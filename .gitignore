@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.log
+
+# FastAPI / uvicorn
+.env
+.env.*
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data — keep CSV but exclude any local overrides
+# (CSV checked in so Cloudflare/static build can use it)
+backend/data/*.bak
+
+# Jupyter
+.ipynb_checkpoints/
