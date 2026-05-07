@@ -35,7 +35,10 @@
       "Bash(curl -s http://localhost:8765/api/monthly)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'{len\\(d\\)} months of data'\\); print\\('First:', json.dumps\\(d[0], indent=2\\)\\); print\\('Last:', json.dumps\\(d[-1], indent=2\\)\\)\")",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git branch *)",
+      "Bash(git commit -m ' *)",
+      "Bash(python *)"
     ]
   }
 }
