@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 export default function TargetDatePanel() {
   const { data, loading } = useApi('/target-date')
@@ -122,6 +123,7 @@ export default function TargetDatePanel() {
       <div style={{ padding: '10px 14px', background: 'rgba(255,179,0,0.06)', border: '1px solid rgba(255,179,0,0.2)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
         <strong style={{ color: 'var(--amber)' }}>Context: </strong>{data.caveat} This comparison uses a simplified lump-sum model &mdash; actual cash-weighted returns would differ.
       </div>
+      <WandPanel buildPrompt={() => !data ? null : `In 2-3 plain-English sentences, explain what this target-date fund comparison means for the investor. Portfolio return ITD: +${portRet?.toFixed(2)}%, vs ${primary?.name} (${primary?.ticker}): +${primary?.return_pct?.toFixed(2)}%, vs ${secondary?.name} (${secondary?.ticker}): +${secondary?.return_pct?.toFixed(2)}%. Is the investor better or worse off than if they'd just put the money in a target-date fund? What should they take from this? 2-3 sentences, plain English.`} />
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 // Mirrors EQUITY_ETF_MAP from backend
 const ETF_MAP = {
@@ -189,6 +190,12 @@ export default function ManagerScorecard() {
       <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 14px', background: 'var(--bg-card)', borderRadius: 6, border: '1px solid var(--border)' }}>
         <strong style={{ color: 'var(--text-secondary)' }}>How to read this:</strong> Alpha (net) = your manager&apos;s return &minus; passive ETF return &minus; estimated sub-manager fee. &quot;Earned it&quot; = net alpha &gt; +2%. Est. fee uses annualised sub-manager fee rate &times; 22-month hold. Passive ETF is the index fund that would have replaced your active manager at near-zero cost. Figures are inception-to-date (Jul 2024 &rarr; May 2026).
       </div>
+      <WandPanel buildPrompt={() => {
+        if (!equityRows.length) return null
+        const earned = equityRows.filter(r => r.netAlpha > 2).length
+        const behind = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).length
+        return `In 2-3 plain-English sentences, explain what this manager scorecard says about whether active management is paying off. Weighted net alpha: ${weightedAlpha !== null ? (weightedAlpha > 0 ? '+' : '') + weightedAlpha.toFixed(2) + '%' : 'N/A'}. ${earned} of ${equityRows.length} managers "earned it" (net alpha > +2%), ${behind} are underperforming. What should the investor do with this information? 2-3 sentences, plain English.`
+      }} />
     </div>
   )
 }

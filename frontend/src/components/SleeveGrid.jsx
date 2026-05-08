@@ -2,6 +2,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 const SUPER_COLOR = {
   equity:       'var(--cyan)',
@@ -141,6 +142,12 @@ export default function SleeveGrid({ compact }) {
       }}>
         {classes.map(ac => <AssetCard key={ac.id} ac={ac} compact={compact} />)}
       </div>
+      <WandPanel buildPrompt={() => {
+        if (!classes.length) return null
+        const top3 = [...classes].sort((a,b) => b.return_pct - a.return_pct).slice(0,3).map(c => `${c.label} +${c.return_pct?.toFixed(1)}%`).join(', ')
+        const total = classes.reduce((s,c) => s + c.value, 0)
+        return `In 2-3 plain-English sentences, explain the asset class picture for this portfolio. Total across ${classes.length} classes: $${total?.toLocaleString()}. Top performers ITD: ${top3}. What's the story here and what should the investor watch? 2-3 sentences, no jargon.`
+      }} />
     </div>
   )
 }

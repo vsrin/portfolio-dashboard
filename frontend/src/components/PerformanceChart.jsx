@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$, fmtShortDate } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -47,7 +48,7 @@ export default function PerformanceChart() {
   }))
 
   return (
-    <div className="card" style={{ height: 340 }}>
+    <div className="card">
       <div className="card-header">
         <span className="card-title">Monthly Cash Flows &amp; Cumulative Capital</span>
         <InfoButton title={WIDGET_INFO.cashFlowChart.title} content={WIDGET_INFO.cashFlowChart.content} />
@@ -107,6 +108,13 @@ export default function PerformanceChart() {
           </ComposedChart>
         </ResponsiveContainer>
       )}
+      <WandPanel buildPrompt={() => {
+        if (!monthly?.length) return null
+        const totalDeposits = monthly.reduce((s, m) => s + (m.deposits || 0), 0)
+        const totalFees = monthly.reduce((s, m) => s + (m.fees || 0), 0)
+        const lastCumulative = monthly[monthly.length - 1]?.cumulative_invested
+        return `In 2-3 plain-English sentences, explain what this cash flow chart shows about this investor's behavior since July 2024. Total deposited: $${totalDeposits?.toLocaleString()}, total fees paid: $${totalFees?.toLocaleString()}, cumulative net invested: $${lastCumulative?.toLocaleString()}. What pattern is notable? What should the investor expect? 2-3 sentences, no jargon.`
+      }} />
     </div>
   )
 }

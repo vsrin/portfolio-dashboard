@@ -16,6 +16,7 @@ import ManagerScorecard from './components/ManagerScorecard'
 import TargetDatePanel from './components/TargetDatePanel'
 import { InfoProvider } from './context/InfoContext'
 import InfoDrawer from './components/InfoDrawer'
+import PortfolioNarrative from './components/PortfolioNarrative'
 
 const TABS = [
   { id: 'overview',      label: 'Overview' },
@@ -143,6 +144,7 @@ export default function App() {
 
             {perfSubtab === 'portfolio' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <PortfolioNarrative />
                 <InsightsPanel />
                 <TargetDatePanel />
               </div>

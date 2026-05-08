@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null
@@ -44,7 +45,7 @@ export default function AllocationChart() {
   const total = summary?.total_value ?? 0
 
   return (
-    <div className="card" style={{ height: 340 }}>
+    <div className="card">
       <div className="card-header">
         <span className="card-title">Portfolio Allocation</span>
         <InfoButton title={WIDGET_INFO.allocationDonut.title} content={WIDGET_INFO.allocationDonut.content} />
@@ -129,6 +130,7 @@ export default function AllocationChart() {
           </div>
         </div>
       )}
+      <WandPanel buildPrompt={() => !summary ? null : `In 2-3 plain-English sentences, explain what this portfolio allocation means and whether it's appropriate. Equity: ${summary.equity_pct?.toFixed(0)}% ($${summary.equity_value?.toLocaleString()}), Alternatives: ${summary.alternatives_pct?.toFixed(0)}% ($${summary.alternatives_value?.toLocaleString()}), Cash: ${(100 - summary.equity_pct - summary.alternatives_pct)?.toFixed(0)}% ($${summary.cash_value?.toLocaleString()}). Is 57% alternatives typical? What should the owner expect from this mix? 2-3 sentences, plain English.`} />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 const VEHICLE_COLORS = {
   private_equity:  '#9b59b6',
@@ -724,6 +725,7 @@ export default function AlternativesPanel() {
           <GroupSection groupId="j_curve"   items={byGroup.j_curve}   totalAltValue={totalAltValue} subMgrFees={subMgrFees} />
         </>
       )}
+      <WandPanel buildPrompt={() => !data ? null : `In 2-3 plain-English sentences, explain the alternatives portfolio picture and what the investor should expect. Total alternatives value: $${totalAltValue?.toLocaleString()} (${sumData?.alternatives_pct?.toFixed(0)}% of AUM), ${altItems.length} vehicles. Sub-manager fee drag embedded: ~$${subMgrFees?.toLocaleString()}. Private market vehicles are illiquid and valued quarterly. What's the story and what should the investor watch over the next 1-2 years? 2-3 sentences, plain English.`} />
     </div>
   )
 }

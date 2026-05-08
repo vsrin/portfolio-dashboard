@@ -2,6 +2,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 function KPI({ label, value, color, borderColor, infoKey, children }) {
   return (
@@ -66,12 +67,8 @@ export default function KPIBar() {
   const { data: d, loading: L } = useApi('/summary')
 
   return (
-    <div style={{
-      background: 'var(--bg-surface)',
-      borderBottom: '1px solid var(--border)',
-      display: 'flex',
-      overflowX: 'auto',
-    }}>
+    <div style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ display: 'flex', overflowX: 'auto' }}>
 
       {/* 1. Total AUM */}
       <KPI
@@ -170,6 +167,10 @@ export default function KPIBar() {
         {!L && <FeeBar advisorFees={d?.total_fees} subMgrFees={d?.sub_manager_fees} />}
       </KPI>
 
+    </div>
+    <div style={{ padding: '0 18px 4px' }}>
+      <WandPanel buildPrompt={() => !d ? null : `In 2-3 plain-English sentences, explain what's most notable about these portfolio KPIs and what the owner should watch. Total AUM: $${d.total_value?.toLocaleString()}, Net gain ITD: +${d.total_gain_pct?.toFixed(2)}% ($${d.total_gain?.toLocaleString()}), 1-Year IRR: ${d.net_irr_1y?.toFixed(2)}%, YTD 2026: ${d.net_irr_ytd?.toFixed(2)}%, Total fees: $${((d.total_fees||0)+(d.sub_manager_fees||0)).toLocaleString()} annually. Be direct, no jargon, 2-3 sentences max.`} />
+    </div>
     </div>
   )
 }

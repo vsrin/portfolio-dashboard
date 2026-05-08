@@ -2,6 +2,7 @@ import { useApi } from '../hooks/useApi'
 import { fmtPct } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 function PctStat({ label, value, highlight }) {
   if (value == null) return null
@@ -61,14 +62,8 @@ export default function BenchmarkBar() {
   const { data: ins }                     = useApi('/insights')
 
   return (
-    <div style={{
-      background: '#0f2044',
-      borderBottom: '1px solid #1a3060',
-      display: 'flex',
-      alignItems: 'center',
-      padding: 0,
-      fontSize: 12,
-    }}>
+    <div style={{ background: '#0f2044', borderBottom: '1px solid #1a3060', fontSize: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'center', padding: 0 }}>
       <div style={{
         padding: '7px 20px',
         borderRight: '1px solid rgba(255,255,255,0.10)',
@@ -118,6 +113,10 @@ export default function BenchmarkBar() {
       <div style={{ marginLeft: 'auto', padding: '7px 20px', fontSize: 10, color: 'rgba(255,255,255,0.28)', whiteSpace: 'nowrap' }}>
         SPY · AGG proxies via Yahoo Finance
       </div>
+    </div>
+    <div style={{ padding: '0 20px 6px' }}>
+      <WandPanel buildPrompt={() => !ins ? null : `In 2-3 plain-English sentences, explain what these benchmark comparisons mean for this investor. Portfolio ITD return: +${ins.portfolio_return?.toFixed(2)}%, S&P 500 ITD: +${ins.spy_itd?.toFixed(2)}%, Bloomberg Agg ITD: +${ins.agg_itd?.toFixed(2)}%, blended benchmark: +${ins.benchmark_itd?.toFixed(2)}%, alpha: +${ins.alpha_itd?.toFixed(2)}%. Is the portfolio beating the market? What should the investor expect? 2-3 sentences, no jargon.`} />
+    </div>
     </div>
   )
 }

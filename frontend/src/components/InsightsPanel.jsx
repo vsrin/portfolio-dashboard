@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import WandPanel from './WandPanel'
 
 function ScoreCard({ label, main, mainColor, sub, subLabel, badge, note, infoTitle, infoContent }) {
   return (
@@ -301,6 +302,7 @@ export default function InsightsPanel() {
           <strong style={{ color: 'var(--text-secondary)' }}>Why 1-year?</strong> The since-inception return (20.74%) includes the full J-Curve effect — PE and VC funds show 0% while capital is being called, dragging the alts sleeve aggregate lower. The 1-year IRR from Tamarac is a cleaner signal of current portfolio momentum for funds that are already deployed.
         </div>
       </div>
+      <WandPanel buildPrompt={() => !data ? null : `In 2-3 plain-English sentences, summarize the key insights from this portfolio's performance scorecard. Alpha vs blended benchmark: ${alpha > 0 ? '+' : ''}${alpha?.toFixed(2)}%, 1-Year IRR: +${irr1y?.toFixed(2)}%, Fee efficiency: ${feeEff?.toFixed(0)}% of gross gains kept after fees, Alts vs bonds: ${altsVsBonds > 0 ? '+' : ''}${altsVsBonds?.toFixed(2)}%. What's the overall verdict and what should the investor focus on? 2-3 sentences, plain English.`} />
     </div>
   )
 }
