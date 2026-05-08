@@ -91,7 +91,7 @@ export default function ManagerScorecard() {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
 
       {/* Weighted summary */}
       {wAvgNetAlpha !== null && (
@@ -194,7 +194,7 @@ export default function ManagerScorecard() {
         if (!equityRows.length) return null
         const earned = equityRows.filter(r => r.netAlpha > 2).length
         const behind = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).length
-        return `In 2-3 plain-English sentences, explain what this manager scorecard says about whether active management is paying off. Weighted net alpha: ${weightedAlpha !== null ? (weightedAlpha > 0 ? '+' : '') + weightedAlpha.toFixed(2) + '%' : 'N/A'}. ${earned} of ${equityRows.length} managers "earned it" (net alpha > +2%), ${behind} are underperforming. What should the investor do with this information? 2-3 sentences, plain English.`
+        return `You are a fiduciary financial advisor conducting a manager review for your client. Deliver a 3-sentence professional verdict. Weighted net alpha across all equity managers: ${weightedAlpha !== null ? (weightedAlpha > 0 ? '+' : '') + weightedAlpha.toFixed(2) + '%' : 'N/A'}. ${earned} of ${equityRows.length} managers beat their passive ETF benchmark net of fees; ${behind} are destroying value. Should the client retain these managers? What specific conversation should they have with AllSource?`
       }} />
     </div>
   )

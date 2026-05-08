@@ -133,7 +133,7 @@ export default function InsightsPanel() {
   const altsGood     = altsVsBonds > 0
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
 
       {/* ── Headline scorecard row ─────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
@@ -302,7 +302,7 @@ export default function InsightsPanel() {
           <strong style={{ color: 'var(--text-secondary)' }}>Why 1-year?</strong> The since-inception return (20.74%) includes the full J-Curve effect — PE and VC funds show 0% while capital is being called, dragging the alts sleeve aggregate lower. The 1-year IRR from Tamarac is a cleaner signal of current portfolio momentum for funds that are already deployed.
         </div>
       </div>
-      <WandPanel buildPrompt={() => !data ? null : `In 2-3 plain-English sentences, summarize the key insights from this portfolio's performance scorecard. Alpha vs blended benchmark: ${alpha > 0 ? '+' : ''}${alpha?.toFixed(2)}%, 1-Year IRR: +${irr1y?.toFixed(2)}%, Fee efficiency: ${feeEff?.toFixed(0)}% of gross gains kept after fees, Alts vs bonds: ${altsVsBonds > 0 ? '+' : ''}${altsVsBonds?.toFixed(2)}%. What's the overall verdict and what should the investor focus on? 2-3 sentences, plain English.`} />
+      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor presenting this client's annual performance review. Give a 3-sentence executive summary with a clear verdict. Alpha vs blended passive benchmark: ${alpha > 0 ? '+' : ''}${alpha?.toFixed(2)}%, 1-Year IRR ${irr1y?.toFixed(2)}%, fee efficiency ${feeEff?.toFixed(0)}% (meaning ${(100-feeEff).toFixed(0)}% of gross gains consumed by fees), alternatives sleeve outperforming bonds by ${altsVsBonds > 0 ? '+' : ''}${altsVsBonds?.toFixed(2)}%. Is this portfolio delivering enough net value to justify its cost structure? What is your recommendation?`} />
     </div>
   )
 }

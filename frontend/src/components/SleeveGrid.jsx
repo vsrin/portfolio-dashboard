@@ -146,7 +146,7 @@ export default function SleeveGrid({ compact }) {
         if (!classes.length) return null
         const top3 = [...classes].sort((a,b) => b.return_pct - a.return_pct).slice(0,3).map(c => `${c.label} +${c.return_pct?.toFixed(1)}%`).join(', ')
         const total = classes.reduce((s,c) => s + c.value, 0)
-        return `In 2-3 plain-English sentences, explain the asset class picture for this portfolio. Total across ${classes.length} classes: $${total?.toLocaleString()}. Top performers ITD: ${top3}. What's the story here and what should the investor watch? 2-3 sentences, no jargon.`
+        return `You are a fiduciary financial advisor. Analyze this client's asset class breakdown in 3 professional sentences. Total across ${classes.length} classes: $${total?.toLocaleString()}. Top performers ITD: ${top3}. Identify concentration risk, comment on whether the dispersion of returns across classes is healthy, and flag any underperforming position that warrants a review conversation with the advisor.`
       }} />
     </div>
   )

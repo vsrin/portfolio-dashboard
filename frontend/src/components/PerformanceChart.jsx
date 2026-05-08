@@ -113,7 +113,7 @@ export default function PerformanceChart() {
         const totalDeposits = monthly.reduce((s, m) => s + (m.deposits || 0), 0)
         const totalFees = monthly.reduce((s, m) => s + (m.fees || 0), 0)
         const lastCumulative = monthly[monthly.length - 1]?.cumulative_invested
-        return `In 2-3 plain-English sentences, explain what this cash flow chart shows about this investor's behavior since July 2024. Total deposited: $${totalDeposits?.toLocaleString()}, total fees paid: $${totalFees?.toLocaleString()}, cumulative net invested: $${lastCumulative?.toLocaleString()}. What pattern is notable? What should the investor expect? 2-3 sentences, no jargon.`
+        return `You are a fiduciary financial advisor reviewing this client's cash flow history since July 2024. Provide a 3-sentence professional assessment. Total deposited: $${totalDeposits?.toLocaleString()}, total fees paid out: $${totalFees?.toLocaleString()}, cumulative net invested: $${lastCumulative?.toLocaleString()}. Comment on the deployment pace, the fee trajectory relative to AUM growth, and whether the capital commitment pattern suggests the client is on track with their investment plan.`
       }} />
     </div>
   )

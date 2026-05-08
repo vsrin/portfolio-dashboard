@@ -424,7 +424,7 @@ export default function AlternativesPanel() {
   const totalAltValue = altItems.reduce((s, i) => s + i.value, 0)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, position: 'relative' }}>
 
       {/* ── Summary KPI bar ──────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
@@ -725,7 +725,7 @@ export default function AlternativesPanel() {
           <GroupSection groupId="j_curve"   items={byGroup.j_curve}   totalAltValue={totalAltValue} subMgrFees={subMgrFees} />
         </>
       )}
-      <WandPanel buildPrompt={() => !data ? null : `In 2-3 plain-English sentences, explain the alternatives portfolio picture and what the investor should expect. Total alternatives value: $${totalAltValue?.toLocaleString()} (${sumData?.alternatives_pct?.toFixed(0)}% of AUM), ${altItems.length} vehicles. Sub-manager fee drag embedded: ~$${subMgrFees?.toLocaleString()}. Private market vehicles are illiquid and valued quarterly. What's the story and what should the investor watch over the next 1-2 years? 2-3 sentences, plain English.`} />
+      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor conducting an alternatives portfolio review. Provide a 3-sentence professional assessment covering return quality, fees, and liquidity risk. Alternatives total: $${totalAltValue?.toLocaleString()} (${sumData?.alternatives_pct?.toFixed(0)}% of AUM across ${altItems.length} vehicles), embedded sub-manager fee drag ~$${subMgrFees?.toLocaleString()} annually. These are illiquid private market instruments marked quarterly. Is this level of alternatives exposure appropriate? What specific risks or opportunities should the client discuss with their advisor in the next 12 months?`} />
     </div>
   )
 }

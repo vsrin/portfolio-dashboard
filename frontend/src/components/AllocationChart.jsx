@@ -130,7 +130,7 @@ export default function AllocationChart() {
           </div>
         </div>
       )}
-      <WandPanel buildPrompt={() => !summary ? null : `In 2-3 plain-English sentences, explain what this portfolio allocation means and whether it's appropriate. Equity: ${summary.equity_pct?.toFixed(0)}% ($${summary.equity_value?.toLocaleString()}), Alternatives: ${summary.alternatives_pct?.toFixed(0)}% ($${summary.alternatives_value?.toLocaleString()}), Cash: ${(100 - summary.equity_pct - summary.alternatives_pct)?.toFixed(0)}% ($${summary.cash_value?.toLocaleString()}). Is 57% alternatives typical? What should the owner expect from this mix? 2-3 sentences, plain English.`} />
+      <WandPanel buildPrompt={() => !summary ? null : `You are a fiduciary financial advisor. Assess this client's asset allocation in 3 professional sentences. Is the concentration appropriate for a $${summary.total_value?.toLocaleString()} portfolio? Allocation: Equity ${summary.equity_pct?.toFixed(0)}% ($${summary.equity_value?.toLocaleString()}), Alternatives ${summary.alternatives_pct?.toFixed(0)}% ($${summary.alternatives_value?.toLocaleString()}), Cash ~${(100 - summary.equity_pct - summary.alternatives_pct)?.toFixed(0)}%. Comment on concentration risk, liquidity, and whether this mix is suitable for a long-term growth objective.`} />
     </div>
   )
 }

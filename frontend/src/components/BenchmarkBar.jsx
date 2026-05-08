@@ -62,7 +62,7 @@ export default function BenchmarkBar() {
   const { data: ins }                     = useApi('/insights')
 
   return (
-    <div style={{ background: '#0f2044', borderBottom: '1px solid #1a3060', fontSize: 12 }}>
+    <div style={{ background: '#0f2044', borderBottom: '1px solid #1a3060', fontSize: 12, position: 'relative' }}>
     <div style={{ display: 'flex', alignItems: 'center', padding: 0 }}>
       <div style={{
         padding: '7px 20px',
@@ -114,9 +114,7 @@ export default function BenchmarkBar() {
         SPY · AGG proxies via Yahoo Finance
       </div>
     </div>
-    <div style={{ padding: '0 20px 6px' }}>
-      <WandPanel buildPrompt={() => !ins ? null : `In 2-3 plain-English sentences, explain what these benchmark comparisons mean for this investor. Portfolio ITD return: +${ins.portfolio_return?.toFixed(2)}%, S&P 500 ITD: +${ins.spy_itd?.toFixed(2)}%, Bloomberg Agg ITD: +${ins.agg_itd?.toFixed(2)}%, blended benchmark: +${ins.benchmark_itd?.toFixed(2)}%, alpha: +${ins.alpha_itd?.toFixed(2)}%. Is the portfolio beating the market? What should the investor expect? 2-3 sentences, no jargon.`} />
-    </div>
+    <WandPanel buildPrompt={() => !ins ? null : `You are a fiduciary financial advisor. Analyze these benchmark results professionally in 3 sentences. Is the client's active strategy justified by the data? Data: Portfolio ITD +${ins.portfolio_return?.toFixed(2)}%, vs S&P 500 ITD +${ins.spy_itd?.toFixed(2)}%, vs Bloomberg Agg ITD +${ins.agg_itd?.toFixed(2)}%, blended passive benchmark +${ins.benchmark_itd?.toFixed(2)}%, net alpha +${ins.alpha_itd?.toFixed(2)}%. Comment on the significance of the alpha and what it implies for the investment strategy going forward.`} />
     </div>
   )
 }
