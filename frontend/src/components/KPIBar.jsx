@@ -168,7 +168,24 @@ export default function KPIBar() {
       </KPI>
 
     </div>
-    <WandPanel buildPrompt={() => !d ? null : `You are a fiduciary financial advisor reviewing this client's portfolio KPIs. Provide a concise 3-sentence professional assessment. Highlight what's working, what needs attention, and one specific action item. Data: Total AUM $${d.total_value?.toLocaleString()}, Net gain ITD +${d.total_gain_pct?.toFixed(2)}% ($${d.total_gain?.toLocaleString()}), 1-Year IRR ${d.net_irr_1y?.toFixed(2)}%, YTD 2026 ${d.net_irr_ytd?.toFixed(2)}%, Total all-in fees $${((d.total_fees||0)+(d.sub_manager_fees||0)).toLocaleString()} annually (${(((d.total_fees||0)+(d.sub_manager_fees||0))/d.total_value*100).toFixed(2)}% of AUM). Write as if advising the client directly.`} />
+    <WandPanel buildPrompt={() => {
+      if (!d) return null
+      const totalFees = (d.total_fees||0) + (d.sub_manager_fees||0)
+      const feesPct = (totalFees / d.total_value * 100).toFixed(2)
+      return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client directly. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+PORTFOLIO METRICS (as of May 5, 2026 | inception July 10, 2024):
+- Total AUM: $${d.total_value?.toLocaleString('en-US', {maximumFractionDigits:0})}
+- Net gain since inception: +$${d.total_gain?.toLocaleString('en-US', {maximumFractionDigits:0})} (+${d.total_gain_pct?.toFixed(2)}%)
+- 1-Year IRR: +${d.net_irr_1y?.toFixed(2)}%
+- YTD 2026 IRR: +${d.net_irr_ytd?.toFixed(2)}%
+- All-in annual fees: $${totalFees.toLocaleString('en-US', {maximumFractionDigits:0})} (${feesPct}% of AUM)
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: State the overall performance verdict using the ITD gain and 1-Year IRR figures.
+Sentence 2: Identify the single most important risk or concern today, citing the specific number that signals it.
+Sentence 3: Give one concrete, specific action the client should raise with their advisor at the next review.`
+    }} />
     </div>
   )
 }

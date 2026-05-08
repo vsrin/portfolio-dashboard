@@ -302,7 +302,18 @@ export default function InsightsPanel() {
           <strong style={{ color: 'var(--text-secondary)' }}>Why 1-year?</strong> The since-inception return (20.74%) includes the full J-Curve effect — PE and VC funds show 0% while capital is being called, dragging the alts sleeve aggregate lower. The 1-year IRR from Tamarac is a cleaner signal of current portfolio momentum for funds that are already deployed.
         </div>
       </div>
-      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor presenting this client's annual performance review. Give a 3-sentence executive summary with a clear verdict. Alpha vs blended passive benchmark: ${alpha > 0 ? '+' : ''}${alpha?.toFixed(2)}%, 1-Year IRR ${irr1y?.toFixed(2)}%, fee efficiency ${feeEff?.toFixed(0)}% (meaning ${(100-feeEff).toFixed(0)}% of gross gains consumed by fees), alternatives sleeve outperforming bonds by ${altsVsBonds > 0 ? '+' : ''}${altsVsBonds?.toFixed(2)}%. Is this portfolio delivering enough net value to justify its cost structure? What is your recommendation?`} />
+      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+PERFORMANCE SCORECARD (as of May 5, 2026):
+- Net alpha vs blended passive benchmark ITD: +${alpha?.toFixed(2)}%
+- 1-Year IRR: +${irr1y?.toFixed(2)}%
+- Fee efficiency: ${feeEff?.toFixed(1)}% of gross gains retained after all fees (${(100-feeEff).toFixed(1)}% consumed by fees)
+- Alternatives sleeve vs bond index outperformance: +${altsVsBonds?.toFixed(2)}%
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: Deliver an overall verdict on whether this active strategy is justified, citing the alpha and 1-Year IRR figures.
+Sentence 2: Assess the fee efficiency number — is losing ${(100-feeEff).toFixed(1)}% of gross gains to fees acceptable given the results, and what's the implication?
+Sentence 3: Give one specific recommendation the client should act on based on this scorecard.`} />
     </div>
   )
 }

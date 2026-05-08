@@ -123,7 +123,23 @@ export default function TargetDatePanel() {
       <div style={{ padding: '10px 14px', background: 'rgba(255,179,0,0.06)', border: '1px solid rgba(255,179,0,0.2)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
         <strong style={{ color: 'var(--amber)' }}>Context: </strong>{data.caveat} This comparison uses a simplified lump-sum model &mdash; actual cash-weighted returns would differ.
       </div>
-      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor. Assess whether this client's active strategy has outperformed the simplest alternative — a target-date fund — in 3 professional sentences. Portfolio ITD return: +${portRet?.toFixed(2)}%, vs ${primary?.name} +${primary?.return_pct?.toFixed(2)}%, vs ${secondary?.name} +${secondary?.return_pct?.toFixed(2)}%. Factor in that the active portfolio carries significantly higher fees and illiquidity from alternatives. What does this comparison tell you about the value proposition of active management for this client, and what would you advise?`} />
+      <WandPanel buildPrompt={() => {
+        if (!data) return null
+        const gap1 = (portRet - primary?.return_pct).toFixed(2)
+        const gap2 = (portRet - secondary?.return_pct).toFixed(2)
+        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+TARGET-DATE FUND COMPARISON (inception July 10, 2024 to May 5, 2026):
+- This portfolio ITD return: +${portRet?.toFixed(2)}%
+- ${primary?.name} (${primary?.ticker}) ITD return: +${primary?.return_pct?.toFixed(2)}%  →  portfolio advantage: ${gap1 >= 0 ? '+' : ''}${gap1}%
+- ${secondary?.name} (${secondary?.ticker}) ITD return: +${secondary?.return_pct?.toFixed(2)}%  →  portfolio advantage: ${gap2 >= 0 ? '+' : ''}${gap2}%
+- Important context: this portfolio carries higher fees (~3% all-in annually) and significant illiquidity from alternatives vs. near-zero cost and full liquidity of a target-date fund
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: State clearly whether the active portfolio outperformed the target-date alternatives and by how much.
+Sentence 2: Frame the outperformance (or underperformance) against the fee differential — is the client being compensated for the extra cost and illiquidity?
+Sentence 3: Give your professional verdict: is active management the right choice for this client, and what should they demand from their advisor to justify it?`
+      }} />
     </div>
   )
 }

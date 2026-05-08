@@ -113,7 +113,17 @@ export default function PerformanceChart() {
         const totalDeposits = monthly.reduce((s, m) => s + (m.deposits || 0), 0)
         const totalFees = monthly.reduce((s, m) => s + (m.fees || 0), 0)
         const lastCumulative = monthly[monthly.length - 1]?.cumulative_invested
-        return `You are a fiduciary financial advisor reviewing this client's cash flow history since July 2024. Provide a 3-sentence professional assessment. Total deposited: $${totalDeposits?.toLocaleString()}, total fees paid out: $${totalFees?.toLocaleString()}, cumulative net invested: $${lastCumulative?.toLocaleString()}. Comment on the deployment pace, the fee trajectory relative to AUM growth, and whether the capital commitment pattern suggests the client is on track with their investment plan.`
+        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+CASH FLOW DATA (July 2024 to May 2026 — 22 months):
+- Total capital deposited: $${totalDeposits?.toLocaleString('en-US', {maximumFractionDigits:0})}
+- Total advisor fees paid (from transactions): $${totalFees?.toLocaleString('en-US', {maximumFractionDigits:0})}
+- Cumulative net invested capital: $${lastCumulative?.toLocaleString('en-US', {maximumFractionDigits:0})}
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: Characterize the pace and consistency of capital deployment over the 22-month period.
+Sentence 2: Assess whether the $${totalFees?.toLocaleString('en-US', {maximumFractionDigits:0})} in fees paid is proportionate to the portfolio growth achieved.
+Sentence 3: What should the client monitor or discuss with their advisor regarding cash flow management going forward?`
       }} />
     </div>
   )

@@ -725,7 +725,24 @@ export default function AlternativesPanel() {
           <GroupSection groupId="j_curve"   items={byGroup.j_curve}   totalAltValue={totalAltValue} subMgrFees={subMgrFees} />
         </>
       )}
-      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor conducting an alternatives portfolio review. Provide a 3-sentence professional assessment covering return quality, fees, and liquidity risk. Alternatives total: $${totalAltValue?.toLocaleString()} (${sumData?.alternatives_pct?.toFixed(0)}% of AUM across ${altItems.length} vehicles), embedded sub-manager fee drag ~$${subMgrFees?.toLocaleString()} annually. These are illiquid private market instruments marked quarterly. Is this level of alternatives exposure appropriate? What specific risks or opportunities should the client discuss with their advisor in the next 12 months?`} />
+      <WandPanel buildPrompt={() => {
+        if (!data) return null
+        const altRetPct = sumData?.alternatives_return_pct?.toFixed(2)
+        const altPct = sumData?.alternatives_pct?.toFixed(1)
+        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+ALTERNATIVES PORTFOLIO (as of May 5, 2026):
+- Alternatives total value: $${totalAltValue?.toLocaleString('en-US', {maximumFractionDigits:0})} (${altPct}% of total AUM)
+- Number of vehicles: ${altItems.length}
+- ITD return on alternatives sleeve: +${altRetPct}%
+- Embedded sub-manager fee drag: ~$${subMgrFees?.toLocaleString('en-US', {maximumFractionDigits:0})} annually
+- Liquidity profile: private market instruments (PE, VC, hedge funds) — quarterly marks, capital locked up for years
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: Assess the +${altRetPct}% alternatives return in the context of the illiquidity premium — is the client being adequately compensated for locking up ${altPct}% of their wealth?
+Sentence 2: Flag the specific fee and liquidity risks the client should understand about having $${totalAltValue?.toLocaleString('en-US', {maximumFractionDigits:0})} in illiquid vehicles.
+Sentence 3: What one question should the client ask their advisor about the alternatives program at the next review?`
+      }} />
     </div>
   )
 }

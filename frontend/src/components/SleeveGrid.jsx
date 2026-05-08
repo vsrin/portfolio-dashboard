@@ -146,7 +146,18 @@ export default function SleeveGrid({ compact }) {
         if (!classes.length) return null
         const top3 = [...classes].sort((a,b) => b.return_pct - a.return_pct).slice(0,3).map(c => `${c.label} +${c.return_pct?.toFixed(1)}%`).join(', ')
         const total = classes.reduce((s,c) => s + c.value, 0)
-        return `You are a fiduciary financial advisor. Analyze this client's asset class breakdown in 3 professional sentences. Total across ${classes.length} classes: $${total?.toLocaleString()}. Top performers ITD: ${top3}. Identify concentration risk, comment on whether the dispersion of returns across classes is healthy, and flag any underperforming position that warrants a review conversation with the advisor.`
+        const bottom3 = [...classes].sort((a,b) => a.return_pct - b.return_pct).slice(0,3).map(c => `${c.label} ${c.return_pct >= 0 ? '+' : ''}${c.return_pct?.toFixed(1)}%`).join(', ')
+        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+ASSET CLASS DETAIL (${classes.length} classes | inception July 10, 2024 to May 5, 2026):
+- Total AUM across all classes: $${total?.toLocaleString('en-US', {maximumFractionDigits:0})}
+- Top 3 performers ITD: ${top3}
+- Bottom 3 performers ITD: ${bottom3}
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: Name the standout performers and quantify their contribution to portfolio gains.
+Sentence 2: Flag the laggards by name and return percentage, and assess whether their underperformance is a concern or expected given their asset class role.
+Sentence 3: Give one specific portfolio action — either to trim a winner, add to a laggard, or hold the current mix — with a clear rationale.`
       }} />
     </div>
   )

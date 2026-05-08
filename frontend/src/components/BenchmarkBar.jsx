@@ -114,7 +114,22 @@ export default function BenchmarkBar() {
         SPY · AGG proxies via Yahoo Finance
       </div>
     </div>
-    <WandPanel buildPrompt={() => !ins ? null : `You are a fiduciary financial advisor. Analyze these benchmark results professionally in 3 sentences. Is the client's active strategy justified by the data? Data: Portfolio ITD +${ins.portfolio_return?.toFixed(2)}%, vs S&P 500 ITD +${ins.spy_itd?.toFixed(2)}%, vs Bloomberg Agg ITD +${ins.agg_itd?.toFixed(2)}%, blended passive benchmark +${ins.benchmark_itd?.toFixed(2)}%, net alpha +${ins.alpha_itd?.toFixed(2)}%. Comment on the significance of the alpha and what it implies for the investment strategy going forward.`} />
+    <WandPanel buildPrompt={() => {
+      if (!ins) return null
+      return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+BENCHMARK DATA (inception July 10, 2024 to May 5, 2026):
+- Portfolio return ITD: +${ins.portfolio_return?.toFixed(2)}%
+- S&P 500 (SPY) ITD: +${ins.spy_itd?.toFixed(2)}%
+- Bloomberg Aggregate Bond Index (AGG) ITD: +${ins.agg_itd?.toFixed(2)}%
+- Blended passive benchmark (weighted mix of SPY + AGG): +${ins.benchmark_itd?.toFixed(2)}%
+- Net alpha (portfolio minus blended benchmark): +${ins.alpha_itd?.toFixed(2)}%
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: Is the portfolio outperforming or underperforming the passive benchmark, and by exactly how much?
+Sentence 2: Put the alpha in context — does it justify the active management fees this client is paying?
+Sentence 3: What is your recommendation — continue the current strategy, or make a specific change?`
+    }} />
     </div>
   )
 }

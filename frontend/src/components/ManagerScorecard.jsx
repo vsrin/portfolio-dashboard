@@ -194,7 +194,21 @@ export default function ManagerScorecard() {
         if (!equityRows.length) return null
         const earned = equityRows.filter(r => r.netAlpha > 2).length
         const behind = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).length
-        return `You are a fiduciary financial advisor conducting a manager review for your client. Deliver a 3-sentence professional verdict. Weighted net alpha across all equity managers: ${weightedAlpha !== null ? (weightedAlpha > 0 ? '+' : '') + weightedAlpha.toFixed(2) + '%' : 'N/A'}. ${earned} of ${equityRows.length} managers beat their passive ETF benchmark net of fees; ${behind} are destroying value. Should the client retain these managers? What specific conversation should they have with AllSource?`
+        const earnedNames = equityRows.filter(r => r.netAlpha > 2).map(r => `${r.label} (net alpha +${r.netAlpha?.toFixed(2)}%)`).join(', ') || 'none'
+        const behindNames = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).map(r => `${r.label} (net alpha ${r.netAlpha?.toFixed(2)}%)`).join(', ') || 'none'
+        return `You are a fiduciary financial advisor conducting a formal manager review. Write exactly 3 sentences. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+MANAGER SCORECARD (inception July 10, 2024 to May 5, 2026):
+- Total equity managers evaluated: ${equityRows.length}
+- Weighted average net alpha across all managers: ${weightedAlpha !== null ? (weightedAlpha >= 0 ? '+' : '') + weightedAlpha.toFixed(2) + '%' : 'not calculable'}
+- Managers that earned their fees (net alpha > +2.00%): ${earned} — ${earnedNames}
+- Managers destroying value (net alpha < -2.00%): ${behind} — ${behindNames}
+- Net alpha = manager return minus passive ETF return minus estimated sub-manager fee
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: State the overall verdict on the manager lineup — is the active management program adding value net of fees?
+Sentence 2: Call out specific underperforming managers by name and net alpha, and say plainly whether they should be replaced.
+Sentence 3: Give one specific action item the client should raise with AllSource at the next quarterly review.`
       }} />
     </div>
   )

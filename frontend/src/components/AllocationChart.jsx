@@ -130,7 +130,22 @@ export default function AllocationChart() {
           </div>
         </div>
       )}
-      <WandPanel buildPrompt={() => !summary ? null : `You are a fiduciary financial advisor. Assess this client's asset allocation in 3 professional sentences. Is the concentration appropriate for a $${summary.total_value?.toLocaleString()} portfolio? Allocation: Equity ${summary.equity_pct?.toFixed(0)}% ($${summary.equity_value?.toLocaleString()}), Alternatives ${summary.alternatives_pct?.toFixed(0)}% ($${summary.alternatives_value?.toLocaleString()}), Cash ~${(100 - summary.equity_pct - summary.alternatives_pct)?.toFixed(0)}%. Comment on concentration risk, liquidity, and whether this mix is suitable for a long-term growth objective.`} />
+      <WandPanel buildPrompt={() => {
+        if (!summary) return null
+        const cashPct = (100 - summary.equity_pct - summary.alternatives_pct).toFixed(1)
+        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+
+ASSET ALLOCATION (as of May 5, 2026):
+- Total portfolio: $${summary.total_value?.toLocaleString('en-US', {maximumFractionDigits:0})}
+- Equity sleeve: ${summary.equity_pct?.toFixed(1)}% of AUM = $${summary.equity_value?.toLocaleString('en-US', {maximumFractionDigits:0})} | ITD return: +${summary.equity_return_pct?.toFixed(2)}%
+- Alternatives sleeve: ${summary.alternatives_pct?.toFixed(1)}% of AUM = $${summary.alternatives_value?.toLocaleString('en-US', {maximumFractionDigits:0})} | ITD return: +${summary.alternatives_return_pct?.toFixed(2)}%
+- Cash: ~${cashPct}% of AUM
+
+OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
+Sentence 1: Assess whether the ${summary.alternatives_pct?.toFixed(0)}% alternatives concentration is appropriate for a growth-oriented investor.
+Sentence 2: Comment on the liquidity profile — what does this allocation mean if the client needed to access funds quickly?
+Sentence 3: Recommend one specific rebalancing action or confirm the allocation is sound, citing the numbers.`
+      }} />
     </div>
   )
 }
