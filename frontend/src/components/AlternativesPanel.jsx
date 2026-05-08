@@ -6,7 +6,6 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
-import WandPanel from './WandPanel'
 
 const VEHICLE_COLORS = {
   private_equity:  '#9b59b6',
@@ -424,7 +423,7 @@ export default function AlternativesPanel() {
   const totalAltValue = altItems.reduce((s, i) => s + i.value, 0)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
 
       {/* ── Summary KPI bar ──────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
@@ -725,29 +724,6 @@ export default function AlternativesPanel() {
           <GroupSection groupId="j_curve"   items={byGroup.j_curve}   totalAltValue={totalAltValue} subMgrFees={subMgrFees} />
         </>
       )}
-      <WandPanel buildPrompt={() => {
-        if (!data) return null
-        const altRetPct = sumData?.alternatives_return_pct?.toFixed(2)
-        const altPct = sumData?.alternatives_pct?.toFixed(1)
-        return `You are a fiduciary financial advisor writing a structured alternatives review. Use the exact data below. Format your response using the section headers shown.
-
-DATA (May 5, 2026):
-- Alternatives total: **$${totalAltValue?.toLocaleString('en-US', {maximumFractionDigits:0})}** (${altPct}% of AUM across ${altItems.length} vehicles)
-- ITD return on alternatives sleeve: **+${altRetPct}%**
-- Embedded sub-manager fee drag: **~$${subMgrFees?.toLocaleString('en-US', {maximumFractionDigits:0})}** annually
-- Liquidity: private market instruments (PE, VC, hedge funds) — quarterly valuations, capital locked for years
-
-Write your response using exactly this structure. Use **bold** for key numbers and terms.
-
-**Return Quality**
-One sentence: is **+${altRetPct}%** ITD an adequate illiquidity premium for having ${altPct}% of wealth locked in private markets?
-
-**Fee & Liquidity Risk**
-One sentence: what do the **~$${subMgrFees?.toLocaleString('en-US', {maximumFractionDigits:0})}** in embedded fees and the illiquidity mean for the client's financial flexibility?
-
-**Key Question**
-One sentence: the single most important question the client should ask their advisor about the alternatives program.`
-      }} />
     </div>
   )
 }

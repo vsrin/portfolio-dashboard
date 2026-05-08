@@ -3,7 +3,6 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
-import WandPanel from './WandPanel'
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null
@@ -45,7 +44,7 @@ export default function AllocationChart() {
   const total = summary?.total_value ?? 0
 
   return (
-    <div className="card">
+    <div className="card" style={{ height: 340 }}>
       <div className="card-header">
         <span className="card-title">Portfolio Allocation</span>
         <InfoButton title={WIDGET_INFO.allocationDonut.title} content={WIDGET_INFO.allocationDonut.content} />
@@ -130,28 +129,6 @@ export default function AllocationChart() {
           </div>
         </div>
       )}
-      <WandPanel buildPrompt={() => {
-        if (!summary) return null
-        const cashPct = (100 - summary.equity_pct - summary.alternatives_pct).toFixed(1)
-        return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
-
-DATA (May 5, 2026):
-- Total portfolio: $${summary.total_value?.toLocaleString('en-US', {maximumFractionDigits:0})}
-- Equity: **${summary.equity_pct?.toFixed(1)}%** = $${summary.equity_value?.toLocaleString('en-US', {maximumFractionDigits:0})} | ITD return +${summary.equity_return_pct?.toFixed(2)}%
-- Alternatives: **${summary.alternatives_pct?.toFixed(1)}%** = $${summary.alternatives_value?.toLocaleString('en-US', {maximumFractionDigits:0})} | ITD return +${summary.alternatives_return_pct?.toFixed(2)}%
-- Cash: ~${cashPct}%
-
-Write your response using exactly this structure. Use **bold** for key numbers and terms.
-
-**Allocation Assessment**
-One sentence: is a ${summary.alternatives_pct?.toFixed(0)}%/${summary.equity_pct?.toFixed(0)}% alts-to-equity split appropriate for a growth investor?
-
-**Liquidity Risk**
-One sentence: what does ${summary.alternatives_pct?.toFixed(0)}% in illiquid alternatives mean practically if the client needs capital?
-
-**Recommendation**
-One sentence: rebalance or hold — with a specific number-backed rationale.`
-      }} />
     </div>
   )
 }

@@ -2,7 +2,6 @@ import { useApi } from '../hooks/useApi'
 import { fmtPct } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
-import WandPanel from './WandPanel'
 
 function PctStat({ label, value, highlight }) {
   if (value == null) return null
@@ -62,8 +61,14 @@ export default function BenchmarkBar() {
   const { data: ins }                     = useApi('/insights')
 
   return (
-    <div style={{ background: '#0f2044', borderBottom: '1px solid #1a3060', fontSize: 12, position: 'relative' }}>
-    <div style={{ display: 'flex', alignItems: 'center', padding: 0 }}>
+    <div style={{
+      background: '#0f2044',
+      borderBottom: '1px solid #1a3060',
+      display: 'flex',
+      alignItems: 'center',
+      padding: 0,
+      fontSize: 12,
+    }}>
       <div style={{
         padding: '7px 20px',
         borderRight: '1px solid rgba(255,255,255,0.10)',
@@ -113,29 +118,6 @@ export default function BenchmarkBar() {
       <div style={{ marginLeft: 'auto', padding: '7px 20px', fontSize: 10, color: 'rgba(255,255,255,0.28)', whiteSpace: 'nowrap' }}>
         SPY · AGG proxies via Yahoo Finance
       </div>
-    </div>
-    <WandPanel buildPrompt={() => {
-      if (!ins) return null
-      return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
-
-DATA (inception July 10, 2024 to May 5, 2026):
-- This portfolio ITD return: +${ins.portfolio_return?.toFixed(2)}%
-- S&P 500 (SPY) ITD: +${ins.spy_itd?.toFixed(2)}%
-- Bloomberg Aggregate Bond Index (AGG) ITD: +${ins.agg_itd?.toFixed(2)}%
-- Blended passive benchmark: +${ins.benchmark_itd?.toFixed(2)}%
-- Net alpha (portfolio minus blended benchmark): +${ins.alpha_itd?.toFixed(2)}%
-
-Write your response using exactly this structure. Use **bold** for key numbers and terms.
-
-**Benchmark Result**
-One sentence: state clearly whether the portfolio beat or trailed the blended benchmark, and by exactly how much alpha.
-
-**Fee Context**
-One sentence: the all-in fees are ~3% of AUM annually — does the +${ins.alpha_itd?.toFixed(2)}% alpha justify that cost?
-
-**Verdict**
-One sentence: your professional recommendation — continue the active strategy, renegotiate fees, or reconsider the mandate.`
-    }} />
     </div>
   )
 }

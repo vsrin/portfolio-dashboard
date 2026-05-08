@@ -6,7 +6,6 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
-import WandPanel from './WandPanel'
 
 export default function TargetDatePanel() {
   const { data, loading } = useApi('/target-date')
@@ -123,29 +122,6 @@ export default function TargetDatePanel() {
       <div style={{ padding: '10px 14px', background: 'rgba(255,179,0,0.06)', border: '1px solid rgba(255,179,0,0.2)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
         <strong style={{ color: 'var(--amber)' }}>Context: </strong>{data.caveat} This comparison uses a simplified lump-sum model &mdash; actual cash-weighted returns would differ.
       </div>
-      <WandPanel buildPrompt={() => {
-        if (!data) return null
-        const gap1 = (portRet - primary?.return_pct).toFixed(2)
-        const gap2 = (portRet - secondary?.return_pct).toFixed(2)
-        return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
-
-DATA (inception July 10, 2024 to May 5, 2026):
-- This portfolio ITD return: **+${portRet?.toFixed(2)}%**
-- ${primary?.name} (${primary?.ticker}): +${primary?.return_pct?.toFixed(2)}% → portfolio leads by **${gap1 >= 0 ? '+' : ''}${gap1}%**
-- ${secondary?.name} (${secondary?.ticker}): +${secondary?.return_pct?.toFixed(2)}% → portfolio leads by **${gap2 >= 0 ? '+' : ''}${gap2}%**
-- Context: active portfolio costs ~3% of AUM annually in all-in fees; target-date funds cost ~0.10%–0.15%
-
-Write your response using exactly this structure. Use **bold** for key numbers and terms.
-
-**Head-to-Head**
-One sentence: did the active portfolio outperform both target-date funds, and by how much?
-
-**Fee-Adjusted Reality**
-One sentence: after accounting for the fee differential, is the client ahead or behind what a low-cost index fund would have delivered?
-
-**Verdict**
-One sentence: professional verdict on whether active management is earning its keep for this client.`
-      }} />
     </div>
   )
 }

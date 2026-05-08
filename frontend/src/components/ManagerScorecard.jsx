@@ -7,7 +7,6 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
-import WandPanel from './WandPanel'
 
 // Mirrors EQUITY_ETF_MAP from backend
 const ETF_MAP = {
@@ -91,7 +90,7 @@ export default function ManagerScorecard() {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Weighted summary */}
       {wAvgNetAlpha !== null && (
@@ -190,32 +189,6 @@ export default function ManagerScorecard() {
       <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 14px', background: 'var(--bg-card)', borderRadius: 6, border: '1px solid var(--border)' }}>
         <strong style={{ color: 'var(--text-secondary)' }}>How to read this:</strong> Alpha (net) = your manager&apos;s return &minus; passive ETF return &minus; estimated sub-manager fee. &quot;Earned it&quot; = net alpha &gt; +2%. Est. fee uses annualised sub-manager fee rate &times; 22-month hold. Passive ETF is the index fund that would have replaced your active manager at near-zero cost. Figures are inception-to-date (Jul 2024 &rarr; May 2026).
       </div>
-      <WandPanel buildPrompt={() => {
-        if (!equityRows.length) return null
-        const earned = equityRows.filter(r => r.netAlpha > 2).length
-        const behind = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).length
-        const earnedNames = equityRows.filter(r => r.netAlpha > 2).map(r => `${r.label} (+${r.netAlpha?.toFixed(2)}%)`).join(', ') || 'none'
-        const behindNames = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).map(r => `${r.label} (${r.netAlpha?.toFixed(2)}%)`).join(', ') || 'none'
-        return `You are a fiduciary financial advisor writing a formal manager review. Use the exact data below. Format your response using the section headers shown.
-
-DATA (inception July 10, 2024 to May 5, 2026):
-- Managers reviewed: ${equityRows.length}
-- Weighted average net alpha: **${weightedAlpha !== null ? (weightedAlpha >= 0 ? '+' : '') + weightedAlpha.toFixed(2) + '%' : 'N/A'}**
-- Earning their fees (net alpha > +2%): ${earned} managers — ${earnedNames}
-- Destroying value (net alpha < -2%): ${behind} managers — ${behindNames}
-- Net alpha defined as: manager return minus passive ETF return minus sub-manager fee
-
-Write your response using exactly this structure. Use **bold** for manager names and numbers.
-
-**Program Verdict**
-One sentence: is the equity manager program, in aggregate, adding value for the client net of all fees?
-
-**Underperformers**
-One sentence: name the specific underperforming managers, state their net alpha, and say plainly whether they should be replaced.
-
-**Action**
-One sentence: the specific question the client must raise with AllSource at the next quarterly review.`
-      }} />
     </div>
   )
 }

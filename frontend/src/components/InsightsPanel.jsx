@@ -6,7 +6,6 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
-import WandPanel from './WandPanel'
 
 function ScoreCard({ label, main, mainColor, sub, subLabel, badge, note, infoTitle, infoContent }) {
   return (
@@ -133,7 +132,7 @@ export default function InsightsPanel() {
   const altsGood     = altsVsBonds > 0
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* ── Headline scorecard row ─────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
@@ -302,24 +301,6 @@ export default function InsightsPanel() {
           <strong style={{ color: 'var(--text-secondary)' }}>Why 1-year?</strong> The since-inception return (20.74%) includes the full J-Curve effect — PE and VC funds show 0% while capital is being called, dragging the alts sleeve aggregate lower. The 1-year IRR from Tamarac is a cleaner signal of current portfolio momentum for funds that are already deployed.
         </div>
       </div>
-      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
-
-DATA (May 5, 2026):
-- Net alpha vs blended passive benchmark ITD: **+${alpha?.toFixed(2)}%**
-- 1-Year IRR: **+${irr1y?.toFixed(2)}%**
-- Fee efficiency: **${feeEff?.toFixed(1)}%** of gross gains retained after all fees (${(100-feeEff).toFixed(1)}% consumed by fees)
-- Alternatives sleeve vs AGG bond index: **+${altsVsBonds?.toFixed(2)}%** outperformance
-
-Write your response using exactly this structure. Use **bold** for key numbers and terms.
-
-**Overall Verdict**
-One sentence: is the +${irr1y?.toFixed(2)}% 1-Year IRR and +${alpha?.toFixed(2)}% alpha sufficient to justify an active management program?
-
-**Fee Drag**
-One sentence: ${(100-feeEff).toFixed(1)}% of gross gains are consumed by fees — state plainly whether this is acceptable for the results delivered.
-
-**Recommendation**
-One sentence: one specific action the client should take or demand from their advisor to improve the net outcome.`} />
     </div>
   )
 }

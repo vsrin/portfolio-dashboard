@@ -2,7 +2,6 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
-import WandPanel from './WandPanel'
 
 function KPI({ label, value, color, borderColor, infoKey, children }) {
   return (
@@ -67,8 +66,12 @@ export default function KPIBar() {
   const { data: d, loading: L } = useApi('/summary')
 
   return (
-    <div style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', position: 'relative' }}>
-    <div style={{ display: 'flex', overflowX: 'auto' }}>
+    <div style={{
+      background: 'var(--bg-surface)',
+      borderBottom: '1px solid var(--border)',
+      display: 'flex',
+      overflowX: 'auto',
+    }}>
 
       {/* 1. Total AUM */}
       <KPI
@@ -167,31 +170,6 @@ export default function KPIBar() {
         {!L && <FeeBar advisorFees={d?.total_fees} subMgrFees={d?.sub_manager_fees} />}
       </KPI>
 
-    </div>
-    <WandPanel buildPrompt={() => {
-      if (!d) return null
-      const totalFees = (d.total_fees||0) + (d.sub_manager_fees||0)
-      const feesPct = (totalFees / d.total_value * 100).toFixed(2)
-      return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
-
-DATA (May 5, 2026 | inception July 10, 2024):
-- Total AUM: $${d.total_value?.toLocaleString('en-US', {maximumFractionDigits:0})}
-- Net gain ITD: +$${d.total_gain?.toLocaleString('en-US', {maximumFractionDigits:0})} (+${d.total_gain_pct?.toFixed(2)}%)
-- 1-Year IRR: +${d.net_irr_1y?.toFixed(2)}%
-- YTD 2026 IRR: +${d.net_irr_ytd?.toFixed(2)}%
-- All-in annual fees: $${totalFees.toLocaleString('en-US', {maximumFractionDigits:0})} per year (${feesPct}% of AUM)
-
-Write your response using exactly this structure. Use **bold** for key numbers and terms.
-
-**Performance**
-One sentence: state whether the portfolio is on track, citing the ITD return and 1-Year IRR.
-
-**Watch**
-One sentence: identify the single biggest concern today and the specific number that flags it.
-
-**Action**
-One sentence: one concrete question or action the client should raise at the next advisor meeting.`
-    }} />
     </div>
   )
 }

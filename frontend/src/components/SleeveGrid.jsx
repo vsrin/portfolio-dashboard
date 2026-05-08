@@ -2,7 +2,6 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
-import WandPanel from './WandPanel'
 
 const SUPER_COLOR = {
   equity:       'var(--cyan)',
@@ -142,29 +141,6 @@ export default function SleeveGrid({ compact }) {
       }}>
         {classes.map(ac => <AssetCard key={ac.id} ac={ac} compact={compact} />)}
       </div>
-      <WandPanel buildPrompt={() => {
-        if (!classes.length) return null
-        const top3 = [...classes].sort((a,b) => b.return_pct - a.return_pct).slice(0,3).map(c => `${c.label} +${c.return_pct?.toFixed(1)}%`).join(', ')
-        const total = classes.reduce((s,c) => s + c.value, 0)
-        const bottom3 = [...classes].sort((a,b) => a.return_pct - b.return_pct).slice(0,3).map(c => `${c.label} ${c.return_pct >= 0 ? '+' : ''}${c.return_pct?.toFixed(1)}%`).join(', ')
-        return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
-
-DATA (${classes.length} asset classes | inception July 10, 2024 to May 5, 2026):
-- Total AUM: $${total?.toLocaleString('en-US', {maximumFractionDigits:0})}
-- Top 3 performers ITD: ${top3}
-- Bottom 3 performers ITD: ${bottom3}
-
-Write your response using exactly this structure. Use **bold** for asset class names and return figures.
-
-**Leaders**
-One sentence: name the top performers by return and assess whether their gains are sustainable or reflect elevated risk.
-
-**Laggards**
-One sentence: name the bottom performers and say clearly whether their underperformance is structural (sell) or cyclical (hold).
-
-**Action**
-One sentence: one specific position action the client should discuss with their advisor, with a number-backed rationale.`
-      }} />
     </div>
   )
 }
