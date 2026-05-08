@@ -194,21 +194,27 @@ export default function ManagerScorecard() {
         if (!equityRows.length) return null
         const earned = equityRows.filter(r => r.netAlpha > 2).length
         const behind = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).length
-        const earnedNames = equityRows.filter(r => r.netAlpha > 2).map(r => `${r.label} (net alpha +${r.netAlpha?.toFixed(2)}%)`).join(', ') || 'none'
-        const behindNames = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).map(r => `${r.label} (net alpha ${r.netAlpha?.toFixed(2)}%)`).join(', ') || 'none'
-        return `You are a fiduciary financial advisor conducting a formal manager review. Write exactly 3 sentences. Use ONLY the numbers below — write every number in full, no abbreviations.
+        const earnedNames = equityRows.filter(r => r.netAlpha > 2).map(r => `${r.label} (+${r.netAlpha?.toFixed(2)}%)`).join(', ') || 'none'
+        const behindNames = equityRows.filter(r => r.netAlpha !== null && r.netAlpha < -2).map(r => `${r.label} (${r.netAlpha?.toFixed(2)}%)`).join(', ') || 'none'
+        return `You are a fiduciary financial advisor writing a formal manager review. Use the exact data below. Format your response using the section headers shown.
 
-MANAGER SCORECARD (inception July 10, 2024 to May 5, 2026):
-- Total equity managers evaluated: ${equityRows.length}
-- Weighted average net alpha across all managers: ${weightedAlpha !== null ? (weightedAlpha >= 0 ? '+' : '') + weightedAlpha.toFixed(2) + '%' : 'not calculable'}
-- Managers that earned their fees (net alpha > +2.00%): ${earned} — ${earnedNames}
-- Managers destroying value (net alpha < -2.00%): ${behind} — ${behindNames}
-- Net alpha = manager return minus passive ETF return minus estimated sub-manager fee
+DATA (inception July 10, 2024 to May 5, 2026):
+- Managers reviewed: ${equityRows.length}
+- Weighted average net alpha: **${weightedAlpha !== null ? (weightedAlpha >= 0 ? '+' : '') + weightedAlpha.toFixed(2) + '%' : 'N/A'}**
+- Earning their fees (net alpha > +2%): ${earned} managers — ${earnedNames}
+- Destroying value (net alpha < -2%): ${behind} managers — ${behindNames}
+- Net alpha defined as: manager return minus passive ETF return minus sub-manager fee
 
-OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
-Sentence 1: State the overall verdict on the manager lineup — is the active management program adding value net of fees?
-Sentence 2: Call out specific underperforming managers by name and net alpha, and say plainly whether they should be replaced.
-Sentence 3: Give one specific action item the client should raise with AllSource at the next quarterly review.`
+Write your response using exactly this structure. Use **bold** for manager names and numbers.
+
+**Program Verdict**
+One sentence: is the equity manager program, in aggregate, adding value for the client net of all fees?
+
+**Underperformers**
+One sentence: name the specific underperforming managers, state their net alpha, and say plainly whether they should be replaced.
+
+**Action**
+One sentence: the specific question the client must raise with AllSource at the next quarterly review.`
       }} />
     </div>
   )

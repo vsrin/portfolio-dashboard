@@ -113,17 +113,23 @@ export default function PerformanceChart() {
         const totalDeposits = monthly.reduce((s, m) => s + (m.deposits || 0), 0)
         const totalFees = monthly.reduce((s, m) => s + (m.fees || 0), 0)
         const lastCumulative = monthly[monthly.length - 1]?.cumulative_invested
-        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+        return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
 
-CASH FLOW DATA (July 2024 to May 2026 — 22 months):
+DATA (July 2024 to May 2026 — 22 months):
 - Total capital deposited: $${totalDeposits?.toLocaleString('en-US', {maximumFractionDigits:0})}
-- Total advisor fees paid (from transactions): $${totalFees?.toLocaleString('en-US', {maximumFractionDigits:0})}
+- Advisor fees paid out: $${totalFees?.toLocaleString('en-US', {maximumFractionDigits:0})}
 - Cumulative net invested capital: $${lastCumulative?.toLocaleString('en-US', {maximumFractionDigits:0})}
 
-OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
-Sentence 1: Characterize the pace and consistency of capital deployment over the 22-month period.
-Sentence 2: Assess whether the $${totalFees?.toLocaleString('en-US', {maximumFractionDigits:0})} in fees paid is proportionate to the portfolio growth achieved.
-Sentence 3: What should the client monitor or discuss with their advisor regarding cash flow management going forward?`
+Write your response using exactly this structure. Use **bold** for key numbers and terms.
+
+**Deployment Pattern**
+One sentence: characterize how capital has been deployed over the 22 months — is the pace disciplined?
+
+**Fee Proportion**
+One sentence: are the $${totalFees?.toLocaleString('en-US', {maximumFractionDigits:0})} in fees proportionate to the portfolio size and the growth delivered?
+
+**Watch**
+One sentence: one specific cash flow metric or pattern the client should monitor going forward.`
       }} />
     </div>
   )

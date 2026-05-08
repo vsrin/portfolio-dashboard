@@ -172,19 +172,25 @@ export default function KPIBar() {
       if (!d) return null
       const totalFees = (d.total_fees||0) + (d.sub_manager_fees||0)
       const feesPct = (totalFees / d.total_value * 100).toFixed(2)
-      return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client directly. Use ONLY the numbers below — write every number in full, no abbreviations.
+      return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
 
-PORTFOLIO METRICS (as of May 5, 2026 | inception July 10, 2024):
+DATA (May 5, 2026 | inception July 10, 2024):
 - Total AUM: $${d.total_value?.toLocaleString('en-US', {maximumFractionDigits:0})}
-- Net gain since inception: +$${d.total_gain?.toLocaleString('en-US', {maximumFractionDigits:0})} (+${d.total_gain_pct?.toFixed(2)}%)
+- Net gain ITD: +$${d.total_gain?.toLocaleString('en-US', {maximumFractionDigits:0})} (+${d.total_gain_pct?.toFixed(2)}%)
 - 1-Year IRR: +${d.net_irr_1y?.toFixed(2)}%
 - YTD 2026 IRR: +${d.net_irr_ytd?.toFixed(2)}%
-- All-in annual fees: $${totalFees.toLocaleString('en-US', {maximumFractionDigits:0})} (${feesPct}% of AUM)
+- All-in annual fees: $${totalFees.toLocaleString('en-US', {maximumFractionDigits:0})} per year (${feesPct}% of AUM)
 
-OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
-Sentence 1: State the overall performance verdict using the ITD gain and 1-Year IRR figures.
-Sentence 2: Identify the single most important risk or concern today, citing the specific number that signals it.
-Sentence 3: Give one concrete, specific action the client should raise with their advisor at the next review.`
+Write your response using exactly this structure. Use **bold** for key numbers and terms.
+
+**Performance**
+One sentence: state whether the portfolio is on track, citing the ITD return and 1-Year IRR.
+
+**Watch**
+One sentence: identify the single biggest concern today and the specific number that flags it.
+
+**Action**
+One sentence: one concrete question or action the client should raise at the next advisor meeting.`
     }} />
     </div>
   )

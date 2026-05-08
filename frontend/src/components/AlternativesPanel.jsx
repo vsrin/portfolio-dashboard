@@ -729,19 +729,24 @@ export default function AlternativesPanel() {
         if (!data) return null
         const altRetPct = sumData?.alternatives_return_pct?.toFixed(2)
         const altPct = sumData?.alternatives_pct?.toFixed(1)
-        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+        return `You are a fiduciary financial advisor writing a structured alternatives review. Use the exact data below. Format your response using the section headers shown.
 
-ALTERNATIVES PORTFOLIO (as of May 5, 2026):
-- Alternatives total value: $${totalAltValue?.toLocaleString('en-US', {maximumFractionDigits:0})} (${altPct}% of total AUM)
-- Number of vehicles: ${altItems.length}
-- ITD return on alternatives sleeve: +${altRetPct}%
-- Embedded sub-manager fee drag: ~$${subMgrFees?.toLocaleString('en-US', {maximumFractionDigits:0})} annually
-- Liquidity profile: private market instruments (PE, VC, hedge funds) — quarterly marks, capital locked up for years
+DATA (May 5, 2026):
+- Alternatives total: **$${totalAltValue?.toLocaleString('en-US', {maximumFractionDigits:0})}** (${altPct}% of AUM across ${altItems.length} vehicles)
+- ITD return on alternatives sleeve: **+${altRetPct}%**
+- Embedded sub-manager fee drag: **~$${subMgrFees?.toLocaleString('en-US', {maximumFractionDigits:0})}** annually
+- Liquidity: private market instruments (PE, VC, hedge funds) — quarterly valuations, capital locked for years
 
-OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
-Sentence 1: Assess the +${altRetPct}% alternatives return in the context of the illiquidity premium — is the client being adequately compensated for locking up ${altPct}% of their wealth?
-Sentence 2: Flag the specific fee and liquidity risks the client should understand about having $${totalAltValue?.toLocaleString('en-US', {maximumFractionDigits:0})} in illiquid vehicles.
-Sentence 3: What one question should the client ask their advisor about the alternatives program at the next review?`
+Write your response using exactly this structure. Use **bold** for key numbers and terms.
+
+**Return Quality**
+One sentence: is **+${altRetPct}%** ITD an adequate illiquidity premium for having ${altPct}% of wealth locked in private markets?
+
+**Fee & Liquidity Risk**
+One sentence: what do the **~$${subMgrFees?.toLocaleString('en-US', {maximumFractionDigits:0})}** in embedded fees and the illiquidity mean for the client's financial flexibility?
+
+**Key Question**
+One sentence: the single most important question the client should ask their advisor about the alternatives program.`
       }} />
     </div>
   )

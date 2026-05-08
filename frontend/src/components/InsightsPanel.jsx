@@ -302,18 +302,24 @@ export default function InsightsPanel() {
           <strong style={{ color: 'var(--text-secondary)' }}>Why 1-year?</strong> The since-inception return (20.74%) includes the full J-Curve effect — PE and VC funds show 0% while capital is being called, dragging the alts sleeve aggregate lower. The 1-year IRR from Tamarac is a cleaner signal of current portfolio momentum for funds that are already deployed.
         </div>
       </div>
-      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+      <WandPanel buildPrompt={() => !data ? null : `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
 
-PERFORMANCE SCORECARD (as of May 5, 2026):
-- Net alpha vs blended passive benchmark ITD: +${alpha?.toFixed(2)}%
-- 1-Year IRR: +${irr1y?.toFixed(2)}%
-- Fee efficiency: ${feeEff?.toFixed(1)}% of gross gains retained after all fees (${(100-feeEff).toFixed(1)}% consumed by fees)
-- Alternatives sleeve vs bond index outperformance: +${altsVsBonds?.toFixed(2)}%
+DATA (May 5, 2026):
+- Net alpha vs blended passive benchmark ITD: **+${alpha?.toFixed(2)}%**
+- 1-Year IRR: **+${irr1y?.toFixed(2)}%**
+- Fee efficiency: **${feeEff?.toFixed(1)}%** of gross gains retained after all fees (${(100-feeEff).toFixed(1)}% consumed by fees)
+- Alternatives sleeve vs AGG bond index: **+${altsVsBonds?.toFixed(2)}%** outperformance
 
-OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
-Sentence 1: Deliver an overall verdict on whether this active strategy is justified, citing the alpha and 1-Year IRR figures.
-Sentence 2: Assess the fee efficiency number — is losing ${(100-feeEff).toFixed(1)}% of gross gains to fees acceptable given the results, and what's the implication?
-Sentence 3: Give one specific recommendation the client should act on based on this scorecard.`} />
+Write your response using exactly this structure. Use **bold** for key numbers and terms.
+
+**Overall Verdict**
+One sentence: is the +${irr1y?.toFixed(2)}% 1-Year IRR and +${alpha?.toFixed(2)}% alpha sufficient to justify an active management program?
+
+**Fee Drag**
+One sentence: ${(100-feeEff).toFixed(1)}% of gross gains are consumed by fees — state plainly whether this is acceptable for the results delivered.
+
+**Recommendation**
+One sentence: one specific action the client should take or demand from their advisor to improve the net outcome.`} />
     </div>
   )
 }

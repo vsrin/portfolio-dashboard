@@ -133,18 +133,24 @@ export default function AllocationChart() {
       <WandPanel buildPrompt={() => {
         if (!summary) return null
         const cashPct = (100 - summary.equity_pct - summary.alternatives_pct).toFixed(1)
-        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+        return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
 
-ASSET ALLOCATION (as of May 5, 2026):
+DATA (May 5, 2026):
 - Total portfolio: $${summary.total_value?.toLocaleString('en-US', {maximumFractionDigits:0})}
-- Equity sleeve: ${summary.equity_pct?.toFixed(1)}% of AUM = $${summary.equity_value?.toLocaleString('en-US', {maximumFractionDigits:0})} | ITD return: +${summary.equity_return_pct?.toFixed(2)}%
-- Alternatives sleeve: ${summary.alternatives_pct?.toFixed(1)}% of AUM = $${summary.alternatives_value?.toLocaleString('en-US', {maximumFractionDigits:0})} | ITD return: +${summary.alternatives_return_pct?.toFixed(2)}%
-- Cash: ~${cashPct}% of AUM
+- Equity: **${summary.equity_pct?.toFixed(1)}%** = $${summary.equity_value?.toLocaleString('en-US', {maximumFractionDigits:0})} | ITD return +${summary.equity_return_pct?.toFixed(2)}%
+- Alternatives: **${summary.alternatives_pct?.toFixed(1)}%** = $${summary.alternatives_value?.toLocaleString('en-US', {maximumFractionDigits:0})} | ITD return +${summary.alternatives_return_pct?.toFixed(2)}%
+- Cash: ~${cashPct}%
 
-OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
-Sentence 1: Assess whether the ${summary.alternatives_pct?.toFixed(0)}% alternatives concentration is appropriate for a growth-oriented investor.
-Sentence 2: Comment on the liquidity profile — what does this allocation mean if the client needed to access funds quickly?
-Sentence 3: Recommend one specific rebalancing action or confirm the allocation is sound, citing the numbers.`
+Write your response using exactly this structure. Use **bold** for key numbers and terms.
+
+**Allocation Assessment**
+One sentence: is a ${summary.alternatives_pct?.toFixed(0)}%/${summary.equity_pct?.toFixed(0)}% alts-to-equity split appropriate for a growth investor?
+
+**Liquidity Risk**
+One sentence: what does ${summary.alternatives_pct?.toFixed(0)}% in illiquid alternatives mean practically if the client needs capital?
+
+**Recommendation**
+One sentence: rebalance or hold — with a specific number-backed rationale.`
       }} />
     </div>
   )

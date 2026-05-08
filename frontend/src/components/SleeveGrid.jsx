@@ -147,17 +147,23 @@ export default function SleeveGrid({ compact }) {
         const top3 = [...classes].sort((a,b) => b.return_pct - a.return_pct).slice(0,3).map(c => `${c.label} +${c.return_pct?.toFixed(1)}%`).join(', ')
         const total = classes.reduce((s,c) => s + c.value, 0)
         const bottom3 = [...classes].sort((a,b) => a.return_pct - b.return_pct).slice(0,3).map(c => `${c.label} ${c.return_pct >= 0 ? '+' : ''}${c.return_pct?.toFixed(1)}%`).join(', ')
-        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+        return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
 
-ASSET CLASS DETAIL (${classes.length} classes | inception July 10, 2024 to May 5, 2026):
-- Total AUM across all classes: $${total?.toLocaleString('en-US', {maximumFractionDigits:0})}
+DATA (${classes.length} asset classes | inception July 10, 2024 to May 5, 2026):
+- Total AUM: $${total?.toLocaleString('en-US', {maximumFractionDigits:0})}
 - Top 3 performers ITD: ${top3}
 - Bottom 3 performers ITD: ${bottom3}
 
-OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
-Sentence 1: Name the standout performers and quantify their contribution to portfolio gains.
-Sentence 2: Flag the laggards by name and return percentage, and assess whether their underperformance is a concern or expected given their asset class role.
-Sentence 3: Give one specific portfolio action — either to trim a winner, add to a laggard, or hold the current mix — with a clear rationale.`
+Write your response using exactly this structure. Use **bold** for asset class names and return figures.
+
+**Leaders**
+One sentence: name the top performers by return and assess whether their gains are sustainable or reflect elevated risk.
+
+**Laggards**
+One sentence: name the bottom performers and say clearly whether their underperformance is structural (sell) or cyclical (hold).
+
+**Action**
+One sentence: one specific position action the client should discuss with their advisor, with a number-backed rationale.`
       }} />
     </div>
   )

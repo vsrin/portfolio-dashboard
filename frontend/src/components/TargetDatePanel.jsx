@@ -127,18 +127,24 @@ export default function TargetDatePanel() {
         if (!data) return null
         const gap1 = (portRet - primary?.return_pct).toFixed(2)
         const gap2 = (portRet - secondary?.return_pct).toFixed(2)
-        return `You are a fiduciary financial advisor. Write exactly 3 sentences advising this client. Use ONLY the numbers below — write every number in full, no abbreviations.
+        return `You are a fiduciary financial advisor writing a structured advisory note. Use the exact data below. Format your response using the section headers shown.
 
-TARGET-DATE FUND COMPARISON (inception July 10, 2024 to May 5, 2026):
-- This portfolio ITD return: +${portRet?.toFixed(2)}%
-- ${primary?.name} (${primary?.ticker}) ITD return: +${primary?.return_pct?.toFixed(2)}%  →  portfolio advantage: ${gap1 >= 0 ? '+' : ''}${gap1}%
-- ${secondary?.name} (${secondary?.ticker}) ITD return: +${secondary?.return_pct?.toFixed(2)}%  →  portfolio advantage: ${gap2 >= 0 ? '+' : ''}${gap2}%
-- Important context: this portfolio carries higher fees (~3% all-in annually) and significant illiquidity from alternatives vs. near-zero cost and full liquidity of a target-date fund
+DATA (inception July 10, 2024 to May 5, 2026):
+- This portfolio ITD return: **+${portRet?.toFixed(2)}%**
+- ${primary?.name} (${primary?.ticker}): +${primary?.return_pct?.toFixed(2)}% → portfolio leads by **${gap1 >= 0 ? '+' : ''}${gap1}%**
+- ${secondary?.name} (${secondary?.ticker}): +${secondary?.return_pct?.toFixed(2)}% → portfolio leads by **${gap2 >= 0 ? '+' : ''}${gap2}%**
+- Context: active portfolio costs ~3% of AUM annually in all-in fees; target-date funds cost ~0.10%–0.15%
 
-OUTPUT FORMAT — write exactly these 3 sentences, no bullets, no headers:
-Sentence 1: State clearly whether the active portfolio outperformed the target-date alternatives and by how much.
-Sentence 2: Frame the outperformance (or underperformance) against the fee differential — is the client being compensated for the extra cost and illiquidity?
-Sentence 3: Give your professional verdict: is active management the right choice for this client, and what should they demand from their advisor to justify it?`
+Write your response using exactly this structure. Use **bold** for key numbers and terms.
+
+**Head-to-Head**
+One sentence: did the active portfolio outperform both target-date funds, and by how much?
+
+**Fee-Adjusted Reality**
+One sentence: after accounting for the fee differential, is the client ahead or behind what a low-cost index fund would have delivered?
+
+**Verdict**
+One sentence: professional verdict on whether active management is earning its keep for this client.`
       }} />
     </div>
   )
