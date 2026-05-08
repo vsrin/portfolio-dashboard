@@ -54,14 +54,17 @@ print('─' * 56)
 
 # ── Simple endpoints ───────────────────────────────────────────────────────────
 for name, endpoint in [
-    ('summary',       '/api/summary'),
-    ('asset-classes', '/api/asset-classes'),
-    ('allocation',    '/api/allocation'),
-    ('alternatives',  '/api/alternatives'),
-    ('monthly',       '/api/monthly'),
-    ('fees',          '/api/fees'),
-    ('insights',      '/api/insights'),
-    ('benchmarks',    '/api/benchmarks'),
+    ('summary',            '/api/summary'),
+    ('asset-classes',      '/api/asset-classes'),
+    ('allocation',         '/api/allocation'),
+    ('alternatives',       '/api/alternatives'),
+    ('monthly',            '/api/monthly'),
+    ('fees',               '/api/fees'),
+    ('insights',           '/api/insights'),
+    ('benchmarks',         '/api/benchmarks'),
+    ('benchmarks-detail',  '/api/benchmarks-detail'),
+    ('target-date',        '/api/target-date'),
+    ('alt-commitments',    '/api/alt-commitments'),
 ]:
     data = get(endpoint)
     if data is not None:
@@ -85,6 +88,8 @@ print(f'       → {len(all_items):,} transaction rows')
 summary   = get('/api/summary')   or {}
 insights  = get('/api/insights')  or {}
 ac_list   = get('/api/asset-classes') or []
+td_data   = get('/api/target-date') or {}
+bd_data   = get('/api/benchmarks-detail') or {}
 
 ctx = {
     'as_of_date':             summary.get('as_of_date'),
@@ -124,6 +129,11 @@ ctx = {
         }
         for ac in ac_list
     ],
+    'target_date_comparison': (
+        f"Portfolio +{td_data.get('portfolio_return_pct', 0):.2f}% vs VTTHX "
+        f"+{td_data.get('target_date', {}).get('primary', {}).get('return_pct', 17.1):.1f}% (est.)"
+    ),
+    'manager_scorecard_summary': 'Active equity managers vs passive ETF benchmarks — see benchmarks-detail endpoint for per-class breakdown.',
 }
 write('system_context', ctx)
 

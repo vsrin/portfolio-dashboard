@@ -82,7 +82,7 @@ function HoldingRow({ h, isJCurve }) {
   )
 }
 
-function VehicleCard({ item }) {
+function VehicleCard({ item, totalAltValue, subMgrFees }) {
   const color   = VEHICLE_COLORS[item.id] || 'var(--cyan)'
   const isNeg   = item.return_pct < 0
   const isJCurve = item.j_curve
@@ -177,11 +177,21 @@ function VehicleCard({ item }) {
           {item.holdings.map(h => <HoldingRow key={h.symbol} h={h} isJCurve={isJCurve} />)}
         </div>
       )}
+
+      {/* Est. fee drag */}
+      {totalAltValue > 0 && subMgrFees > 0 && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)', fontSize: 10, color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+          <span>Est. sub-mgr fee drag (value-weighted)</span>
+          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+            ~{fmt$(Math.round(item.value / totalAltValue * subMgrFees), 0)}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
 
-function GroupSection({ groupId, items }) {
+function GroupSection({ groupId, items, totalAltValue, subMgrFees }) {
   if (!items.length) return null
   const meta = GROUP_META[groupId]
 
@@ -217,7 +227,7 @@ function GroupSection({ groupId, items }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: items.length === 1 ? '1fr' : '1fr 1fr', gap: 20 }}>
-        {items.map(item => <VehicleCard key={item.id} item={item} />)}
+        {items.map(item => <VehicleCard key={item.id} item={item} totalAltValue={totalAltValue} subMgrFees={subMgrFees} />)}
       </div>
     </div>
   )
@@ -225,7 +235,7 @@ function GroupSection({ groupId, items }) {
 
 const GROUP_LABEL = { live: 'Live', quarterly: 'Quarterly', j_curve: 'J-Curve' }
 
-function AltsTable({ items }) {
+function AltsTable({ items, totalAltValue, subMgrFees }) {
   const [expanded, setExpanded] = useState(new Set())
   const [sortBy,   setSortBy]   = useState('value')
   const [sortDir,  setSortDir]  = useState('desc')
@@ -262,6 +272,7 @@ function AltsTable({ items }) {
             <th onClick={() => onSort('weight_pct')} style={{ cursor: 'pointer' }}>Portfolio Wt <SortIcon col="weight_pct" /></th>
             <th>Group</th>
             <th>Reporting</th>
+            {totalAltValue > 0 && subMgrFees > 0 && <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Est. Fee Drag</th>}
             <th />
           </tr>
         </thead>
@@ -312,6 +323,11 @@ function AltsTable({ items }) {
                   <td style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                     {item.reporting_freq}
                   </td>
+                  {totalAltValue > 0 && subMgrFees > 0 && (
+                    <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right', fontSize: 11, color: 'var(--text-muted)' }}>
+                      ~{fmt$(Math.round(item.value / totalAltValue * subMgrFees), 0)}
+                    </td>
+                  )}
                   <td style={{ width: 32, textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>
                     {item.holdings?.length ? (isOpen ? '▲' : '▼') : ''}
                   </td>
@@ -320,7 +336,7 @@ function AltsTable({ items }) {
                 {/* Expanded holdings */}
                 {isOpen && item.holdings?.length > 0 && (
                   <tr key={item.id + '_exp'}>
-                    <td colSpan={9} style={{ padding: '10px 16px 14px 36px', background: 'var(--bg-input)', borderBottom: '1px solid var(--border)' }}>
+                    <td colSpan={totalAltValue > 0 && subMgrFees > 0 ? 10 : 9} style={{ padding: '10px 16px 14px 36px', background: 'var(--bg-input)', borderBottom: '1px solid var(--border)' }}>
                       {item.j_curve_note && (
                         <div style={{ marginBottom: 10, padding: '7px 10px', background: 'rgba(255,179,0,0.07)', border: '1px solid rgba(255,179,0,0.2)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
                           <span style={{ color: 'var(--amber)', fontWeight: 700, marginRight: 6 }}>J-Curve</span>
@@ -360,8 +376,13 @@ function AltsTable({ items }) {
   )
 }
 
+function round2(n) { return Math.round(n * 100) / 100 }
+
 export default function AlternativesPanel() {
   const { data, loading } = useApi('/alternatives')
+  const { data: bdData }  = useApi('/benchmarks-detail')
+  const { data: cmtData } = useApi('/alt-commitments')
+  const { data: sumData } = useApi('/summary')
   const [view, setView]   = useState('table')
 
   if (loading) return (
@@ -380,6 +401,24 @@ export default function AlternativesPanel() {
   const bpValue  = bondProxies.reduce((s, i) => s + i.value, 0)
   const bpGain   = bondProxies.reduce((s, i) => s + i.net_gain, 0)
   const bpReturn = bpValue > 0 ? (bpGain / (bpValue - bpGain) * 100) : 0
+
+  // New: benchmark and commitment data
+  const BOND_BENCHMARK = {
+    private_equity:  'AGG',
+    hedge_fund:      'AGG',
+    private_credit:  'HYG',
+    hedged_equity:   'AGG',
+    managed_futures: 'AGG',
+    commodity:       'AGG',
+    venture:         'AGG',
+  }
+
+  const spyRet     = bdData?.etf_returns?.SPY?.return_pct ?? 31.65
+  const aggRet     = bdData?.etf_returns?.AGG?.return_pct ?? 8.63
+  const hygRet     = bdData?.bond_proxy_returns?.HYG?.return_pct ?? null
+  const subMgrFees = sumData?.sub_manager_fees ?? 27446
+  const altItems   = data?.items ?? []
+  const totalAltValue = altItems.reduce((s, i) => s + i.value, 0)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
@@ -452,6 +491,200 @@ export default function AlternativesPanel() {
         </div>
       </div>
 
+      {/* ── Opportunity Cost vs SPY + Bond Benchmark ────────────────────────── */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Alternatives Accountability &mdash; Opportunity Cost</span>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>vs SPY and bond benchmark since inception</span>
+        </div>
+
+        {/* Overall scorecard vs AGG */}
+        {(() => {
+          const altGain    = data.total_gain
+          const altCost    = data.total_value - altGain
+          const aggHypo    = altCost * (1 + aggRet / 100)
+          const altBenefit = round2(data.total_value - aggHypo)
+          const good       = altBenefit >= 0
+          return (
+            <div style={{
+              padding: '12px 16px', marginBottom: 16,
+              background: good ? 'rgba(0,230,118,0.07)' : 'rgba(255,82,82,0.07)',
+              border: `1px solid ${good ? 'rgba(0,230,118,0.2)' : 'rgba(255,82,82,0.2)'}`,
+              borderRadius: 6,
+            }}>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 6 }}>ALTERNATIVES VS BOND COUNTERFACTUAL (AGG)</div>
+              <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Your alts today</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 800, color: 'var(--amber)' }}>
+                    {fmt$(data.total_value, 0)} ({data.total_return_pct > 0 ? '+' : ''}{data.total_return_pct.toFixed(2)}%)
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>AGG equivalent</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 800, color: 'var(--text-muted)' }}>
+                    {fmt$(aggHypo, 0)} (+{aggRet.toFixed(2)}%)
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Net benefit of alts vs bonds</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 800, color: good ? 'var(--green)' : 'var(--red)' }}>
+                    {altBenefit >= 0 ? '+' : ''}{fmt$(altBenefit, 0)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ fontSize: 11, width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left' }}>Fund</th>
+                <th>Value</th>
+                <th>ITD Return</th>
+                <th>vs SPY ({spyRet.toFixed(1)}%)</th>
+                <th>vs Bonds</th>
+                <th>Verdict vs SPY</th>
+                <th>Verdict vs Bonds</th>
+              </tr>
+            </thead>
+            <tbody>
+              {altItems.map(item => {
+                const isJC  = item.j_curve && item.return_pct === 0
+                const cost  = item.value - item.net_gain
+
+                // vs SPY
+                const spyDelta  = isJC ? null : round2((item.return_pct - spyRet) / 100 * cost)
+                const spyVerdict = isJC
+                  ? { label: 'J-Curve',        color: 'var(--text-muted)', bg: 'var(--bg-input)', border: 'var(--border)' }
+                  : item.return_pct > spyRet + 3
+                  ? { label: 'Beat SPY ✓',      color: 'var(--green)', bg: 'rgba(0,230,118,0.10)', border: 'rgba(0,230,118,0.25)' }
+                  : item.return_pct > spyRet - 3
+                  ? { label: 'Roughly matched', color: 'var(--amber)', bg: 'rgba(255,179,0,0.10)', border: 'rgba(255,179,0,0.25)' }
+                  : item.return_pct > spyRet - 15
+                  ? { label: 'Below SPY',       color: '#ff8c00',      bg: 'rgba(255,140,0,0.10)', border: 'rgba(255,140,0,0.25)' }
+                  : { label: 'Well Below SPY',  color: 'var(--red)',   bg: 'rgba(255,82,82,0.10)',  border: 'rgba(255,82,82,0.25)' }
+
+                // vs bond benchmark
+                const bondTicker  = BOND_BENCHMARK[item.id] || 'AGG'
+                const bondRet     = bondTicker === 'HYG' && hygRet !== null ? hygRet : aggRet
+                const bondLabel   = bondTicker === 'HYG'
+                  ? `HYG (${hygRet !== null ? hygRet.toFixed(1) : '~15'}%)`
+                  : `AGG (${aggRet.toFixed(1)}%)`
+                const bondDelta   = isJC ? null : round2((item.return_pct - bondRet) / 100 * cost)
+                const bondVerdict = isJC
+                  ? { label: 'J-Curve',         color: 'var(--text-muted)', bg: 'var(--bg-input)', border: 'var(--border)' }
+                  : item.return_pct > bondRet + 2
+                  ? { label: 'Beat bonds ✓',    color: 'var(--green)', bg: 'rgba(0,230,118,0.10)', border: 'rgba(0,230,118,0.25)' }
+                  : item.return_pct > bondRet - 2
+                  ? { label: 'Roughly matched',  color: 'var(--amber)', bg: 'rgba(255,179,0,0.10)', border: 'rgba(255,179,0,0.25)' }
+                  : { label: 'Lost to bonds ✗',  color: 'var(--red)',   bg: 'rgba(255,82,82,0.10)',  border: 'rgba(255,82,82,0.25)' }
+
+                return (
+                  <tr key={item.id}>
+                    <td style={{ fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left', paddingLeft: 12, whiteSpace: 'nowrap' }}>{item.label}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right', color: 'var(--text-secondary)' }}>{fmt$(item.value, 0)}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right', fontWeight: 700, color: isJC ? 'var(--amber)' : item.return_pct >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                      {isJC ? '0.00% J-CURVE' : `${item.return_pct > 0 ? '+' : ''}${item.return_pct.toFixed(2)}%`}
+                    </td>
+                    <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right', color: spyDelta === null ? 'var(--text-muted)' : spyDelta >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                      {spyDelta !== null ? `${spyDelta >= 0 ? '+' : ''}${fmt$(spyDelta, 0)}` : '—'}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', color: bondDelta === null ? 'var(--text-muted)' : bondDelta >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                        {bondDelta !== null ? `${bondDelta >= 0 ? '+' : ''}${fmt$(bondDelta, 0)}` : '—'}
+                      </div>
+                      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>{bondLabel}</div>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', padding: '2px 7px', borderRadius: 3, background: spyVerdict.bg, border: `1px solid ${spyVerdict.border}`, color: spyVerdict.color, whiteSpace: 'nowrap' }}>
+                        {spyVerdict.label}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', padding: '2px 7px', borderRadius: 3, background: bondVerdict.bg, border: `1px solid ${bondVerdict.border}`, color: bondVerdict.color, whiteSpace: 'nowrap' }}>
+                        {bondVerdict.label}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+              {/* Summary row */}
+              {(() => {
+                const totalSpyDelta = altItems
+                  .filter(i => !(i.j_curve && i.return_pct === 0))
+                  .reduce((s, i) => s + round2((i.return_pct - spyRet) / 100 * (i.value - i.net_gain)), 0)
+                return (
+                  <tr style={{ borderTop: '2px solid var(--border)', background: 'var(--bg-input)' }}>
+                    <td style={{ fontWeight: 700, color: 'var(--text-primary)', textAlign: 'left', paddingLeft: 12 }}>Total (excl. J-Curve)</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {fmt$(altItems.reduce((s, i) => s + i.value, 0), 0)}
+                    </td>
+                    <td />
+                    <td style={{ fontFamily: 'var(--font-mono)', textAlign: 'right', fontWeight: 800, color: totalSpyDelta >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                      {totalSpyDelta >= 0 ? '+' : ''}{fmt$(totalSpyDelta, 0)}
+                    </td>
+                    <td colSpan={3} style={{ fontSize: 10, color: 'var(--text-muted)', paddingLeft: 12 }}>
+                      vs SPY: your alt allocation {totalSpyDelta >= 0 ? 'earned' : 'cost'} you {fmt$(Math.abs(totalSpyDelta), 0)} since inception
+                    </td>
+                  </tr>
+                )
+              })()}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ marginTop: 12, padding: '9px 12px', background: 'var(--bg-input)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+          Alts are not a pure SPY replacement &mdash; they provide diversification, lower correlation, and downside protection. The bond counterfactual (vs AGG / HYG) is the more appropriate benchmark for hedge funds and private credit.
+        </div>
+      </div>
+
+      {/* ── Committed Capital Tracker ──────────────────────────────────────────── */}
+      {cmtData?.commitments?.length > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Committed Capital &mdash; Illiquid Funds</span>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Uncalled commitments represent future cash obligations</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {cmtData.commitments.map(cmt => (
+              <div key={cmt.id}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{cmt.label}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>est. through {cmt.est_vintage_end}</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 4 }}>COMMITTED</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt$(cmt.committed, 0)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 4 }}>CALLED ({cmt.called_pct}%)</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, color: 'var(--green)' }}>{fmt$(cmt.called, 0)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 4 }}>UNCALLED</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, color: cmt.uncalled > 0 ? 'var(--amber)' : 'var(--text-muted)' }}>
+                      {fmt$(cmt.uncalled, 0)}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ width: `${cmt.called_pct}%`, height: '100%', background: 'var(--green)', borderRadius: 4, transition: 'width 0.5s ease' }} />
+                </div>
+                {cmt.uncalled > 0 && (
+                  <div style={{ fontSize: 10, color: 'var(--amber)', marginTop: 6 }}>
+                    {fmt$(cmt.uncalled, 0)} in future cash draws &mdash; plan liquidity accordingly
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── View toggle ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>View:</span>
@@ -474,16 +707,16 @@ export default function AlternativesPanel() {
       {/* ── Table view ──────────────────────────────────────────────────────── */}
       {view === 'table' && (
         <div className="card" style={{ padding: 0 }}>
-          <AltsTable items={data.items} />
+          <AltsTable items={data.items} totalAltValue={totalAltValue} subMgrFees={subMgrFees} />
         </div>
       )}
 
       {/* ── Card view (grouped) ─────────────────────────────────────────────── */}
       {view === 'cards' && (
         <>
-          <GroupSection groupId="live"      items={byGroup.live} />
-          <GroupSection groupId="quarterly" items={byGroup.quarterly} />
-          <GroupSection groupId="j_curve"   items={byGroup.j_curve} />
+          <GroupSection groupId="live"      items={byGroup.live}      totalAltValue={totalAltValue} subMgrFees={subMgrFees} />
+          <GroupSection groupId="quarterly" items={byGroup.quarterly} totalAltValue={totalAltValue} subMgrFees={subMgrFees} />
+          <GroupSection groupId="j_curve"   items={byGroup.j_curve}   totalAltValue={totalAltValue} subMgrFees={subMgrFees} />
         </>
       )}
     </div>

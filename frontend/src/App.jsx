@@ -12,6 +12,8 @@ import PerformanceMatrix from './components/PerformanceMatrix'
 import AlternativesPanel from './components/AlternativesPanel'
 import InsightsPanel from './components/InsightsPanel'
 import ChatPanel from './components/ChatPanel'
+import ManagerScorecard from './components/ManagerScorecard'
+import TargetDatePanel from './components/TargetDatePanel'
 
 const TABS = [
   { id: 'overview',      label: 'Overview' },
@@ -30,6 +32,7 @@ const PERF_SUBTABS = [
 export default function App() {
   const [activeTab, setActiveTab]   = useState('overview')
   const [perfSubtab, setPerfSubtab] = useState('portfolio')
+  const [equityView, setEquityView] = useState('scorecard')
   const [theme, setTheme]           = useState(() =>
     localStorage.getItem('theme') || 'light'
   )
@@ -135,8 +138,36 @@ export default function App() {
               ))}
             </div>
 
-            {perfSubtab === 'portfolio' && <InsightsPanel />}
-            {perfSubtab === 'equity'    && <PerformanceMatrix />}
+            {perfSubtab === 'portfolio' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <InsightsPanel />
+                <TargetDatePanel />
+              </div>
+            )}
+            {perfSubtab === 'equity' && (
+              <div>
+                {/* Equity view toggle */}
+                <div style={{
+                  display: 'flex', gap: 4, marginBottom: 20,
+                  padding: 4, background: 'var(--bg-card)',
+                  borderRadius: 6, border: '1px solid var(--border)',
+                  width: 'fit-content',
+                }}>
+                  {[['scorecard', 'Scorecard'], ['raw', 'Raw Returns']].map(([v, lbl]) => (
+                    <button key={v} onClick={() => setEquityView(v)} style={{
+                      background: equityView === v ? 'var(--cyan)' : 'transparent',
+                      border: 'none', borderRadius: 4,
+                      color: equityView === v ? 'var(--bg-base)' : 'var(--text-muted)',
+                      padding: '6px 16px', fontSize: 11,
+                      fontWeight: equityView === v ? 700 : 400,
+                      cursor: 'pointer', letterSpacing: '0.04em',
+                      fontFamily: 'var(--font-ui)', transition: 'all 0.15s',
+                    }}>{lbl}</button>
+                  ))}
+                </div>
+                {equityView === 'scorecard' ? <ManagerScorecard /> : <PerformanceMatrix />}
+              </div>
+            )}
             {perfSubtab === 'alts'      && <AlternativesPanel />}
           </div>
         )}

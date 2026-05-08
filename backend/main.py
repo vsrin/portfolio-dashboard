@@ -400,6 +400,50 @@ ALT_META = {
     },
 }
 
+# ── Equity ETF benchmarks — passive proxy for each active equity manager ──────
+EQUITY_ETF_MAP = {
+    "lc_core":           ("IVV",  "S&P 500 Core"),
+    "lc_growth":         ("IVW",  "S&P 500 Growth"),
+    "lc_value":          ("IVE",  "S&P 500 Value"),
+    "mc_core":           ("IJH",  "S&P MidCap 400"),
+    "mc_growth":         ("IJK",  "S&P MidCap 400 Growth"),
+    "mc_value":          ("IJJ",  "S&P MidCap 400 Value"),
+    "sc_core":           ("IJR",  "S&P SmallCap 600"),
+    "sc_growth":         ("IJT",  "S&P SmallCap 600 Growth"),
+    "sc_value":          ("IJS",  "S&P SmallCap 600 Value"),
+    "foreign_lc_growth": ("EFG",  "MSCI EAFE Growth"),
+    "foreign_sm_growth": ("VSS",  "FTSE All-World ex-US Small-Cap"),
+    "intl_developed":    ("EFA",  "MSCI EAFE"),
+    "commodity":         ("GLDM", "Gold MiniShares"),
+}
+
+TARGET_DATE_FUNDS = {
+    "VTTHX": "Vanguard Target Retirement 2035",
+    "VFORX": "Vanguard Target Retirement 2040",
+}
+
+BOND_PROXIES = {
+    "HYG": "iShares High Yield Corporate Bond",
+    "BND": "Vanguard Total Bond Market",
+}
+
+ALT_COMMITMENTS = {
+    "private_equity": {
+        "label": "Private Equity",
+        "committed":  750_000,
+        "called":     629_688,
+        "uncalled":   120_312,
+        "est_vintage_end": "2027",
+    },
+    "venture": {
+        "label": "Venture Capital",
+        "committed":  75_000,
+        "called":     75_000,
+        "uncalled":   0,
+        "est_vintage_end": "2026",
+    },
+}
+
 # ── Fallback benchmark ─────────────────────────────────────────────────────────
 BENCHMARK_FALLBACK = {
     "sp500": {
@@ -966,6 +1010,99 @@ def insights():
     }
 
 
+@app.get("/api/benchmarks-detail")
+def benchmarks_detail():
+    bm = _get_benchmark_itd()
+    etf = _get_all_etf_returns()
+
+    # Per-equity-class ETF benchmarks
+    etf_returns = {}
+    for asset_id, (ticker, name) in EQUITY_ETF_MAP.items():
+        etf_returns[ticker] = {
+            "return_pct": etf.get(ticker),
+            "ticker": ticker,
+            "name": name,
+            "asset_id": asset_id,
+        }
+    # Add SPY and AGG from the main benchmark fetch (more reliable)
+    etf_returns["SPY"] = {"return_pct": bm["spy_itd"], "ticker": "SPY", "name": "S&P 500 (SPY)", "asset_id": None}
+    etf_returns["AGG"] = {"return_pct": bm["agg_itd"], "ticker": "AGG", "name": "US Agg Bonds (AGG)", "asset_id": None}
+
+    # Target-date funds
+    td_returns = {}
+    for ticker, name in TARGET_DATE_FUNDS.items():
+        td_returns[ticker] = {"return_pct": etf.get(ticker), "ticker": ticker, "name": name}
+
+    # Bond proxies
+    bond_returns = {}
+    for ticker, name in BOND_PROXIES.items():
+        bond_returns[ticker] = {"return_pct": etf.get(ticker), "ticker": ticker, "name": name}
+    bond_returns["AGG"] = {"return_pct": bm["agg_itd"], "ticker": "AGG", "name": "Bloomberg US Aggregate (AGG)"}
+
+    return {
+        "as_of": PORTFOLIO_AS_OF,
+        "inception": PORTFOLIO_INCEPTION,
+        "etf_returns": etf_returns,
+        "target_date_returns": td_returns,
+        "bond_proxy_returns": bond_returns,
+    }
+
+
+@app.get("/api/target-date")
+def target_date_comparison():
+    etf = _get_all_etf_returns()
+    vtthx_ret = etf.get("VTTHX") or 17.1
+    vforx_ret = etf.get("VFORX") or 18.9
+
+    def hypo(ret_pct):
+        return round(PORTAL_COST_BASIS * (1 + ret_pct / 100), 2)
+
+    return {
+        "as_of": PORTFOLIO_AS_OF,
+        "inception": PORTFOLIO_INCEPTION,
+        "user_age": 52,
+        "portfolio_return_pct": PORTAL_RETURN_PCT,
+        "portfolio_value": PORTAL_TOTAL,
+        "portfolio_cost_basis": PORTAL_COST_BASIS,
+        "target_date": {
+            "primary": {
+                "ticker": "VTTHX",
+                "name": "Vanguard Target 2035",
+                "return_pct": vtthx_ret,
+                "hypothetical_value": hypo(vtthx_ret),
+                "dollar_difference": round(PORTAL_TOTAL - hypo(vtthx_ret), 2),
+                "allocation": "~65% global equity / 35% bonds",
+            },
+            "secondary": {
+                "ticker": "VFORX",
+                "name": "Vanguard Target 2040",
+                "return_pct": vforx_ret,
+                "hypothetical_value": hypo(vforx_ret),
+                "dollar_difference": round(PORTAL_TOTAL - hypo(vforx_ret), 2),
+                "allocation": "~75% global equity / 25% bonds",
+            },
+        },
+        "caveat": "Alternatives sleeve (~57%) carries illiquidity premium not captured by VTTHX. PE/VC J-curve funds show 0% return during capital call phase — understating true portfolio momentum.",
+    }
+
+
+@app.get("/api/alt-commitments")
+def alt_commitments_endpoint():
+    result = []
+    for ac_id, d in ALT_COMMITMENTS.items():
+        called_pct = round(d["called"] / d["committed"] * 100, 1) if d["committed"] > 0 else 0
+        result.append({
+            "id": ac_id,
+            "label": d["label"],
+            "committed": d["committed"],
+            "called": d["called"],
+            "uncalled": d["uncalled"],
+            "called_pct": called_pct,
+            "est_vintage_end": d["est_vintage_end"],
+        })
+    return {"commitments": result}
+
+
 # ── AI Chat ────────────────────────────────────────────────────────────────────
 
 class ChatMsg(BaseModel):
@@ -1000,6 +1137,30 @@ def _get_benchmark_itd() -> dict:
     result["spy_1y"]   = result["spy_1y"]   or 29.91
     result["agg_1y"]   = result["agg_1y"]   or 5.07
     return result
+
+
+@lru_cache(maxsize=1)
+def _get_all_etf_returns() -> dict:
+    """Fetch ITD returns for all ETF benchmarks. Returns dict[ticker] = return_pct or None."""
+    all_tickers = set()
+    for ticker, _ in EQUITY_ETF_MAP.values():
+        all_tickers.add(ticker)
+    all_tickers.update(TARGET_DATE_FUNDS.keys())
+    all_tickers.update(BOND_PROXIES.keys())
+
+    results = {}
+    for ticker in all_tickers:
+        try:
+            hist = yf.Ticker(ticker).history(start=PORTFOLIO_INCEPTION, end="2026-05-06")
+            if hist.empty:
+                results[ticker] = None
+                continue
+            s = float(hist["Close"].iloc[0])
+            e = float(hist["Close"].iloc[-1])
+            results[ticker] = round((e - s) / s * 100, 2)
+        except Exception:
+            results[ticker] = None
+    return results
 
 
 def _build_system_prompt() -> str:
