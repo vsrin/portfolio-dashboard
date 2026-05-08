@@ -14,6 +14,8 @@ import InsightsPanel from './components/InsightsPanel'
 import ChatPanel from './components/ChatPanel'
 import ManagerScorecard from './components/ManagerScorecard'
 import TargetDatePanel from './components/TargetDatePanel'
+import { InfoProvider } from './context/InfoContext'
+import InfoDrawer from './components/InfoDrawer'
 
 const TABS = [
   { id: 'overview',      label: 'Overview' },
@@ -49,6 +51,7 @@ export default function App() {
   const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light')
 
   return (
+    <InfoProvider>
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
       <ChatPanel />
       <Header theme={theme} onToggleTheme={toggleTheme} />
@@ -177,5 +180,7 @@ export default function App() {
         {activeTab === 'transactions'  && <TransactionTable />}
       </div>
     </div>
+    <InfoDrawer />
+    </InfoProvider>
   )
 }

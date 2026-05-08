@@ -4,11 +4,18 @@
  */
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
+import InfoButton from './InfoButton'
+import { WIDGET_INFO } from '../data/widgetInfo'
 
-function ScoreCard({ label, main, mainColor, sub, subLabel, badge, note }) {
+function ScoreCard({ label, main, mainColor, sub, subLabel, badge, note, infoTitle, infoContent }) {
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div className="card-title">{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <span className="card-title">{label}</span>
+        {infoTitle && infoContent && (
+          <InfoButton title={infoTitle} content={infoContent} />
+        )}
+      </div>
       <div style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 32,
@@ -132,6 +139,8 @@ export default function InsightsPanel() {
 
         <ScoreCard
           label="Alpha vs Passive Benchmark"
+          infoTitle={WIDGET_INFO.alphaBenchmark.title}
+          infoContent={WIDGET_INFO.alphaBenchmark.content}
           main={`${alphaGood ? '+' : ''}${alpha.toFixed(2)}%`}
           mainColor={alphaGood ? 'var(--green)' : 'var(--red)'}
           badge={alphaGood ? {
@@ -154,6 +163,8 @@ export default function InsightsPanel() {
 
         <ScoreCard
           label="1-Year IRR vs Bond Index"
+          infoTitle={WIDGET_INFO.irr1yVsBonds.title}
+          infoContent={WIDGET_INFO.irr1yVsBonds.content}
           main={`+${irr1y.toFixed(2)}%`}
           mainColor="var(--cyan)"
           badge={irr1yGood ? {
@@ -176,6 +187,8 @@ export default function InsightsPanel() {
 
         <ScoreCard
           label="Fee Efficiency"
+          infoTitle={WIDGET_INFO.feeEfficiency.title}
+          infoContent={WIDGET_INFO.feeEfficiency.content}
           main={`${feeEff.toFixed(1)}%`}
           mainColor={feeEff >= 90 ? 'var(--green)' : feeEff >= 80 ? 'var(--amber)' : 'var(--red)'}
           badge={{
@@ -197,6 +210,7 @@ export default function InsightsPanel() {
         <div className="card">
           <div className="card-header">
             <span className="card-title">Portfolio vs Blended Benchmark</span>
+            <InfoButton title={WIDGET_INFO.benchmarkBreakdown.title} content={WIDGET_INFO.benchmarkBreakdown.content} />
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
               Since inception {data.inception_date} → {data.as_of_date}
             </span>
@@ -223,6 +237,7 @@ export default function InsightsPanel() {
         <div className="card">
           <div className="card-header">
             <span className="card-title">Alternatives as Bond Substitute</span>
+            <InfoButton title={WIDGET_INFO.altsBondSubstitute.title} content={WIDGET_INFO.altsBondSubstitute.content} />
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
               57% of portfolio replacing bonds
             </span>
@@ -263,6 +278,7 @@ export default function InsightsPanel() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">1-Year View — IRR in Context</span>
+          <InfoButton title={WIDGET_INFO.irr1yContext.title} content={WIDGET_INFO.irr1yContext.content} />
           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
             Best comparison period for illiquid alts (avoids J-Curve distortion)
           </span>

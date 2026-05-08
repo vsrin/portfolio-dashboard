@@ -5,6 +5,8 @@
 import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
+import InfoButton from './InfoButton'
+import { WIDGET_INFO } from '../data/widgetInfo'
 
 // Mirrors EQUITY_ETF_MAP from backend
 const ETF_MAP = {
@@ -100,7 +102,10 @@ export default function ManagerScorecard() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20,
         }}>
           <div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 4 }}>WEIGHTED AVG NET ALPHA (EQUITY SLEEVE)</div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+              WEIGHTED AVG NET ALPHA (EQUITY SLEEVE)
+              <InfoButton title={WIDGET_INFO.managerScorecardHeadline.title} content={WIDGET_INFO.managerScorecardHeadline.content} />
+            </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 800, color: wAvgNetAlpha > 0 ? 'var(--green)' : 'var(--red)' }}>
               {wAvgNetAlpha > 0 ? '+' : ''}{wAvgNetAlpha.toFixed(2)}%
             </div>
@@ -113,6 +118,10 @@ export default function ManagerScorecard() {
 
       {/* Scorecard table */}
       <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+        <div className="card-header" style={{ padding: '12px 16px' }}>
+          <span className="card-title">Manager Scorecard</span>
+          <InfoButton title={WIDGET_INFO.managerScorecard.title} content={WIDGET_INFO.managerScorecard.content} />
+        </div>
         <table style={{ fontSize: 12, width: '100%' }}>
           <thead>
             <tr>

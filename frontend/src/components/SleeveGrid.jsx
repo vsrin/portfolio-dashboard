@@ -1,5 +1,7 @@
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
+import InfoButton from './InfoButton'
+import { WIDGET_INFO } from '../data/widgetInfo'
 
 const SUPER_COLOR = {
   equity:       'var(--cyan)',
@@ -107,18 +109,24 @@ export default function SleeveGrid({ compact }) {
     <div>
       {compact ? (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <span className="card-title">Asset Classes</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span className="card-title">Asset Classes</span>
+            <InfoButton title={WIDGET_INFO.assetClassGrid.title} content={WIDGET_INFO.assetClassGrid.content} />
+          </div>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
             {fmt$(total, 0)} · {classes.length} classes
           </span>
         </div>
       ) : (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Equity &amp; Alternatives</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-              {fmt$(total, 0)} · {classes.length} asset classes
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Equity &amp; Alternatives</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                {fmt$(total, 0)} · {classes.length} asset classes
+              </div>
             </div>
+            <InfoButton title={WIDGET_INFO.assetClassGrid.title} content={WIDGET_INFO.assetClassGrid.content} />
           </div>
           <div className="pill cyan">{equityCount} equity · {altsCount} alts</div>
         </div>

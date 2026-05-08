@@ -4,6 +4,8 @@
 import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
+import InfoButton from './InfoButton'
+import { WIDGET_INFO } from '../data/widgetInfo'
 
 const VEHICLE_COLORS = {
   private_equity:  '#9b59b6',
@@ -446,6 +448,7 @@ export default function AlternativesPanel() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">Bond Substitute Scorecard</span>
+          <InfoButton title={WIDGET_INFO.bondSubstituteScorecard.title} content={WIDGET_INFO.bondSubstituteScorecard.content} />
           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Excludes J-Curve vehicles (PE / VC) — they haven't deployed capital yet</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
@@ -495,6 +498,7 @@ export default function AlternativesPanel() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">Alternatives Accountability &mdash; Opportunity Cost</span>
+          <InfoButton title={WIDGET_INFO.oppCostTable.title} content={WIDGET_INFO.oppCostTable.content} />
           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>vs SPY and bond benchmark since inception</span>
         </div>
 
@@ -646,6 +650,7 @@ export default function AlternativesPanel() {
         <div className="card">
           <div className="card-header">
             <span className="card-title">Committed Capital &mdash; Illiquid Funds</span>
+            <InfoButton title={WIDGET_INFO.committedCapital.title} content={WIDGET_INFO.committedCapital.content} />
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Uncalled commitments represent future cash obligations</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

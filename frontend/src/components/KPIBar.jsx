@@ -1,7 +1,9 @@
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
+import InfoButton from './InfoButton'
+import { WIDGET_INFO } from '../data/widgetInfo'
 
-function KPI({ label, value, color, borderColor, children }) {
+function KPI({ label, value, color, borderColor, infoKey, children }) {
   return (
     <div style={{
       flex: 1,
@@ -10,7 +12,12 @@ function KPI({ label, value, color, borderColor, children }) {
       borderTop: `2px solid ${borderColor || 'transparent'}`,
       minWidth: 0,
     }}>
-      <div className="label" style={{ marginBottom: 6 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+        <span className="label">{label}</span>
+        {infoKey && WIDGET_INFO[infoKey] && (
+          <InfoButton title={WIDGET_INFO[infoKey].title} content={WIDGET_INFO[infoKey].content} />
+        )}
+      </div>
       <div style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 19,
@@ -72,6 +79,7 @@ export default function KPIBar() {
         value={L ? '…' : fmt$(d?.total_value, 0)}
         color="var(--text-primary)"
         borderColor="var(--cyan)"
+        infoKey="totalAum"
       >
         <SubRow label="Cost basis" value={L ? '…' : fmt$(d?.cost_basis, 0)} />
         <SubRow label="As of" value="May 5, 2026" />
@@ -83,6 +91,7 @@ export default function KPIBar() {
         value={L ? '…' : `+${d?.total_gain_pct?.toFixed(2)}%`}
         color="var(--green)"
         borderColor="var(--green)"
+        infoKey="netGain"
       >
         <SubRow label="Dollar gain" value={L ? '…' : `+${fmt$(d?.total_gain, 0)}`} valueColor="var(--text-secondary)" />
         <SubRow label="IRR YTD 2026" value={L ? '…' : `${d?.net_irr_ytd?.toFixed(2)}%`} valueColor="var(--text-secondary)" />
@@ -94,6 +103,7 @@ export default function KPIBar() {
         value={L ? '…' : `${d?.net_irr_1y?.toFixed(2)}%`}
         color="var(--green)"
         borderColor="var(--green)"
+        infoKey="irr1y"
       >
         <SubRow label="QTD" value={L ? '…' : `${d?.net_irr_qtd?.toFixed(2)}%`} valueColor="var(--text-secondary)" />
         <SubRow label="MTD" value={L ? '…' : `${d?.net_irr_mtd?.toFixed(2)}%`} valueColor="var(--text-secondary)" />
@@ -105,6 +115,7 @@ export default function KPIBar() {
         value={L ? '…' : `+${d?.equity_return_pct?.toFixed(1)}%`}
         color="var(--cyan)"
         borderColor="var(--cyan)"
+        infoKey="equitySleeve"
       >
         <SubRow
           label="Market value"
@@ -124,6 +135,7 @@ export default function KPIBar() {
         value={L ? '…' : `+${d?.alternatives_return_pct?.toFixed(1)}%`}
         color="var(--amber)"
         borderColor="var(--amber)"
+        infoKey="altsSleeve"
       >
         <SubRow
           label="Market value"
@@ -143,6 +155,7 @@ export default function KPIBar() {
         value={L ? '…' : fmt$(d?.total_fee_impact, 0)}
         color="var(--red)"
         borderColor="var(--red)"
+        infoKey="feeDrag"
       >
         <SubRow
           label={`Advisor ~${d?.advisor_fee_rate_pct?.toFixed(2)}% ann.`}

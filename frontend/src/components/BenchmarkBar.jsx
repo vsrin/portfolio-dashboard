@@ -1,5 +1,7 @@
 import { useApi } from '../hooks/useApi'
 import { fmtPct } from '../utils/formatters'
+import InfoButton from './InfoButton'
+import { WIDGET_INFO } from '../data/widgetInfo'
 
 function PctStat({ label, value, highlight }) {
   if (value == null) return null
@@ -75,8 +77,12 @@ export default function BenchmarkBar() {
         letterSpacing: '0.12em',
         color: '#7dd3fc',
         whiteSpace: 'nowrap',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
       }}>
         BENCHMARKS
+        <InfoButton title={WIDGET_INFO.benchmarkBar.title} content={WIDGET_INFO.benchmarkBar.content} />
       </div>
 
       {bmLoading ? (

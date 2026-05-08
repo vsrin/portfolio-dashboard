@@ -4,6 +4,8 @@ import {
 } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { fmt$, fmtShortDate } from '../utils/formatters'
+import InfoButton from './InfoButton'
+import { WIDGET_INFO } from '../data/widgetInfo'
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -48,6 +50,7 @@ export default function PerformanceChart() {
     <div className="card" style={{ height: 340 }}>
       <div className="card-header">
         <span className="card-title">Monthly Cash Flows &amp; Cumulative Capital</span>
+        <InfoButton title={WIDGET_INFO.cashFlowChart.title} content={WIDGET_INFO.cashFlowChart.content} />
         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Jul 2024 → May 2026</span>
       </div>
 

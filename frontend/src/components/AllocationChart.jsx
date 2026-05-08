@@ -1,6 +1,8 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
+import InfoButton from './InfoButton'
+import { WIDGET_INFO } from '../data/widgetInfo'
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null
@@ -45,6 +47,7 @@ export default function AllocationChart() {
     <div className="card" style={{ height: 340 }}>
       <div className="card-header">
         <span className="card-title">Portfolio Allocation</span>
+        <InfoButton title={WIDGET_INFO.allocationDonut.title} content={WIDGET_INFO.allocationDonut.content} />
       </div>
 
       {loading ? (
