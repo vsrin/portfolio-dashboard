@@ -135,7 +135,7 @@ export default function InsightsPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* ── Headline scorecard row ─────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+      <div className="grid-3-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
 
         <ScoreCard
           label="Alpha vs Passive Benchmark"
@@ -205,7 +205,7 @@ export default function InsightsPanel() {
       </div>
 
       {/* ── Benchmark breakdown card ───────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="grid-2-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
         <div className="card">
           <div className="card-header">
@@ -283,7 +283,7 @@ export default function InsightsPanel() {
             Best comparison period for illiquid alts (avoids J-Curve distortion)
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+        <div className="grid-4-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
           {[
             { label: 'Your Portfolio (1Y IRR)', value: `+${irr1y.toFixed(2)}%`, color: 'var(--cyan)', note: 'Tamarac annualised IRR' },
             { label: 'AGG Bond Index (1Y)', value: `${data.agg_1y > 0 ? '+' : ''}${data.agg_1y.toFixed(2)}%`, color: 'var(--text-muted)', note: 'Bloomberg US Aggregate' },

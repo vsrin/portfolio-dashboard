@@ -167,3 +167,88 @@ td {
 tr:hover td { background: rgba(0, 0, 0, 0.02); }
 [data-theme="dark"] tr:hover td { background: rgba(255, 255, 255, 0.02); }
 tr:last-child td { border-bottom: none; }
+
+/* ── Mobile Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Header — stack brand / controls vertically */
+  .app-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 12px 16px !important;
+  }
+  .app-header-right {
+    width: 100%;
+    justify-content: space-between !important;
+  }
+  .app-header-sub { display: none; }
+
+  /* KPI bar — 2-column grid instead of horizontal strip */
+  .kpi-bar {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    overflow-x: visible !important;
+  }
+  .kpi-tile {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 10px 14px !important;
+  }
+  .kpi-tile:nth-child(odd)  { border-right: 1px solid var(--border) !important; }
+  .kpi-tile:last-child      { border-bottom: none !important; }
+  .kpi-tile:nth-last-child(2):nth-child(odd) { border-bottom: none !important; }
+
+  /* Benchmark bar — horizontal scroll */
+  .benchmark-bar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .benchmark-bar::-webkit-scrollbar { display: none; }
+  .benchmark-bar > * { flex-shrink: 0; }
+
+  /* Tab nav — horizontal scroll, no clip */
+  .tab-nav {
+    padding: 0 8px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-nav button { white-space: nowrap; padding: 10px 12px !important; }
+
+  /* Content area — tighter padding */
+  .app-content { padding: 12px !important; }
+
+  /* Overview 2-col → 1-col */
+  .overview-grid { grid-template-columns: 1fr !important; }
+
+  /* PerformanceChart / AllocationChart — remove fixed heights */
+  .perf-chart-card  { height: auto !important; }
+  .alloc-chart-card { height: auto !important; }
+  .alloc-chart-inner { height: auto !important; }
+
+  /* Chat panel — full width slide-in */
+  .chat-panel  { width: 100% !important; left: 0 !important; }
+  .chat-trigger { bottom: 14px !important; right: 14px !important; }
+
+  /* Tables — ensure containing card scrolls */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Responsive grid utilities */
+  .grid-4-col { grid-template-columns: 1fr 1fr !important; }
+  .grid-3-col { grid-template-columns: 1fr !important; }
+  .grid-2-col { grid-template-columns: 1fr !important; }
+  .grid-alts-row { grid-template-columns: 1fr !important; }
+
+  /* TargetDatePanel — stack compare blocks */
+  .target-compare { grid-template-columns: 1fr !important; text-align: left !important; gap: 12px !important; }
+  .target-compare-center { display: none; }
+  .target-compare-right { text-align: left !important; }
+}
+
+@media (max-width: 480px) {
+  .app-header-aum   { font-size: 18px !important; }
+  .kpi-tile         { padding: 8px 12px !important; }
+  .app-content      { padding: 8px !important; }
+}

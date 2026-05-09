@@ -33,7 +33,7 @@ export default function FeePanel() {
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      <div className="grid-4-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         {[
           {
             label: 'Total Fees Paid',
@@ -113,7 +113,7 @@ export default function FeePanel() {
       </div>
 
       {/* By account */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="grid-2-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div className="card">
           <div className="card-header">
             <span className="card-title">Fees by Account</span>

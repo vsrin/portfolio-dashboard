@@ -61,7 +61,7 @@ export default function BenchmarkBar() {
   const { data: ins }                     = useApi('/insights')
 
   return (
-    <div style={{
+    <div className="benchmark-bar" style={{
       background: '#0f2044',
       borderBottom: '1px solid #1a3060',
       display: 'flex',

@@ -5,7 +5,7 @@ import { WIDGET_INFO } from '../data/widgetInfo'
 
 function KPI({ label, value, color, borderColor, infoKey, children }) {
   return (
-    <div style={{
+    <div className="kpi-tile" style={{
       flex: 1,
       padding: '12px 18px',
       borderRight: '1px solid var(--border)',
@@ -66,7 +66,7 @@ export default function KPIBar() {
   const { data: d, loading: L } = useApi('/summary')
 
   return (
-    <div style={{
+    <div className="kpi-bar" style={{
       background: 'var(--bg-surface)',
       borderBottom: '1px solid var(--border)',
       display: 'flex',

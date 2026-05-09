@@ -267,6 +267,7 @@ export default function ChatPanel() {
 
       {/* Floating trigger button */}
       <button
+        className="chat-trigger"
         onClick={() => setOpen(o => !o)}
         style={{
           position: 'fixed',
@@ -296,7 +297,7 @@ export default function ChatPanel() {
 
       {/* Panel */}
       {open && (
-        <div style={{
+        <div className="chat-panel" style={{
           position: 'fixed',
           top: 0,
           right: 0,

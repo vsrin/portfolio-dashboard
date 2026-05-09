@@ -47,7 +47,7 @@ export default function PerformanceChart() {
   }))
 
   return (
-    <div className="card" style={{ height: 340 }}>
+    <div className="card perf-chart-card" style={{ height: 340 }}>
       <div className="card-header">
         <span className="card-title">Monthly Cash Flows &amp; Cumulative Capital</span>
         <InfoButton title={WIDGET_INFO.cashFlowChart.title} content={WIDGET_INFO.cashFlowChart.content} />

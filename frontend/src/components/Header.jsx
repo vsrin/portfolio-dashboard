@@ -6,7 +6,7 @@ export default function Header({ theme, onToggleTheme }) {
   const isDark = theme === 'dark'
 
   return (
-    <div style={{
+    <div className="app-header" style={{
       background: 'var(--bg-surface)',
       borderBottom: '1px solid var(--border)',
       padding: '14px 24px',
@@ -28,14 +28,14 @@ export default function Header({ theme, onToggleTheme }) {
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
             PORTFOLIO INTELLIGENCE
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
+          <div className="app-header-sub" style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
             SRINIVASAN HOUSEHOLD · ALLSOURCE ADVISORY
           </div>
         </div>
       </div>
 
       {/* Right: theme toggle + AUM */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+      <div className="app-header-right" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
 
         {/* Theme toggle */}
         <button
@@ -64,7 +64,7 @@ export default function Header({ theme, onToggleTheme }) {
 
         {/* AUM */}
         <div style={{ textAlign: 'right' }}>
-          <div style={{
+          <div className="app-header-aum" style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 22,
             fontWeight: 600,

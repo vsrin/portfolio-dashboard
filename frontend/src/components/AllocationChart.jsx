@@ -44,7 +44,7 @@ export default function AllocationChart() {
   const total = summary?.total_value ?? 0
 
   return (
-    <div className="card" style={{ height: 340 }}>
+    <div className="card alloc-chart-card" style={{ height: 340 }}>
       <div className="card-header">
         <span className="card-title">Portfolio Allocation</span>
         <InfoButton title={WIDGET_INFO.allocationDonut.title} content={WIDGET_INFO.allocationDonut.content} />
@@ -55,7 +55,7 @@ export default function AllocationChart() {
           Loading…
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 280 }}>
+        <div className="alloc-chart-inner" style={{ display: 'flex', flexDirection: 'column', height: 280 }}>
           {/* Donut with center label */}
           <div style={{ position: 'relative', height: 180 }}>
             <ResponsiveContainer width="100%" height={180}>

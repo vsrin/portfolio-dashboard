@@ -59,7 +59,7 @@ export default function App() {
       <BenchmarkBar />
 
       {/* Tab nav */}
-      <div style={{
+      <div className="tab-nav" style={{
         borderBottom: '1px solid var(--border)',
         padding: '0 24px',
         display: 'flex',
@@ -93,11 +93,11 @@ export default function App() {
       </div>
 
       {/* Tab content */}
-      <div style={{ padding: '24px', maxWidth: 1600, margin: '0 auto' }}>
+      <div className="app-content" style={{ padding: '24px', maxWidth: 1600, margin: '0 auto' }}>
 
         {activeTab === 'overview' && (
           <div style={{ display: 'grid', gap: 20 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+            <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
               <PerformanceChart />
               <AllocationChart />
             </div>

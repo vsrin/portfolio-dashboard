@@ -43,7 +43,7 @@ export default function TargetDatePanel() {
         border: `1px solid ${priDiff >= 0 ? 'rgba(0,230,118,0.2)' : 'rgba(255,82,82,0.2)'}`,
         borderRadius: 6,
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 24, alignItems: 'center' }}>
+        <div className="target-compare" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 24, alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 6 }}>YOUR PORTFOLIO</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 800, color: 'var(--cyan)', lineHeight: 1 }}>
