@@ -6,6 +6,37 @@ import { useApi } from '../hooks/useApi'
 import { fmt$, fmtShortDate } from '../utils/formatters'
 import InfoButton from './InfoButton'
 
+// ── Educational content for the info drawer ───────────────────────────────────
+const SHARPE_EDU = `**What Is the Sharpe Ratio?**
+
+The Sharpe Ratio is the single most widely used measure of risk-adjusted performance in professional investing. It answers one essential question: how much net return did you earn for every unit of risk you accepted?
+
+**The Formula**
+Sharpe = (Portfolio Return − Risk-Free Rate) ÷ Annualised Volatility
+
+The risk-free rate is the return you could have earned with zero risk — typically approximated by short-term US Treasuries or the Fed Funds rate (~5% during your 22-month holding period). Volatility is the annualised standard deviation of your monthly returns.
+
+**How to Interpret the Number**
+• Below 0.5 — Weak. You are not being adequately compensated for the volatility you are absorbing. Common causes: high fees, concentrated bets, or an unfavourable measurement period.
+• 0.5 to 1.0 — Acceptable. A professionally managed, diversified portfolio typically lands here. Passive 60/40 portfolios score ~0.6–0.8 with minimal fees.
+• 1.0 to 2.0 — Strong. You are generating well-rewarded risk. Institutional allocators target this range.
+• Above 2.0 — Exceptional. Rare outside very short windows or highly concentrated strategies that happened to work.
+
+**Why Fees Destroy the Sharpe Ratio**
+Every percentage point of fees reduces your net return directly while volatility stays unchanged. A portfolio running 3% all-in fees could have a gross Sharpe of 0.8 and a net Sharpe of 0.44 — not because the managers are bad, but because the fee load is heavy. This is why professional managers are always evaluated on **gross alpha vs their benchmark**, not on net Sharpe vs a zero-cost index.
+
+**What Is Volatility?**
+Annualised volatility is calculated as the standard deviation of your monthly returns multiplied by the square root of 12. It measures how much your portfolio fluctuates around its average return. A pure S&P 500 portfolio typically runs 15–20% annualised volatility. A 60/40 blend runs 10–12%. An alternatives-heavy portfolio like yours — with PE, private credit, and hedge funds absorbing market shocks — should run lower than a pure equity book, all else equal.
+
+**What Is Max Drawdown?**
+Max drawdown is the worst peak-to-trough decline experienced during the measurement period, expressed as a percentage. A −14.4% max drawdown means that at its lowest point, your portfolio had lost 14.4% of its prior peak value. This is not the same as your total return — it measures the worst-case timing a specific investor would have experienced if they entered at the peak and measured at the trough.
+
+**Max Drawdown in Context**
+The April 2025 tariff shock caused a broad risk-asset sell-off. The S&P 500 fell approximately 18–20% from its February 2025 high. Your portfolio, with 38% in public equities, 57% in alternatives (many of which report quarterly and don't show intra-quarter declines), experienced a smoothed version of that shock. A −14.4% drawdown on a portfolio with significant illiquid alternatives is broadly expected — the dampening is evidence the alternatives sleeve is working.
+
+**The Honest Caveat**
+The volatility and max drawdown figures displayed here are derived from estimated monthly portfolio snapshots, not confirmed AllSource/Tamarac statements. The directional story is reliable — the precise numbers should be treated as directionally accurate approximations until actual monthly statements are loaded.`
+
 // ── Shared tooltip ────────────────────────────────────────────────────────────
 const ChartTip = ({ active, payload, label, fmtVal }) => {
   if (!active || !payload?.length) return null
@@ -100,18 +131,66 @@ function RiskMetrics({ rm }) {
         />
       </div>
 
+      {/* ── Advisor Interpretation block ─────────────────────────────────── */}
       <div style={{
-        padding: '10px 14px', borderRadius: 6,
-        background: 'rgba(255,179,0,0.06)', border: '1px solid rgba(255,179,0,0.2)',
-        fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6,
+        borderRadius: 8,
+        border: '1px solid var(--border-light)',
+        borderLeft: `4px solid ${rm.sharpe_ratio >= 0.5 ? 'var(--cyan)' : 'var(--amber)'}`,
+        background: 'var(--bg-surface)',
+        overflow: 'hidden',
       }}>
-        <strong style={{ color: 'var(--amber)' }}>Interpretation: </strong>
-        A Sharpe of {rm.sharpe_ratio.toFixed(2)} means you earned {rm.sharpe_ratio.toFixed(2)} units of return per unit of risk —
-        {rm.sharpe_ratio >= 0.5
-          ? ' acceptable for an alternatives-heavy portfolio absorbing significant fee drag. A pure passive 60/40 typically scores ~0.6–0.8 with near-zero fees.'
-          : ' below the passive baseline. Fee drag (~3% all-in annually) is the primary culprit. Gross return before fees would score materially higher.'}
-        {' '}Volatility at {rm.volatility_pct}% is {rm.volatility_pct < 12 ? 'well below' : 'broadly in line with'} the blended benchmark — alternatives are doing their job as portfolio dampeners.
-        &nbsp;<span style={{ opacity: 0.6 }}>({rm.data_note})</span>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-input)',
+        }}>
+          <span style={{
+            fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: rm.sharpe_ratio >= 0.5 ? 'var(--cyan)' : 'var(--amber)',
+          }}>
+            Advisor Interpretation
+          </span>
+          <InfoButton
+            title="Understanding Your Risk Metrics"
+            content={SHARPE_EDU}
+          />
+          <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+            Recalculates on every data refresh
+          </span>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+            A Sharpe of <strong style={{ fontFamily: 'var(--font-mono)', color: rm.sharpe_ratio >= 0.5 ? 'var(--cyan)' : 'var(--amber)' }}>{rm.sharpe_ratio.toFixed(2)}</strong> means
+            you earned {rm.sharpe_ratio.toFixed(2)} units of return per unit of risk —
+            {rm.sharpe_ratio >= 1.0
+              ? <> <strong>strong</strong>, outperforming the typical 0.6–0.8 range for a passive 60/40. This portfolio is generating well-compensated risk.</>
+              : rm.sharpe_ratio >= 0.5
+              ? <> <strong>acceptable</strong> for an alternatives-heavy portfolio absorbing ~3% in all-in annual fees. A pure passive 60/40 typically scores 0.6–0.8 with near-zero costs — fee drag is the gap.</>
+              : <> <strong>below the passive baseline</strong>. Fee drag (~3% all-in annually) is the primary culprit. Gross return before fees would score materially higher — evaluate managers on gross alpha, not net Sharpe alone.</>
+            }
+          </p>
+
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+            Volatility at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{rm.volatility_pct}%</strong> annualised
+            is <strong>{rm.volatility_pct < 12 ? 'well below' : 'broadly in line with'}</strong> a comparable passive blend —
+            alternatives are doing their job as portfolio dampeners. The max drawdown of <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--red)' }}>{rm.max_drawdown_pct}%</strong> occurred
+            during the April 2025 tariff shock and is consistent with a {Math.round(38)}% equity allocation absorbing a broad market correction.
+          </p>
+        </div>
+
+        {/* Disclaimer footer */}
+        <div style={{
+          padding: '8px 16px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--bg-input)',
+          fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic',
+        }}>
+          ⚠ {rm.data_note}
+        </div>
       </div>
     </Section>
   )
