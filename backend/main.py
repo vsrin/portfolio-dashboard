@@ -1174,6 +1174,47 @@ RETIREMENT_CONFIG = {
     "risk_free_rate":    5.0,         # Approximate Fed funds rate during the period
 }
 
+# Official risk metrics — sourced from AllSource/Tamarac Account Analytics export 2026-05-09
+RISK_METRICS = {
+    "as_of":   "2026-05-09",
+    "source":  "Tamarac (official)",
+    "itd": {
+        "sharpe":               0.84,
+        "sortino":              1.26,
+        "std_dev":              0.0845,
+        "downside_dev":         0.0565,
+        "beta":                 0.43,
+        "alpha_raw":           -0.0614,
+        "jensens_alpha":        0.0143,
+        "upside_capture":       0.26,
+        "downside_capture":     0.65,
+        "r_squared":            0.7331,
+        "net_return_ann":       0.1143,
+    },
+    "ytd_2026": {
+        "sharpe":               None,
+        "beta":                 0.41,
+        "alpha_raw":           -0.0753,
+        "jensens_alpha":       -0.0326,
+        "upside_capture":       0.22,
+        "downside_capture":     0.70,
+        "r_squared":            0.6694,
+    },
+    "fy_2025": {
+        "sharpe":               0.89,
+        "sortino":              1.35,
+        "std_dev":              0.0995,
+        "downside_dev":         0.0657,
+        "net_return":           0.1307,
+    },
+    "benchmark_itd": {
+        "sp500_sharpe":         0.70,
+        "sp500_sortino":        1.02,
+        "sp500_std_dev":        0.1688,
+        "sp500_net_return_ann": 0.1610,
+    },
+}
+
 
 def _compute_risk_metrics() -> dict:
     import statistics, math
@@ -1373,6 +1414,11 @@ def risk():
         "concentration":      con,
         "retirement":         ret,
     }
+
+
+@app.get("/api/risk-metrics")
+def get_risk_metrics():
+    return RISK_METRICS
 
 
 # ── AI Chat ────────────────────────────────────────────────────────────────────

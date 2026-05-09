@@ -92,42 +92,89 @@ function MetricTile({ label, value, sub, color, borderColor, note }) {
 }
 
 // ── Gap 1: Risk Metrics ───────────────────────────────────────────────────────
-function RiskMetrics({ rm }) {
-  const sharpeColor = rm.sharpe_ratio >= 1.0 ? 'var(--green)' : rm.sharpe_ratio >= 0.5 ? 'var(--amber)' : 'var(--red)'
+function RiskMetrics({ rm, official }) {
+  // Use official Tamarac figures when available, fall back to computed estimates
+  const itd      = official?.itd || {}
+  const bm       = official?.benchmark_itd || {}
+  const sharpe   = itd.sharpe    ?? rm.sharpe_ratio
+  const sortino  = itd.sortino   ?? null
+  const volPct   = itd.std_dev   != null ? (itd.std_dev * 100).toFixed(2) : rm.volatility_pct
+  const jAlpha   = itd.jensens_alpha != null ? (itd.jensens_alpha * 100).toFixed(2) : null
+  const upCap    = itd.upside_capture   != null ? Math.round(itd.upside_capture * 100)   : null
+  const dnCap    = itd.downside_capture != null ? Math.round(itd.downside_capture * 100) : null
+  const sp500Vol = bm.sp500_std_dev     != null ? (bm.sp500_std_dev * 100).toFixed(1)   : '16.9'
+  const isOfficial = !!official?.itd
+  const asOf     = official?.as_of || ''
+
+  const sharpeColor = sharpe >= 1.0 ? 'var(--green)' : sharpe >= 0.5 ? 'var(--amber)' : 'var(--red)'
+  const sharpeLabel = sharpe >= 1.0 ? 'Strong (>1.0)' : sharpe >= 0.8 ? 'Good (>0.8)' : sharpe >= 0.5 ? 'Acceptable (0.5–1.0)' : 'Weak (<0.5)'
   const ddColor     = Math.abs(rm.max_drawdown_pct) <= 10 ? 'var(--green)' : Math.abs(rm.max_drawdown_pct) <= 20 ? 'var(--amber)' : 'var(--red)'
 
   return (
     <Section
-      title="Gap 1 — Risk-Adjusted Returns"
+      title="Risk-Adjusted Returns"
       subtitle="How much risk was taken to generate the returns? Without this, alpha claims are incomplete."
     >
+      {/* Row 1 — core 4 metrics */}
       <div className="grid-4-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <MetricTile
-          label="Annualised Return"
-          value={`+${rm.annualized_return_pct}%`}
-          sub={`${rm.annualized_return_pct > rm.risk_free_rate_pct ? '▲' : '▼'} ${Math.abs(rm.annualized_return_pct - rm.risk_free_rate_pct).toFixed(2)}% above risk-free`}
+          label="Annualised Return (ITD)"
+          value={`+${(itd.net_return_ann ? (itd.net_return_ann * 100).toFixed(2) : rm.annualized_return_pct)}%`}
+          sub={`vs S&P 500 +${bm.sp500_net_return_ann ? (bm.sp500_net_return_ann * 100).toFixed(1) : '16.1'}% ITD`}
           color="var(--cyan)"
         />
         <MetricTile
-          label="Sharpe Ratio"
-          value={rm.sharpe_ratio.toFixed(2)}
-          sub={rm.sharpe_ratio >= 1.0 ? 'Excellent (>1.0)' : rm.sharpe_ratio >= 0.5 ? 'Acceptable (0.5–1.0)' : 'Weak (<0.5) — fee drag'}
+          label="Sharpe Ratio (ITD)"
+          value={sharpe.toFixed(2)}
+          sub={sharpeLabel}
           color={sharpeColor}
           note="(Return − Risk-Free) ÷ Volatility"
         />
         <MetricTile
-          label="Annualised Volatility"
-          value={`${rm.volatility_pct}%`}
-          sub={`vs ~${(rm.volatility_pct * 2.5).toFixed(0)}% pure S&P 500`}
-          color="var(--text-secondary)"
-          note="Std dev of monthly returns × √12"
+          label="Sortino Ratio (ITD)"
+          value={sortino != null ? sortino.toFixed(2) : '—'}
+          sub={sortino != null ? (sortino >= 1.0 ? 'Strong (>1.0)' : 'Acceptable') : 'n/a'}
+          color={sortino != null && sortino >= 1.0 ? 'var(--green)' : 'var(--amber)'}
+          note="Return ÷ Downside deviation only"
         />
         <MetricTile
           label="Max Drawdown"
           value={`${rm.max_drawdown_pct}%`}
-          sub={`${rm.max_drawdown_start} peak → ${rm.max_drawdown_trough} trough`}
+          sub={`${rm.max_drawdown_start} → ${rm.max_drawdown_trough}`}
           color={ddColor}
           note="Worst peak-to-trough decline ITD"
+        />
+      </div>
+
+      {/* Row 2 — volatility + capture ratios + Jensen's alpha */}
+      <div className="grid-4-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <MetricTile
+          label="Annualised Volatility"
+          value={`${volPct}%`}
+          sub={`vs S&P 500 ~${sp500Vol}% — portfolio runs far lower`}
+          color="var(--text-secondary)"
+          note="Std dev of monthly returns (ITD)"
+        />
+        <MetricTile
+          label="Upside Capture"
+          value={upCap != null ? `${upCap}%` : '—'}
+          sub="Captured 26% of S&P 500 gains"
+          color="var(--text-secondary)"
+          note="Low — alternatives dampen upswings"
+        />
+        <MetricTile
+          label="Downside Capture"
+          value={dnCap != null ? `${dnCap}%` : '—'}
+          sub="Absorbed 65% of S&P 500 losses"
+          color={dnCap != null && dnCap < 70 ? 'var(--amber)' : 'var(--red)'}
+          note="Goal: upside capture > downside capture"
+        />
+        <MetricTile
+          label="Jensen's Alpha"
+          value={jAlpha != null ? `${jAlpha > 0 ? '+' : ''}${jAlpha}%` : '—'}
+          sub={jAlpha != null && parseFloat(jAlpha) > 0 ? 'Positive excess return vs benchmark' : 'Below benchmark after risk adjustment'}
+          color={jAlpha != null && parseFloat(jAlpha) > 0 ? 'var(--green)' : 'var(--red)'}
+          note="Risk-adjusted excess return (CAPM)"
         />
       </div>
 
@@ -135,7 +182,7 @@ function RiskMetrics({ rm }) {
       <div style={{
         borderRadius: 8,
         border: '1px solid var(--border-light)',
-        borderLeft: `4px solid ${rm.sharpe_ratio >= 0.5 ? 'var(--cyan)' : 'var(--amber)'}`,
+        borderLeft: `4px solid ${sharpe >= 0.5 ? 'var(--cyan)' : 'var(--amber)'}`,
         background: 'var(--bg-surface)',
         overflow: 'hidden',
       }}>
@@ -148,48 +195,46 @@ function RiskMetrics({ rm }) {
         }}>
           <span style={{
             fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
-            color: rm.sharpe_ratio >= 0.5 ? 'var(--cyan)' : 'var(--amber)',
+            color: sharpe >= 0.5 ? 'var(--cyan)' : 'var(--amber)',
           }}>
             Advisor Interpretation
           </span>
-          <InfoButton
-            title="Understanding Your Risk Metrics"
-            content={SHARPE_EDU}
-          />
+          <InfoButton title="Understanding Your Risk Metrics" content={SHARPE_EDU} />
           <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--text-muted)', fontStyle: 'italic' }}>
-            Recalculates on every data refresh
+            {isOfficial ? `Source: AllSource / Tamarac · as of ${asOf}` : 'Estimated — update PORTFOLIO_VALUE_SERIES for official figures'}
           </span>
         </div>
 
         {/* Body */}
         <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-            A Sharpe of <strong style={{ fontFamily: 'var(--font-mono)', color: rm.sharpe_ratio >= 0.5 ? 'var(--cyan)' : 'var(--amber)' }}>{rm.sharpe_ratio.toFixed(2)}</strong> means
-            you earned {rm.sharpe_ratio.toFixed(2)} units of return per unit of risk —
-            {rm.sharpe_ratio >= 1.0
-              ? <> <strong>strong</strong>, outperforming the typical 0.6–0.8 range for a passive 60/40. This portfolio is generating well-compensated risk.</>
-              : rm.sharpe_ratio >= 0.5
+            A Sharpe of <strong style={{ fontFamily: 'var(--font-mono)', color: sharpeColor }}>{sharpe.toFixed(2)}</strong> means
+            you earned {sharpe.toFixed(2)} units of return per unit of risk —
+            {sharpe >= 0.8
+              ? <> <strong>good</strong>, above the typical 0.6–0.8 range for a passive 60/40. The S&P 500 itself scores {bm.sp500_sharpe?.toFixed(2) ?? '0.70'} ITD on the same period. This portfolio is generating well-compensated risk despite carrying ~3% in all-in annual fees.</>
+              : sharpe >= 0.5
               ? <> <strong>acceptable</strong> for an alternatives-heavy portfolio absorbing ~3% in all-in annual fees. A pure passive 60/40 typically scores 0.6–0.8 with near-zero costs — fee drag is the gap.</>
-              : <> <strong>below the passive baseline</strong>. Fee drag (~3% all-in annually) is the primary culprit. Gross return before fees would score materially higher — evaluate managers on gross alpha, not net Sharpe alone.</>
+              : <> <strong>below the passive baseline</strong>. Fee drag (~3% all-in annually) is the primary culprit.</>
             }
           </p>
 
           <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-            Volatility at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{rm.volatility_pct}%</strong> annualised
-            is <strong>{rm.volatility_pct < 12 ? 'well below' : 'broadly in line with'}</strong> a comparable passive blend —
-            alternatives are doing their job as portfolio dampeners. The max drawdown of <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--red)' }}>{rm.max_drawdown_pct}%</strong> occurred
-            during the April 2025 tariff shock and is consistent with a {Math.round(38)}% equity allocation absorbing a broad market correction.
+            Volatility at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{volPct}%</strong> annualised
+            is well below the S&P 500's <strong style={{ fontFamily: 'var(--font-mono)' }}>{sp500Vol}%</strong> — alternatives are doing their job as volatility dampeners.
+            The capture ratio asymmetry (upside {upCap ?? 26}% / downside {dnCap ?? 65}%) reflects the illiquid alternatives sleeve smoothing marks on the downside — the goal is to close that gap on the upside as PE and private credit mature.
           </p>
         </div>
 
-        {/* Disclaimer footer */}
+        {/* Source footer */}
         <div style={{
           padding: '8px 16px',
           borderTop: '1px solid var(--border)',
           background: 'var(--bg-input)',
           fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic',
         }}>
-          ⚠ {rm.data_note}
+          {isOfficial
+            ? `✓ Official figures from AllSource / Tamarac Account Analytics · as of ${asOf}`
+            : `⚠ ${rm.data_note}`}
         </div>
       </div>
     </Section>
@@ -571,12 +616,15 @@ function ConcentrationRisk({ con }) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function RiskPanel() {
-  const { data, loading } = useApi('/risk')
+  const { data, loading }           = useApi('/risk')
+  const { data: official, loading: loadingOfficial } = useApi('/risk-metrics')
 
-  if (loading) return (
+  if (loading || loadingOfficial) return (
     <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading risk analysis…</div>
   )
   if (!data) return null
+
+  const officialSharpe = official?.itd?.sharpe ?? data.risk_metrics.sharpe_ratio
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -596,7 +644,7 @@ export default function RiskPanel() {
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           {[
-            { label: 'Sharpe Ratio', val: data.risk_metrics.sharpe_ratio.toFixed(2), color: data.risk_metrics.sharpe_ratio >= 0.5 ? 'var(--amber)' : 'var(--red)' },
+            { label: 'Sharpe Ratio', val: officialSharpe.toFixed(2), color: officialSharpe >= 0.8 ? 'var(--green)' : officialSharpe >= 0.5 ? 'var(--amber)' : 'var(--red)' },
             { label: 'Max Drawdown', val: `${data.risk_metrics.max_drawdown_pct}%`, color: 'var(--red)' },
             { label: 'Illiquid AUM', val: `${data.liquidity.locked_pct}%`, color: 'var(--amber)' },
             { label: 'Retirement', val: data.retirement.on_track ? 'On Track' : 'At Risk', color: data.retirement.on_track ? 'var(--green)' : 'var(--red)' },
@@ -609,7 +657,7 @@ export default function RiskPanel() {
         </div>
       </div>
 
-      <RiskMetrics    rm={data.risk_metrics} />
+      <RiskMetrics    rm={data.risk_metrics} official={official} />
       <EquityCurve    curve={data.equity_curve} rm={data.risk_metrics} />
       <LiquidityProfile liq={data.liquidity} />
       <RetirementProjection ret={data.retirement} />

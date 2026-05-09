@@ -66,6 +66,7 @@ for name, endpoint in [
     ('target-date',        '/api/target-date'),
     ('alt-commitments',    '/api/alt-commitments'),
     ('risk',               '/api/risk'),
+    ('risk-metrics',       '/api/risk-metrics'),
 ]:
     data = get(endpoint)
     if data is not None:
