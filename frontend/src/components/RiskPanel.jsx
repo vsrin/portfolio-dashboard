@@ -368,17 +368,70 @@ function RetirementProjection({ ret }) {
         ))}
       </div>
 
+      {/* ── Retirement Advisory Panel ─────────────────────────────────────── */}
       <div style={{
-        padding: '10px 14px', borderRadius: 6,
-        background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.2)',
-        fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6,
+        borderRadius: 8,
+        border: '1px solid var(--border-light)',
+        borderLeft: `4px solid ${ret.on_track ? 'var(--cyan)' : 'var(--amber)'}`,
+        background: 'var(--bg-surface)',
+        overflow: 'hidden',
       }}>
-        <strong style={{ color: 'var(--cyan)' }}>Required rate to reach $5M: {ret.required_return_pct}% annualised. </strong>
-        Your current annualised pace is {ret.annualized_return_pct}% —
-        {ret.on_track
-          ? ` ${(ret.annualized_return_pct - ret.required_return_pct).toFixed(2)}% above the required hurdle. Even a conservative 6% scenario barely clears $5M.`
-          : ` below the ${ret.required_return_pct}% hurdle. A sustained return improvement is needed.`}
-        {' '}Note: this projection assumes no additional contributions. Ongoing savings would reduce the required return materially.
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-input)',
+        }}>
+          <span style={{
+            fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: ret.on_track ? 'var(--cyan)' : 'var(--amber)',
+          }}>
+            Retirement Projection — Advisor Briefing
+          </span>
+          <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+            No additional contributions assumed · update if savings rate changes
+          </span>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {ret.on_track ? (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                <strong style={{ color: 'var(--green)' }}>Bottom line: you are well ahead of where you need to be.</strong> To reach <strong style={{ fontFamily: 'var(--font-mono)' }}>$5M</strong> by age {ret.retirement_age}, this portfolio only needs to compound at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>{ret.required_return_pct}%</strong> per year. You have been compounding at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--green)' }}>{ret.annualized_return_pct}%</strong> — nearly double the minimum required rate. That {(ret.annualized_return_pct - ret.required_return_pct).toFixed(2)}% buffer means returns could slow down significantly from here and you would still reach your target.
+              </p>
+
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                <strong>All three scenarios reach $5M.</strong> Even the conservative model (6% annually — roughly half your current pace) clears the target. The moderate (8%) and current-pace (10.83%) scenarios project into the $8–10M range, well above what you need. The $5M figure itself is grounded in the <strong>4% withdrawal rule</strong>: a $5M portfolio supports ~$200,000/year of inflation-adjusted income, a practical financial independence threshold.
+              </p>
+
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                <strong>One important caveat: this model assumes zero additional contributions.</strong> If you continue saving — even at a modest pace — the required return hurdle drops further and all scenarios improve. Any ongoing savings are pure upside on top of an already solid projection. The planning conversation to have with your advisor is not whether you will reach $5M, but how to preserve it: as age 58–60 approaches, consider whether the 57% alternatives sleeve should begin rotating toward more liquid, lower-volatility assets to protect what you have built.
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                <strong style={{ color: 'var(--amber)' }}>The current pace falls short of what is needed.</strong> To reach <strong style={{ fontFamily: 'var(--font-mono)' }}>$5M</strong> by age {ret.retirement_age}, the portfolio needs to compound at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{ret.required_return_pct}%</strong> per year. Your current annualised return of <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{ret.annualized_return_pct}%</strong> is below that threshold — meaning the conservative scenario misses $5M at retirement.
+              </p>
+
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                The gap can be closed in two ways: <strong>higher returns</strong> (discuss with your advisor whether the current allocation is positioned for a 13-year accumulation phase) or <strong>ongoing contributions</strong> (adding savings reduces how much investment return you need to rely on — this is the most controllable lever). Either path narrows the shortfall substantially.
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* Disclaimer footer */}
+        <div style={{
+          padding: '8px 16px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--bg-input)',
+          fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic',
+        }}>
+          ⚠ Projections are illustrative compounding models — not guaranteed outcomes. Actual results depend on return sequence, inflation, fees, and contribution patterns.
+        </div>
       </div>
     </Section>
   )
@@ -455,21 +508,61 @@ function ConcentrationRisk({ con }) {
         </div>
       </div>
 
-      {/* HHI + advisory */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <div style={{ padding: '12px 16px', background: 'var(--bg-input)', borderRadius: 8, minWidth: 140 }}>
-          <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.07em', marginBottom: 6 }}>HERFINDAHL INDEX</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 800, color: con.hhi > 15 ? 'var(--amber)' : 'var(--green)' }}>{con.hhi}</div>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>{con.hhi > 15 ? 'Moderate concentration' : 'Well diversified'}</div>
-        </div>
+      {/* ── HHI + Concentration Advisory Panel ─────────────────────────────── */}
+      <div style={{
+        borderRadius: 8,
+        border: '1px solid var(--border-light)',
+        borderLeft: '4px solid var(--amber)',
+        background: 'var(--bg-surface)',
+        overflow: 'hidden',
+      }}>
+        {/* Header */}
         <div style={{
-          flex: 1, padding: '10px 14px', borderRadius: 6,
-          background: 'rgba(255,179,0,0.06)', border: '1px solid rgba(255,179,0,0.2)',
-          fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6,
+          display: 'flex', alignItems: 'center', gap: 16,
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-input)',
         }}>
-          <strong style={{ color: 'var(--amber)' }}>Action: </strong>
-          Private Equity at 26.3% is the dominant single-position risk. This is illiquid — you cannot trim it. The concentration will resolve naturally as the fund matures and returns capital (typically years 5–8). In the interim, ask your advisor whether new capital deployments should intentionally diversify away from additional PE to rebalance the sleeve composition.
-          <br /><div style={{ marginTop: 6, fontSize: 10 }}>{con.diversification_note}</div>
+          <span style={{
+            fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: 'var(--amber)',
+          }}>
+            Concentration Risk — Advisor Briefing
+          </span>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Herfindahl Index</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 800, color: con.hhi > 15 ? 'var(--amber)' : 'var(--green)' }}>{con.hhi}</span>
+            <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{con.hhi > 15 ? '— Moderate concentration' : '— Well diversified'}</span>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+            <strong>Private Equity at 26.3%</strong> is the dominant concentration risk — more than twice the 10–15% ceiling most institutional allocators apply to any single private-markets vehicle. The HHI of <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{con.hhi}</strong> signals meaningful asymmetry: a perfectly balanced six-sleeve portfolio scores ~8, the broad US market scores ~6. A score of {con.hhi} reflects the PE sleeve pulling far above its proportional weight.
+          </p>
+
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+            <strong>This is structurally illiquid — it cannot be trimmed.</strong> Unlike public equities, a PE fund commitment cannot be sold or redeemed before the fund's natural wind-down. The only path forward is time: as the fund matures through its harvest years (typically years 5–8), it will distribute capital and the concentration resolves organically. Forcing a secondary-market sale would incur a 15–30% discount to NAV and is rarely advisable unless there is an acute liquidity crisis.
+          </p>
+
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+            <strong>Three advisor questions worth raising explicitly:</strong> (1) Is the next capital deployment intended to counterweight the PE sleeve rather than extend it? (2) As PE distributions arrive, what is the reinvestment policy — back into privates, or rotating toward liquid, lower-correlation assets? (3) Is there a formal alternatives ceiling — say ≤40% of AUM — being actively monitored as a guardrail?
+          </p>
+
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            {con.diversification_note}
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: '8px 16px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--bg-input)',
+          fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic',
+        }}>
+          ⚠ HHI and concentration percentages reflect current portfolio weights — they shift as PE distributes capital and new allocations are made.
         </div>
       </div>
     </Section>
