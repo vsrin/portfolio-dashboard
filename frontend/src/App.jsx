@@ -14,6 +14,7 @@ import InsightsPanel from './components/InsightsPanel'
 import ChatPanel from './components/ChatPanel'
 import ManagerScorecard from './components/ManagerScorecard'
 import TargetDatePanel from './components/TargetDatePanel'
+import RiskPanel from './components/RiskPanel'
 import { InfoProvider } from './context/InfoContext'
 import InfoDrawer from './components/InfoDrawer'
 
@@ -29,6 +30,7 @@ const PERF_SUBTABS = [
   { id: 'portfolio',  label: 'Portfolio' },
   { id: 'equity',     label: 'Equity' },
   { id: 'alts',       label: 'Alternatives' },
+  { id: 'risk',       label: 'Risk & Planning' },
 ]
 
 export default function App() {
@@ -172,6 +174,7 @@ export default function App() {
               </div>
             )}
             {perfSubtab === 'alts'      && <AlternativesPanel />}
+            {perfSubtab === 'risk'      && <RiskPanel />}
           </div>
         )}
 

@@ -1103,6 +1103,278 @@ def alt_commitments_endpoint():
     return {"commitments": result}
 
 
+# ── Risk & Planning constants ──────────────────────────────────────────────────
+
+# Estimated month-end portfolio values (market value, all accounts).
+# Anchor: 2026-05 = $2,392,970 (actual from AllSource portal).
+# All prior months are estimates — update from AllSource monthly statements for exact risk metrics.
+PORTFOLIO_VALUE_SERIES = [
+    ("2024-07",   695_000),   # Initial equity accounts opened
+    ("2024-08",   862_000),   # +$170K additional funding, Aug market dip offset
+    ("2024-09", 1_628_000),   # +$812K major funding wave
+    ("2024-10", 1_682_000),   # Market appreciation, no deposits
+    ("2024-11", 1_762_000),   # Post-election equity rally
+    ("2024-12", 1_728_000),   # December pullback
+    ("2025-01", 1_718_000),   # Flat start to 2025
+    ("2025-02", 1_685_000),   # Tech correction
+    ("2025-03", 1_638_000),   # Tariff policy fears build
+    ("2025-04", 1_508_000),   # April tariff shock — estimated max drawdown
+    ("2025-05", 1_598_000),   # Recovery begins
+    ("2025-06", 1_652_000),   # Continued recovery
+    ("2025-07", 1_706_000),   # Summer rally
+    ("2025-08", 2_162_000),   # Managed accounts funded (+~$600K AUM added)
+    ("2025-09", 2_118_000),   # Slight pullback
+    ("2025-10", 2_222_000),   # Recovery + small additions
+    ("2025-11", 2_255_000),   # Market steady
+    ("2025-12", 2_312_000),   # Year-end appreciation
+    ("2026-01", 2_270_000),   # January volatility
+    ("2026-02", 2_245_000),   # Continued pressure
+    ("2026-03", 2_358_000),   # March additions + recovery
+    ("2026-04", 2_358_000),   # April — tariff noise, new additions
+    ("2026-05", 2_392_970),   # ACTUAL — AllSource portal 2026-05-05
+]
+
+# Liquidity classification by asset class id
+LIQUIDITY_MAP = {
+    # Liquid — public market, T+2 settlement
+    "lc_core":           "liquid",
+    "lc_growth":         "liquid",
+    "lc_value":          "liquid",
+    "mc_core":           "liquid",
+    "mc_growth":         "liquid",
+    "mc_value":          "liquid",
+    "sc_core":           "liquid",
+    "sc_growth":         "liquid",
+    "sc_value":          "liquid",
+    "foreign_lc_growth": "liquid",
+    "foreign_sm_growth": "liquid",
+    "intl_developed":    "liquid",
+    "commodity":         "liquid",   # GLDM — exchange-traded gold
+    # Semi-liquid — quarterly redemption windows, 45-90 days notice
+    "hedged_equity":     "semi_liquid",
+    "managed_futures":   "semi_liquid",
+    "hedge_fund":        "semi_liquid",
+    # Illiquid — 5-10 year lock-up, no redemption
+    "private_credit":    "illiquid",
+    "private_equity":    "illiquid",
+    "venture":           "illiquid",
+}
+
+LIQUIDITY_LABELS = {
+    "liquid":      ("Liquid (T+2)", "Public market securities — sellable within 2 business days"),
+    "semi_liquid": ("Semi-Liquid (30–90 days)", "Hedge/managed funds with quarterly redemption windows; notice period required"),
+    "illiquid":    ("Illiquid (locked)", "Private market assets — PE, VC, Private Credit with 5–10 year fund lives"),
+}
+
+# Retirement planning config
+RETIREMENT_CONFIG = {
+    "current_age":       52,
+    "retirement_age":    65,
+    "target_portfolio":  5_000_000,   # $5M (supports ~$200K/yr at 4% withdrawal rate)
+    "risk_free_rate":    5.0,         # Approximate Fed funds rate during the period
+}
+
+
+def _compute_risk_metrics() -> dict:
+    import statistics, math
+
+    series = PORTFOLIO_VALUE_SERIES
+    months_total = 22
+
+    # Annualized return from ITD return
+    ann_return = ((1 + PORTAL_RETURN_PCT / 100) ** (12 / months_total) - 1) * 100
+
+    # Monthly returns — skip months with large net capital additions (>$100K)
+    large_flow_months = {"2024-07", "2024-08", "2024-09", "2025-08", "2025-10",
+                         "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"}
+    vals = {m: v for m, v in series}
+    ordered = [m for m, _ in series]
+    clean_rets = []
+    for i in range(1, len(ordered)):
+        m = ordered[i]
+        if m in large_flow_months:
+            continue
+        prev = vals[ordered[i - 1]]
+        if prev > 0:
+            clean_rets.append((vals[m] - prev) / prev)
+
+    vol_monthly = statistics.stdev(clean_rets) if len(clean_rets) > 1 else 0.031
+    vol_annual  = vol_monthly * math.sqrt(12) * 100
+    rf          = RETIREMENT_CONFIG["risk_free_rate"]
+    sharpe      = round((ann_return - rf) / vol_annual, 2) if vol_annual else 0
+
+    # Max drawdown
+    peak = 0
+    max_dd = 0.0
+    dd_start = dd_trough = None
+    cur_peak_m = None
+    for m, v in series:
+        if v > peak:
+            peak = v
+            cur_peak_m = m
+        if peak > 0:
+            dd = (v - peak) / peak * 100
+            if dd < max_dd:
+                max_dd = dd
+                dd_start  = cur_peak_m
+                dd_trough = m
+
+    return {
+        "annualized_return_pct": round(ann_return, 2),
+        "volatility_pct":        round(vol_annual, 1),
+        "sharpe_ratio":          sharpe,
+        "risk_free_rate_pct":    rf,
+        "max_drawdown_pct":      round(max_dd, 1),
+        "max_drawdown_start":    dd_start,
+        "max_drawdown_trough":   dd_trough,
+        "data_note": "Volatility & drawdown derived from estimated monthly valuations. Update PORTFOLIO_VALUE_SERIES in backend/main.py with actual AllSource monthly statements for exact figures.",
+    }
+
+
+def _compute_liquidity() -> dict:
+    tiers: dict = {"liquid": [], "semi_liquid": [], "illiquid": []}
+    # Cash super_category → liquid
+    for ac in ASSET_CLASSES:
+        if ac["super_category"] == "cash":
+            tiers["liquid"].append({"id": ac["id"], "label": ac["label"], "value": ac["value"]})
+        else:
+            t = LIQUIDITY_MAP.get(ac["id"], "semi_liquid")
+            tiers[t].append({"id": ac["id"], "label": ac["label"], "value": ac["value"]})
+
+    result = []
+    for tier_id, assets in tiers.items():
+        total = sum(a["value"] for a in assets)
+        label, desc = LIQUIDITY_LABELS[tier_id]
+        result.append({
+            "tier":   tier_id,
+            "label":  label,
+            "description": desc,
+            "value":  round(total, 2),
+            "pct":    round(total / PORTAL_TOTAL * 100, 1),
+            "assets": [a["label"] for a in assets],
+        })
+
+    liquid_val    = next((t["value"] for t in result if t["tier"] == "liquid"), 0)
+    semi_val      = next((t["value"] for t in result if t["tier"] == "semi_liquid"), 0)
+    illiquid_val  = next((t["value"] for t in result if t["tier"] == "illiquid"), 0)
+    return {
+        "tiers":        result,
+        "liquid_30d":   round(liquid_val, 0),
+        "liquid_90d":   round(liquid_val + semi_val, 0),
+        "locked":       round(illiquid_val, 0),
+        "locked_pct":   round(illiquid_val / PORTAL_TOTAL * 100, 1),
+    }
+
+
+def _compute_concentration() -> dict:
+    SINGLE_THRESHOLD = 15.0   # flag any single position > 15%
+    SUPER_THRESHOLDS = {"alternatives": 50.0, "equity": 70.0, "cash": 20.0}
+    total = PORTAL_TOTAL
+
+    warnings = []
+    for ac in ASSET_CLASSES:
+        pct = ac["value"] / total * 100
+        if pct >= SINGLE_THRESHOLD:
+            severity = "high" if pct >= 25 else "medium"
+            warnings.append({
+                "id":            ac["id"],
+                "label":         ac["label"],
+                "super_category": ac["super_category"],
+                "value":         round(ac["value"], 0),
+                "pct":           round(pct, 1),
+                "threshold_pct": SINGLE_THRESHOLD,
+                "severity":      severity,
+                "note":          f"Single {'illiquid ' if LIQUIDITY_MAP.get(ac['id']) == 'illiquid' else ''}position = {pct:.1f}% of total portfolio",
+            })
+
+    super_conc = []
+    for cat, threshold in SUPER_THRESHOLDS.items():
+        val = SUPER_TOTALS.get(cat, {}).get("value", 0)
+        pct = val / total * 100
+        super_conc.append({
+            "category":      cat,
+            "value":         round(val, 0),
+            "pct":           round(pct, 1),
+            "threshold_pct": threshold,
+            "is_over":       pct > threshold,
+        })
+
+    # Herfindahl-Hirschman Index (sum of squared weight fractions × 100)
+    hhi = sum((ac["value"] / total * 100) ** 2 for ac in ASSET_CLASSES) / 100
+    largest = max(ASSET_CLASSES, key=lambda a: a["value"])
+
+    return {
+        "warnings":                warnings,
+        "super_category_concentration": super_conc,
+        "largest_single_position": {
+            "id":    largest["id"],
+            "label": largest["label"],
+            "value": round(largest["value"], 0),
+            "pct":   round(largest["value"] / total * 100, 1),
+        },
+        "hhi": round(hhi, 1),
+        "diversification_note": "Lower HHI = more diversified. A 20-position equal-weight portfolio scores ~5. Above 15 = moderate concentration.",
+    }
+
+
+def _compute_retirement(ann_return_pct: float) -> dict:
+    import math
+    cfg       = RETIREMENT_CONFIG
+    years     = cfg["retirement_age"] - cfg["current_age"]
+    current   = PORTAL_TOTAL
+    target    = cfg["target_portfolio"]
+
+    req_rate  = ((target / current) ** (1 / years) - 1) * 100
+
+    scenarios = [
+        {"id": "conservative", "label": "Conservative (6%)",    "rate": 6.0},
+        {"id": "moderate",     "label": "Moderate (8%)",         "rate": 8.0},
+        {"id": "current",      "label": f"Current pace ({ann_return_pct:.1f}%)", "rate": round(ann_return_pct, 2)},
+    ]
+    for s in scenarios:
+        s["projected_value"] = round(current * (1 + s["rate"] / 100) ** years)
+        s["reaches_target"]  = s["projected_value"] >= target
+
+    base_year = 2026
+    projection_series = []
+    for y in range(years + 1):
+        row = {"year": base_year + y, "target": target}
+        for s in scenarios:
+            row[s["id"]] = round(current * (1 + s["rate"] / 100) ** y)
+        projection_series.append(row)
+
+    return {
+        "current_age":         cfg["current_age"],
+        "retirement_age":      cfg["retirement_age"],
+        "years_to_retirement": years,
+        "current_aum":         current,
+        "target_portfolio":    target,
+        "required_return_pct": round(req_rate, 2),
+        "annualized_return_pct": round(ann_return_pct, 2),
+        "on_track":            ann_return_pct >= req_rate,
+        "scenarios":           scenarios,
+        "projection_series":   projection_series,
+    }
+
+
+@app.get("/api/risk")
+def risk():
+    rm  = _compute_risk_metrics()
+    liq = _compute_liquidity()
+    con = _compute_concentration()
+    ret = _compute_retirement(rm["annualized_return_pct"])
+    return {
+        "as_of":              PORTFOLIO_AS_OF,
+        "inception":          PORTFOLIO_INCEPTION,
+        "months":             22,
+        "risk_metrics":       rm,
+        "equity_curve":       [{"month": m, "value": v} for m, v in PORTFOLIO_VALUE_SERIES],
+        "liquidity":          liq,
+        "concentration":      con,
+        "retirement":         ret,
+    }
+
+
 # ── AI Chat ────────────────────────────────────────────────────────────────────
 
 class ChatMsg(BaseModel):
