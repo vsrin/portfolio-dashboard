@@ -62,12 +62,17 @@ def _parse_date(val: str):
     return None
 
 
+def _normalize_desc(desc: str) -> str:
+    """Strip non-ASCII so encoding variants (Â® vs ®) deduplicate correctly."""
+    return desc.encode('ascii', 'ignore').decode('ascii').strip()
+
+
 def _dedup_key(r: dict) -> tuple:
     return (
         r['date'].strftime('%Y-%m-%d'),
         r['account'],
         r['activity'],
-        r['description'],
+        _normalize_desc(r['description']),
         f"{abs(r['amount']):.4f}",
     )
 

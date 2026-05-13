@@ -1,1 +1,1 @@
-{"sp500":{"ticker":"SPY","label":"S&P 500 (Price Only)","price":738.18,"as_of":"2026-05-12","1d":-0.15,"mtd":45.16,"ytd":8.35,"1y":32.3},"bloomberg_agg":{"ticker":"AGG","label":"Bloomberg US Aggregate","price":98.63,"as_of":"2026-05-12","1d":-0.29,"mtd":10.66,"ytd":0.08,"1y":4.94}}
+{"sp500":{"ticker":"SPY","label":"S&P 500 (Price Only)","price":743.22,"as_of":"2026-05-13","1d":0.68,"mtd":46.15,"ytd":9.09,"1y":28.95},"bloomberg_agg":{"ticker":"AGG","label":"Bloomberg US Aggregate","price":98.66,"as_of":"2026-05-13","1d":0.03,"mtd":10.7,"ytd":0.12,"1y":5.33}}

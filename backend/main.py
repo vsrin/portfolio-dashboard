@@ -36,16 +36,29 @@ app.add_middleware(
 DATA_PATH = os.path.join(os.path.dirname(__file__), "../data/transactions.csv")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# GROUND TRUTH from AllSource portal — Position Performance Inception
-# All Accounts | From July 10, 2024 to May 11, 2026
+# GROUND TRUTH — loaded from data/portal_snapshot.json (written by update_portal.py)
+# Hardcoded values below are fallbacks only; JSON takes precedence when present.
+# To refresh: python scripts/update_portal.py <positions_csv> [transactions_csv]
 # ─────────────────────────────────────────────────────────────────────────────
 
-PORTAL_TOTAL          = 2_411_418.76   # Managed Market ending value 5/11/2026
-PORTAL_NET_GAIN       = 378_047.76     # Net Investment Gain since inception
-PORTAL_RETURN_PCT     = 21.78          # Since-inception net return %
-PORTAL_COST_BASIS     = PORTAL_TOTAL - PORTAL_NET_GAIN   # ≈ $2,033,371
-PORTFOLIO_AS_OF       = "2026-05-11"
-PORTFOLIO_INCEPTION   = "2024-07-10"
+_SNAP_PATH = os.path.join(os.path.dirname(__file__), "../data/portal_snapshot.json")
+try:
+    with open(_SNAP_PATH) as _f:
+        _SNAP = json.load(_f)
+except (FileNotFoundError, json.JSONDecodeError):
+    _SNAP = {}
+
+PORTAL_TOTAL      = _SNAP.get("total_value",      2_411_418.76)
+PORTAL_NET_GAIN   = _SNAP.get("net_gain",          378_047.76)
+PORTAL_RETURN_PCT = _SNAP.get("return_pct_itd",    21.78)
+PORTAL_COST_BASIS = PORTAL_TOTAL - PORTAL_NET_GAIN
+PORTFOLIO_AS_OF   = _SNAP.get("as_of",             "2026-05-11")
+PORTFOLIO_INCEPTION = "2024-07-10"
+
+_IRR_MTD = _SNAP.get("irr_mtd", 0.82)
+_IRR_QTD = _SNAP.get("irr_qtd", 2.65)
+_IRR_YTD = _SNAP.get("irr_ytd", 0.88)
+_IRR_1Y  = _SNAP.get("irr_1y",  13.11)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Asset class data — each entry is a category group from Position Perf Inception
@@ -317,6 +330,16 @@ ASSET_CLASSES = [
         "holdings": [{"symbol":"HAMLANVENCAP","name":"Hamilton Lane Venture Capital & Growth Fund","value":75000.00,"gain":0.0,"return_pct":0.0}],
     },
 ]
+
+# Overlay live numeric values from portal_snapshot.json
+_AC_SNAP = _SNAP.get("asset_classes", {})
+if _AC_SNAP:
+    for _ac in ASSET_CLASSES:
+        _upd = _AC_SNAP.get(_ac["id"], {})
+        if _upd:
+            for _k in ("value", "net_gain", "return_pct", "weight", "income"):
+                if _k in _upd:
+                    _ac[_k] = _upd[_k]
 
 # Quick lookup map
 AC_BY_ID = {ac["id"]: ac for ac in ASSET_CLASSES}
@@ -594,11 +617,10 @@ def summary():
         "total_gain_pct":    PORTAL_RETURN_PCT,
         "total_income":      round(total_income, 2),
         "total_other_exp":   round(total_other_exp, 2),
-        # IRR from portal (annualised ~22 months)
-        "net_irr_mtd":       0.07,
-        "net_irr_qtd":       1.89,
-        "net_irr_ytd":       0.08,
-        "net_irr_1y":        13.11,
+        "net_irr_mtd":       _IRR_MTD,
+        "net_irr_qtd":       _IRR_QTD,
+        "net_irr_ytd":       _IRR_YTD,
+        "net_irr_1y":        _IRR_1Y,
         # Equity sleeve
         "equity_value":      round(eq["value"], 2),
         "equity_pct":        round(eq["value"] / PORTAL_TOTAL * 100, 2),
@@ -1108,31 +1130,32 @@ def alt_commitments_endpoint():
 # Estimated month-end portfolio values (market value, all accounts).
 # Anchor: 2026-05 = $2,392,970 (actual from AllSource portal).
 # All prior months are estimates — update from AllSource monthly statements for exact risk metrics.
-PORTFOLIO_VALUE_SERIES = [
-    ("2024-07",   695_000),   # Initial equity accounts opened
-    ("2024-08",   862_000),   # +$170K additional funding, Aug market dip offset
-    ("2024-09", 1_628_000),   # +$812K major funding wave
-    ("2024-10", 1_682_000),   # Market appreciation, no deposits
-    ("2024-11", 1_762_000),   # Post-election equity rally
-    ("2024-12", 1_728_000),   # December pullback
-    ("2025-01", 1_718_000),   # Flat start to 2025
-    ("2025-02", 1_685_000),   # Tech correction
-    ("2025-03", 1_638_000),   # Tariff policy fears build
-    ("2025-04", 1_508_000),   # April tariff shock — estimated max drawdown
-    ("2025-05", 1_598_000),   # Recovery begins
-    ("2025-06", 1_652_000),   # Continued recovery
-    ("2025-07", 1_706_000),   # Summer rally
-    ("2025-08", 2_162_000),   # Managed accounts funded (+~$600K AUM added)
-    ("2025-09", 2_118_000),   # Slight pullback
-    ("2025-10", 2_222_000),   # Recovery + small additions
-    ("2025-11", 2_255_000),   # Market steady
-    ("2025-12", 2_312_000),   # Year-end appreciation
-    ("2026-01", 2_270_000),   # January volatility
-    ("2026-02", 2_245_000),   # Continued pressure
-    ("2026-03", 2_358_000),   # March additions + recovery
-    ("2026-04", 2_358_000),   # April — tariff noise, new additions
-    ("2026-05", 2_411_419),   # ACTUAL — AllSource portal 2026-05-11
+_VALUE_SERIES_RAW = _SNAP.get("value_series") or [
+    {"month": "2024-07", "value": 695000},
+    {"month": "2024-08", "value": 862000},
+    {"month": "2024-09", "value": 1628000},
+    {"month": "2024-10", "value": 1682000},
+    {"month": "2024-11", "value": 1762000},
+    {"month": "2024-12", "value": 1728000},
+    {"month": "2025-01", "value": 1718000},
+    {"month": "2025-02", "value": 1685000},
+    {"month": "2025-03", "value": 1638000},
+    {"month": "2025-04", "value": 1508000},
+    {"month": "2025-05", "value": 1598000},
+    {"month": "2025-06", "value": 1652000},
+    {"month": "2025-07", "value": 1706000},
+    {"month": "2025-08", "value": 2162000},
+    {"month": "2025-09", "value": 2118000},
+    {"month": "2025-10", "value": 2222000},
+    {"month": "2025-11", "value": 2255000},
+    {"month": "2025-12", "value": 2312000},
+    {"month": "2026-01", "value": 2270000},
+    {"month": "2026-02", "value": 2245000},
+    {"month": "2026-03", "value": 2358000},
+    {"month": "2026-04", "value": 2358000},
+    {"month": "2026-05", "value": 2411419},
 ]
+PORTFOLIO_VALUE_SERIES = [(s["month"], s["value"]) for s in _VALUE_SERIES_RAW]
 
 # Liquidity classification by asset class id
 LIQUIDITY_MAP = {

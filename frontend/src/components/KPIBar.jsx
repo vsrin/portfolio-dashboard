@@ -82,7 +82,7 @@ export default function KPIBar() {
         infoKey="totalAum"
       >
         <SubRow label="Cost basis" value={L ? '…' : fmt$(d?.cost_basis, 0)} />
-        <SubRow label="As of" value="May 5, 2026" />
+        <SubRow label="As of" value={L ? '…' : (d?.as_of_date ? new Date(d.as_of_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—')} />
       </KPI>
 
       {/* 2. Net Gain ITD — return % prominent, $ subtle */}
