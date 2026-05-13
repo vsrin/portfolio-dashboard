@@ -43,7 +43,7 @@ function PeriodBtn({ active, onClick, label }) {
   )
 }
 
-function HoldingsRow({ holdings, period, colSpan }) {
+function HoldingsRow({ holdings, colSpan }) {
   if (!holdings || holdings.length === 0) return (
     <tr>
       <td colSpan={colSpan} style={{ paddingLeft: 32, paddingBottom: 12, color: 'var(--text-muted)', fontSize: 11 }}>
@@ -52,41 +52,90 @@ function HoldingsRow({ holdings, period, colSpan }) {
     </tr>
   )
 
+  const isContributorOnly = holdings.some(h => h.contributor_type)
+  const winners = isContributorOnly ? holdings.filter(h => h.contributor_type === 'winner') : []
+  const losers  = isContributorOnly ? holdings.filter(h => h.contributor_type === 'loser')  : []
+  const fullPositions = isContributorOnly ? [] : holdings
+
+  const thStyle = { padding: '6px 16px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em' }
+
   return (
     <tr>
       <td colSpan={colSpan} style={{ padding: '0 0 12px 0', background: 'var(--bg-base)' }}>
+        {isContributorOnly && (
+          <div style={{ padding: '4px 16px 4px 32px', fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic', borderBottom: '1px solid var(--border)' }}>
+            Top ITD contributors — full position roster not stored
+          </div>
+        )}
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg-card)' }}>
-              <th style={{ padding: '6px 16px 6px 32px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'left', letterSpacing: '0.05em' }}>SYMBOL</th>
-              <th style={{ padding: '6px 16px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'left', letterSpacing: '0.05em' }}>NAME</th>
-              <th style={{ padding: '6px 16px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em' }}>VALUE</th>
-              <th style={{ padding: '6px 16px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em' }}>GAIN ITD</th>
-              <th style={{ padding: '6px 16px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em' }}>RETURN ITD</th>
-              <th style={{ padding: '6px 16px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em' }}>GAIN YTD</th>
-              <th style={{ padding: '6px 16px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em' }}>RETURN YTD</th>
+              <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 32 }}>SYMBOL</th>
+              {!isContributorOnly && <th style={{ ...thStyle, textAlign: 'left' }}>NAME</th>}
+              {!isContributorOnly && <th style={thStyle}>VALUE</th>}
+              <th style={thStyle}>GAIN ITD</th>
+              {!isContributorOnly && <th style={thStyle}>RETURN ITD</th>}
+              {!isContributorOnly && <th style={thStyle}>GAIN YTD</th>}
+              {!isContributorOnly && <th style={thStyle}>RETURN YTD</th>}
             </tr>
           </thead>
           <tbody>
-            {holdings.map((h, i) => {
-              const itdColor = h.gain >= 0 ? 'var(--green)' : 'var(--red)'
-              const ytdColor = h.ytd_gain == null ? 'var(--text-muted)' : (h.ytd_gain >= 0 ? 'var(--green)' : 'var(--red)')
-              return (
-                <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
-                  <td style={{ padding: '8px 16px 8px 32px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--cyan)' }}>{h.symbol}</td>
-                  <td style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-secondary)' }}>{h.name}</td>
-                  <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)' }}>{fmt$(h.value, 0)}</td>
-                  <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: itdColor }}>{h.gain >= 0 ? '+' : ''}{fmt$(h.gain, 0)}</td>
-                  <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: itdColor }}>{h.return_pct > 0 ? '+' : ''}{h.return_pct?.toFixed(2)}%</td>
-                  <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: ytdColor }}>
-                    {h.ytd_gain == null ? '—' : `${h.ytd_gain >= 0 ? '+' : ''}${fmt$(h.ytd_gain, 0)}`}
-                  </td>
-                  <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: ytdColor }}>
-                    {h.ytd_return_pct == null ? '—' : `${h.ytd_return_pct > 0 ? '+' : ''}${h.ytd_return_pct?.toFixed(2)}%`}
-                  </td>
-                </tr>
-              )
-            })}
+            {isContributorOnly ? (
+              <>
+                {winners.length > 0 && (
+                  <tr style={{ background: 'var(--bg-card)' }}>
+                    <td colSpan={2} style={{ padding: '4px 16px 4px 32px', fontSize: 9, color: 'var(--green)', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Winners
+                    </td>
+                  </tr>
+                )}
+                {winners.map((h, i) => (
+                  <tr key={`w${i}`} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '7px 16px 7px 32px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--cyan)' }}>{h.symbol}</td>
+                    <td style={{ padding: '7px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)' }}>+{fmt$(h.gain, 0)}</td>
+                  </tr>
+                ))}
+                {losers.length > 0 && (
+                  <tr style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
+                    <td colSpan={2} style={{ padding: '4px 16px 4px 32px', fontSize: 9, color: 'var(--red)', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Losers
+                    </td>
+                  </tr>
+                )}
+                {losers.map((h, i) => (
+                  <tr key={`l${i}`} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '7px 16px 7px 32px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--cyan)' }}>{h.symbol}</td>
+                    <td style={{ padding: '7px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--red)' }}>{fmt$(h.gain, 0)}</td>
+                  </tr>
+                ))}
+              </>
+            ) : (
+              fullPositions.map((h, i) => {
+                const itdColor = h.gain >= 0 ? 'var(--green)' : 'var(--red)'
+                const ytdColor = h.ytd_gain == null ? 'var(--text-muted)' : (h.ytd_gain >= 0 ? 'var(--green)' : 'var(--red)')
+                return (
+                  <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px 16px 8px 32px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--cyan)' }}>{h.symbol}</td>
+                    <td style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-secondary)' }}>{h.name}</td>
+                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)' }}>
+                      {h.value == null ? '—' : fmt$(h.value, 0)}
+                    </td>
+                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: itdColor }}>
+                      {h.gain >= 0 ? '+' : ''}{fmt$(h.gain, 0)}
+                    </td>
+                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: itdColor }}>
+                      {h.return_pct == null ? '—' : `${h.return_pct > 0 ? '+' : ''}${h.return_pct.toFixed(2)}%`}
+                    </td>
+                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: ytdColor }}>
+                      {h.ytd_gain == null ? '—' : `${h.ytd_gain >= 0 ? '+' : ''}${fmt$(h.ytd_gain, 0)}`}
+                    </td>
+                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: ytdColor }}>
+                      {h.ytd_return_pct == null ? '—' : `${h.ytd_return_pct > 0 ? '+' : ''}${h.ytd_return_pct.toFixed(2)}%`}
+                    </td>
+                  </tr>
+                )
+              })
+            )}
           </tbody>
         </table>
       </td>
@@ -248,7 +297,7 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
                     )}
                   </tr>,
                   isExpanded && (
-                    <HoldingsRow key={`${ac.id}-holdings`} holdings={ac.holdings} period={period} colSpan={colSpan} />
+                    <HoldingsRow key={`${ac.id}-holdings`} holdings={ac.holdings} colSpan={colSpan} />
                   ),
                 ]
               })}

@@ -664,6 +664,22 @@ def summary():
     }
 
 
+def _build_holdings(ac: dict) -> list:
+    """Return explicit holdings if available; otherwise synthesize from top/worst contributors."""
+    if ac.get("holdings"):
+        return ac["holdings"]
+    rows = []
+    for sym, gain in ac.get("top", []):
+        rows.append({"symbol": sym, "name": sym, "value": None, "gain": gain,
+                     "return_pct": None, "ytd_gain": None, "ytd_return_pct": None,
+                     "contributor_type": "winner"})
+    for sym, gain in ac.get("worst", []):
+        rows.append({"symbol": sym, "name": sym, "value": None, "gain": gain,
+                     "return_pct": None, "ytd_gain": None, "ytd_return_pct": None,
+                     "contributor_type": "loser"})
+    return rows
+
+
 @app.get("/api/asset-classes")
 def asset_classes(super_category: Optional[str] = None):
     """Return all asset class groups, optionally filtered by super_category."""
@@ -687,7 +703,7 @@ def asset_classes(super_category: Optional[str] = None):
             "income":         round(ac.get("income", 0), 2),
             "top_winners":    ac.get("top", []),
             "top_losers":     ac.get("worst", []),
-            "holdings":       ac.get("holdings", []),
+            "holdings":       _build_holdings(ac),
             "ytd_gain":       ytd.get("gain"),       # null if not available
             "ytd_return_pct": ytd.get("return_pct"), # null if not available
         })
