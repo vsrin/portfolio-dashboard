@@ -212,7 +212,7 @@ def period_flows(txn_path: str, start_dt: date, end_dt: date) -> float:
     if not os.path.exists(txn_path):
         return 0.0
     total = 0.0
-    with open(txn_path, encoding="utf-8") as f:
+    with open(txn_path, encoding="iso-8859-1") as f:
         reader = csv.DictReader(f)
         for row in reader:
             d = _parse_date(row.get("Trade Date", ""))
