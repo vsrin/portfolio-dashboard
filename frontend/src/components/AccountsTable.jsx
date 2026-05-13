@@ -148,18 +148,23 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
   const { data: summary } = useApi('/summary')
   const [filter, setFilter] = useState('all')
   const [expanded, setExpanded] = useState(new Set())
+  const [focusedId, setFocusedId] = useState(null)
 
-  // Auto-expand and scroll when navigated from a card
+  // When navigated from an overview card: focus + auto-expand that class only
   useEffect(() => {
     if (selectedAssetClass && assetClasses) {
-      setExpanded(prev => new Set([...prev, selectedAssetClass]))
-      // Clear the selection so re-navigation to same class still works
+      setFocusedId(selectedAssetClass)
+      setExpanded(new Set([selectedAssetClass]))
       onClearSelection?.()
     }
   }, [selectedAssetClass, assetClasses])
 
+  const clearFocus = () => { setFocusedId(null); setExpanded(new Set()) }
+
   const all     = assetClasses || []
-  const visible = filter === 'all' ? all : all.filter(ac => ac.super_category === filter)
+  const visible = focusedId
+    ? all.filter(ac => ac.id === focusedId)
+    : (filter === 'all' ? all : all.filter(ac => ac.super_category === filter))
   const sorted  = [...visible].sort((a, b) => b.value - a.value)
   const maxWeight = all.length ? Math.max(...all.map(ac => ac.weight_pct)) : 1
   const total   = summary?.total_value ?? 0
@@ -195,8 +200,22 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
     letterSpacing: '0.04em', fontFamily: 'var(--font-ui)',
   })
 
+  const focusedAc = focusedId ? all.find(ac => ac.id === focusedId) : null
+
   return (
     <div className="card">
+      {focusedId && (
+        <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-card)' }}>
+          <button onClick={clearFocus} style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0',
+            fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            ← All Asset Classes
+          </button>
+          <span style={{ color: 'var(--border)', fontSize: 12 }}>|</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{focusedAc?.label}</span>
+        </div>
+      )}
       <div className="card-header" style={{ flexWrap: 'wrap', gap: 10 }}>
         <span className="card-title">Asset Class Holdings</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -206,11 +225,13 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
               <PeriodBtn key={p.key} active={period === p.key} onClick={() => onPeriodChange?.(p.key)} label={p.label} />
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {FILTERS.map(f => (
-              <button key={f.id} style={btnStyle(filter === f.id)} onClick={() => setFilter(f.id)}>{f.label}</button>
-            ))}
-          </div>
+          {!focusedId && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              {FILTERS.map(f => (
+                <button key={f.id} style={btnStyle(filter === f.id)} onClick={() => setFilter(f.id)}>{f.label}</button>
+              ))}
+            </div>
+          )}
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--cyan)', fontWeight: 700 }}>{fmt$(total, 0)}</span>
         </div>
       </div>
