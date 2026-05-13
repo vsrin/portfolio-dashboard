@@ -60,6 +60,17 @@ _IRR_QTD = _SNAP.get("irr_qtd", 2.65)
 _IRR_YTD = _SNAP.get("irr_ytd", 0.88)
 _IRR_1Y  = _SNAP.get("irr_1y",  13.11)
 
+_ANC_PATH = os.path.join(os.path.dirname(__file__), "../data/period_anchors.json")
+try:
+    with open(_ANC_PATH) as _f:
+        _ANC = json.load(_f)
+except (FileNotFoundError, json.JSONDecodeError):
+    _ANC = {}
+
+def _period_gain(mv_end: float, anchor_key: str, net_cf: float = 0.0) -> float:
+    start = _ANC.get(anchor_key, {}).get("value", mv_end)
+    return round(mv_end - start - net_cf, 2)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Asset class data — each entry is a category group from Position Perf Inception
 # ─────────────────────────────────────────────────────────────────────────────
@@ -621,6 +632,13 @@ def summary():
         "net_irr_qtd":       _IRR_QTD,
         "net_irr_ytd":       _IRR_YTD,
         "net_irr_1y":        _IRR_1Y,
+        # Period dollar gains (mv_end − mv_start − net_cf)
+        # MTD/QTD: intra-HH transfers net ~$0, so CF=0
+        # YTD: net external outflow = −$175,800
+        "gain_mtd":  _period_gain(PORTAL_TOTAL, "mtd"),
+        "gain_qtd":  _period_gain(PORTAL_TOTAL, "qtd"),
+        "gain_ytd":  _period_gain(PORTAL_TOTAL, "ytd", net_cf=-175_800),
+        "gain_1y":   round(_IRR_1Y / 100 * _ANC.get("prev_1y", {}).get("value", PORTAL_TOTAL), 2),
         # Equity sleeve
         "equity_value":      round(eq["value"], 2),
         "equity_pct":        round(eq["value"] / PORTAL_TOTAL * 100, 2),
