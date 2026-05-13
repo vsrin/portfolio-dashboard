@@ -42,6 +42,7 @@ export default function App() {
   const [equityView, setEquityView]       = useState('scorecard')
   const [selectedAssetClass, setSelectedAssetClass] = useState(null)
   const [overviewFilter, setOverviewFilter]         = useState('all')
+  const [activePeriod, setActivePeriod]             = useState('ITD')
 
   const navigateToAssetClass = (assetClassId) => {
     setSelectedAssetClass(assetClassId)
@@ -77,7 +78,7 @@ export default function App() {
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
       <ChatPanel />
       <Header theme={theme} onToggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
-      <KPIBar />
+      <KPIBar period={activePeriod} onPeriodChange={setActivePeriod} />
       <BenchmarkBar />
 
       {/* Tab nav */}
@@ -123,7 +124,7 @@ export default function App() {
               <PerformanceChart />
               <AllocationChart onFilterChange={setOverviewFilter} />
             </div>
-            <SleeveGrid compact onNavigate={navigateToAssetClass} categoryFilter={overviewFilter} />
+            <SleeveGrid compact onNavigate={navigateToAssetClass} categoryFilter={overviewFilter} period={activePeriod} />
           </div>
         )}
 
@@ -198,7 +199,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 'accounts'      && <AccountsTable selectedAssetClass={selectedAssetClass} onClearSelection={() => setSelectedAssetClass(null)} />}
+        {activeTab === 'accounts'      && <AccountsTable selectedAssetClass={selectedAssetClass} onClearSelection={() => setSelectedAssetClass(null)} period={activePeriod} onPeriodChange={setActivePeriod} />}
         {activeTab === 'fees'          && <FeePanel />}
         {activeTab === 'transactions'  && <TransactionTable />}
       </div>

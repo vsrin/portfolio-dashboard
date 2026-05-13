@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
@@ -71,9 +70,8 @@ function FeeBar({ advisorFees, subMgrFees }) {
   )
 }
 
-export default function KPIBar() {
+export default function KPIBar({ period = 'MTD', onPeriodChange }) {
   const { data: d, loading: L } = useApi('/summary')
-  const [period, setPeriod] = useState('MTD')
 
   const periodGain = {
     MTD: d?.gain_mtd,
@@ -112,7 +110,7 @@ export default function KPIBar() {
         {PERIODS.map(p => (
           <button
             key={p.key}
-            onClick={() => setPeriod(p.key)}
+            onClick={() => onPeriodChange?.(p.key)}
             style={{
               padding: '2px 10px',
               fontSize: 10,

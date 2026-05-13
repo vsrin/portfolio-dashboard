@@ -9,10 +9,17 @@ const SUPER_COLOR = {
   cash:         'var(--text-muted)',
 }
 
-function AssetCard({ ac, compact }) {
+function periodData(ac, period) {
+  if (period === 'ITD') return { gain: ac.net_gain,    ret: ac.return_pct,     label: 'ITD' }
+  if (period === 'YTD') return { gain: ac.ytd_gain,    ret: ac.ytd_return_pct, label: 'YTD' }
+  return { gain: null, ret: null, label: period }
+}
+
+function AssetCard({ ac, compact, period = 'ITD' }) {
   const color  = SUPER_COLOR[ac.super_category] || 'var(--cyan)'
-  const isNeg  = ac.net_gain < 0
-  const retColor = isNeg ? 'var(--red)' : 'var(--green)'
+  const { gain, ret, label } = periodData(ac, period)
+  const isNeg    = gain != null && gain < 0
+  const retColor = gain == null ? 'var(--text-muted)' : (isNeg ? 'var(--red)' : 'var(--green)')
 
   return (
     <div
@@ -41,14 +48,14 @@ function AssetCard({ ac, compact }) {
             {ac.super_category}
           </div>
         </div>
-        <span style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 13,
-          fontWeight: 700,
-          color: retColor,
-        }}>
-          {ac.return_pct > 0 ? '+' : ''}{ac.return_pct.toFixed(2)}%
-        </span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: retColor }}>
+            {ret == null ? '—' : `${ret > 0 ? '+' : ''}${ret.toFixed(2)}%`}
+          </div>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 1 }}>
+            {label}
+          </div>
+        </div>
       </div>
 
       {/* Value */}
@@ -61,34 +68,32 @@ function AssetCard({ ac, compact }) {
         </div>
       </div>
 
-      {/* Gain + income row (full mode only) */}
-      {!compact && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      {/* Gain row */}
+      <div style={{ display: 'grid', gridTemplateColumns: !compact && ac.income > 0 ? '1fr 1fr' : '1fr', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 9, color: 'var(--text-label)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>
+            Net Gain {label}
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: retColor }}>
+            {gain == null ? <span style={{ color: 'var(--text-muted)' }}>—</span> : `${gain >= 0 ? '+' : ''}${fmt$(gain, 0)}`}
+          </div>
+        </div>
+        {!compact && ac.income > 0 && period === 'ITD' && (
           <div>
             <div style={{ fontSize: 9, color: 'var(--text-label)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>
-              Net Gain
+              Income
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: retColor }}>
-              {ac.net_gain >= 0 ? '+' : ''}{fmt$(ac.net_gain, 0)}
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--cyan)' }}>
+              {fmt$(ac.income, 0)}
             </div>
           </div>
-          {ac.income > 0 && (
-            <div>
-              <div style={{ fontSize: 9, color: 'var(--text-label)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>
-                Income
-              </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--cyan)' }}>
-                {fmt$(ac.income, 0)}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
 
-export default function SleeveGrid({ compact, onNavigate, categoryFilter }) {
+export default function SleeveGrid({ compact, onNavigate, categoryFilter, period = 'ITD' }) {
   const { data, loading } = useApi('/asset-classes')
 
   if (loading) return (
@@ -143,7 +148,7 @@ export default function SleeveGrid({ compact, onNavigate, categoryFilter }) {
       }}>
         {sortedClasses.map(ac => (
           <div key={ac.id} onClick={() => onNavigate?.(ac.id)} style={{ cursor: onNavigate ? 'pointer' : 'default' }}>
-            <AssetCard ac={ac} compact={compact} />
+            <AssetCard ac={ac} compact={compact} period={period} />
           </div>
         ))}
       </div>

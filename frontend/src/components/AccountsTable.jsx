@@ -94,11 +94,10 @@ function HoldingsRow({ holdings, period, colSpan }) {
   )
 }
 
-export default function AccountsTable({ selectedAssetClass, onClearSelection }) {
+export default function AccountsTable({ selectedAssetClass, onClearSelection, period = 'ITD', onPeriodChange }) {
   const { data: assetClasses, loading } = useApi('/asset-classes')
   const { data: summary } = useApi('/summary')
   const [filter, setFilter] = useState('all')
-  const [period, setPeriod] = useState('ITD')
   const [expanded, setExpanded] = useState(new Set())
 
   // Auto-expand and scroll when navigated from a card
@@ -155,7 +154,7 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection }) 
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontSize: 10, color: 'var(--text-muted)', marginRight: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Period</span>
             {PERIODS.map(p => (
-              <PeriodBtn key={p.key} active={period === p.key} onClick={() => setPeriod(p.key)} label={p.label} />
+              <PeriodBtn key={p.key} active={period === p.key} onClick={() => onPeriodChange?.(p.key)} label={p.label} />
             ))}
           </div>
           <div style={{ display: 'flex', gap: 4 }}>
