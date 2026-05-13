@@ -170,13 +170,14 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
   const total   = summary?.total_value ?? 0
 
   const periodLabel = PERIODS.find(p => p.key === period)?.label || period
-  const hasClassDetail = period === 'ITD' || period === 'YTD'
+  const hasClassDetail = period === 'ITD' || period === 'YTD' || period === '1Y'
 
   const colSpan = period === 'ITD' ? 8 : 7
 
   function rowGain(ac) {
-    if (period === 'ITD') return { gain: ac.net_gain, ret: ac.return_pct }
+    if (period === 'ITD') return { gain: ac.net_gain,         ret: ac.return_pct }
     if (period === 'YTD') return { gain: ac.ytd_gain ?? null, ret: ac.ytd_return_pct ?? null }
+    if (period === '1Y')  return { gain: ac.one_year_gain ?? null, ret: ac.one_year_return_pct ?? null }
     return { gain: null, ret: null }
   }
 
@@ -238,12 +239,17 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
 
       {!hasClassDetail && (
         <div style={{ padding: '6px 20px', fontSize: 11, color: 'var(--amber)', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
-          Per-class {period} detail requires downloading Position Performance {period} CSV from AllSource. Portfolio total shown in footer.
+          Per-class {period} detail not available — portfolio total shown in footer.
         </div>
       )}
       {period === 'YTD' && (
         <div style={{ padding: '6px 20px', fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
-          YTD: Dec 31, 2025 → May 12, 2026 · Equity classes pending YTD CSV
+          YTD: Jan 1, 2026 → present · Equity classes pending YTD CSV download
+        </div>
+      )}
+      {period === '1Y' && (
+        <div style={{ padding: '6px 20px', fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
+          Previous year: Jan 1, 2025 → Dec 31, 2025
         </div>
       )}
 

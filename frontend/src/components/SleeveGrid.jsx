@@ -10,8 +10,9 @@ const SUPER_COLOR = {
 }
 
 function periodData(ac, period) {
-  if (period === 'ITD') return { gain: ac.net_gain,    ret: ac.return_pct,     label: 'ITD' }
-  if (period === 'YTD') return { gain: ac.ytd_gain,    ret: ac.ytd_return_pct, label: 'YTD' }
+  if (period === 'ITD') return { gain: ac.net_gain,          ret: ac.return_pct,          label: 'ITD' }
+  if (period === 'YTD') return { gain: ac.ytd_gain,          ret: ac.ytd_return_pct,      label: 'YTD' }
+  if (period === '1Y')  return { gain: ac.one_year_gain,     ret: ac.one_year_return_pct, label: 'Prev Year' }
   return { gain: null, ret: null, label: period }
 }
 

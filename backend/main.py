@@ -72,6 +72,7 @@ def _period_gain(mv_end: float, anchor_key: str, net_cf: float = 0.0) -> float:
     return round(mv_end - start - net_cf, 2)
 
 _YTD_CLASS = _SNAP.get("ytd_class_gains", {})
+_1Y_CLASS  = _SNAP.get("one_year_class_gains", {})
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Asset class data — each entry is a category group from Position Perf Inception
@@ -691,21 +692,24 @@ def asset_classes(super_category: Optional[str] = None):
     for ac in data:
         cost = ac["value"] - ac["net_gain"]
         ytd  = _YTD_CLASS.get(ac["id"], {})
+        ony  = _1Y_CLASS.get(ac["id"], {})
         result.append({
-            "id":             ac["id"],
-            "label":          ac["label"],
-            "super_category": ac["super_category"],
-            "value":          round(ac["value"], 2),
-            "cost_basis":     round(cost, 2),
-            "net_gain":       round(ac["net_gain"], 2),
-            "return_pct":     ac["return_pct"],
-            "weight_pct":     ac["weight"],
-            "income":         round(ac.get("income", 0), 2),
-            "top_winners":    ac.get("top", []),
-            "top_losers":     ac.get("worst", []),
-            "holdings":       _build_holdings(ac),
-            "ytd_gain":       ytd.get("gain"),       # null if not available
-            "ytd_return_pct": ytd.get("return_pct"), # null if not available
+            "id":                  ac["id"],
+            "label":               ac["label"],
+            "super_category":      ac["super_category"],
+            "value":               round(ac["value"], 2),
+            "cost_basis":          round(cost, 2),
+            "net_gain":            round(ac["net_gain"], 2),
+            "return_pct":          ac["return_pct"],
+            "weight_pct":          ac["weight"],
+            "income":              round(ac.get("income", 0), 2),
+            "top_winners":         ac.get("top", []),
+            "top_losers":          ac.get("worst", []),
+            "holdings":            _build_holdings(ac),
+            "ytd_gain":            ytd.get("gain"),
+            "ytd_return_pct":      ytd.get("return_pct"),
+            "one_year_gain":       ony.get("gain"),
+            "one_year_return_pct": ony.get("return_pct"),
         })
     return result
 

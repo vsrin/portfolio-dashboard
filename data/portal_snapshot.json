@@ -103,6 +103,29 @@
       "value": 2411924
     }
   ],
+  "one_year_class_gains": {
+    "_note": "Previous year (12/31/2024 to 12/31/2025) gains per asset class. Source: AllSource Position Performance Previous Year CSV 2026-05-13.",
+    "cash":             { "gain": 4111.01,   "return_pct": 3.63 },
+    "commodity":        { "gain": 11986.86,  "return_pct": 27.94 },
+    "foreign_lc_growth":{ "gain": 28921.28,  "return_pct": 20.65 },
+    "foreign_sm_growth":{ "gain": 11970.78,  "return_pct": 39.46 },
+    "hedge_fund":       { "gain": 44223.60,  "return_pct": 21.78 },
+    "hedged_equity":    { "gain": 1212.48,   "return_pct": 1.07 },
+    "intl_developed":   { "gain": 11916.54,  "return_pct": 39.15 },
+    "lc_core":          { "gain": 21025.15,  "return_pct": 9.34 },
+    "lc_growth":        { "gain": 65447.79,  "return_pct": 28.53 },
+    "lc_value":         { "gain": 16646.37,  "return_pct": 27.48 },
+    "managed_futures":  { "gain": 1117.18,   "return_pct": 1.05 },
+    "mc_core":          { "gain": 6063.92,   "return_pct": 10.53 },
+    "mc_growth":        { "gain": 896.28,    "return_pct": 1.33 },
+    "mc_value":         { "gain": 20360.87,  "return_pct": 25.52 },
+    "private_credit":   { "gain": 18258.41,  "return_pct": 16.05 },
+    "private_equity":   { "gain": 38130.60,  "return_pct": 9.15 },
+    "sc_core":          { "gain": -11704.40, "return_pct": -43.63 },
+    "sc_growth":        { "gain": 929.92,    "return_pct": 8.93 },
+    "sc_value":         { "gain": -17747.27, "return_pct": -17.92 },
+    "venture":          { "gain": null,      "return_pct": null }
+  },
   "ytd_class_gains": {
     "_note": "YTD gains per asset class from AllSource Position Performance YTD (Dec 31 2025 to May 12 2026). Null = data not yet available (need YTD CSV for equity classes).",
     "commodity":       { "gain": 6842.34,   "return_pct": 14.06 },
