@@ -71,6 +71,8 @@ def _period_gain(mv_end: float, anchor_key: str, net_cf: float = 0.0) -> float:
     start = _ANC.get(anchor_key, {}).get("value", mv_end)
     return round(mv_end - start - net_cf, 2)
 
+_YTD_CLASS = _SNAP.get("ytd_class_gains", {})
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Asset class data — each entry is a category group from Position Perf Inception
 # ─────────────────────────────────────────────────────────────────────────────
@@ -672,6 +674,7 @@ def asset_classes(super_category: Optional[str] = None):
     result = []
     for ac in data:
         cost = ac["value"] - ac["net_gain"]
+        ytd  = _YTD_CLASS.get(ac["id"], {})
         result.append({
             "id":             ac["id"],
             "label":          ac["label"],
@@ -685,6 +688,8 @@ def asset_classes(super_category: Optional[str] = None):
             "top_winners":    ac.get("top", []),
             "top_losers":     ac.get("worst", []),
             "holdings":       ac.get("holdings", []),
+            "ytd_gain":       ytd.get("gain"),       # null if not available
+            "ytd_return_pct": ytd.get("return_pct"), # null if not available
         })
     return result
 

@@ -103,6 +103,16 @@
       "value": 2411924
     }
   ],
+  "ytd_class_gains": {
+    "_note": "YTD gains per asset class from AllSource Position Performance YTD (Dec 31 2025 to May 12 2026). Null = data not yet available (need YTD CSV for equity classes).",
+    "commodity":       { "gain": 6842.34,   "return_pct": 14.06 },
+    "hedged_equity":   { "gain": -16488.48, "return_pct": -12.11 },
+    "managed_futures": { "gain": 0.0,       "return_pct": 0.0 },
+    "hedge_fund":      { "gain": 2302.67,   "return_pct": null },
+    "private_equity":  { "gain": 854.32,    "return_pct": null },
+    "private_credit":  { "gain": 4612.83,   "return_pct": 3.49 },
+    "cash":            { "gain": 1464.31,   "return_pct": null }
+  },
   "asset_classes": {
     "lc_core": {
       "value": 194072.61,
