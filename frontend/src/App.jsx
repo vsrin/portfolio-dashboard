@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 import Header from './components/Header'
 import KPIBar from './components/KPIBar'
 import PerformanceChart from './components/PerformanceChart'
@@ -15,6 +16,7 @@ import ChatPanel from './components/ChatPanel'
 import ManagerScorecard from './components/ManagerScorecard'
 import TargetDatePanel from './components/TargetDatePanel'
 import RiskPanel from './components/RiskPanel'
+import LoginScreen from './components/LoginScreen'
 import { InfoProvider } from './context/InfoContext'
 import InfoDrawer from './components/InfoDrawer'
 
@@ -34,6 +36,7 @@ const PERF_SUBTABS = [
 ]
 
 export default function App() {
+  const { isLoading, isAuthenticated, logout, user } = useAuth0()
   const [activeTab, setActiveTab]   = useState('overview')
   const [perfSubtab, setPerfSubtab] = useState('portfolio')
   const [equityView, setEquityView] = useState('scorecard')
@@ -52,11 +55,21 @@ export default function App() {
 
   const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light')
 
+  if (isLoading) return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontSize: 13 }}>
+      Loading…
+    </div>
+  )
+
+  if (!isAuthenticated) return <LoginScreen />
+
+  const handleLogout = () => logout({ logoutParams: { returnTo: window.location.origin } })
+
   return (
     <InfoProvider>
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
       <ChatPanel />
-      <Header theme={theme} onToggleTheme={toggleTheme} />
+      <Header theme={theme} onToggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
       <KPIBar />
       <BenchmarkBar />
 

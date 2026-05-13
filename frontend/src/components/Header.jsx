@@ -1,7 +1,7 @@
 import { useApi } from '../hooks/useApi'
 import { fmt$, fmtDate } from '../utils/formatters'
 
-export default function Header({ theme, onToggleTheme }) {
+export default function Header({ theme, onToggleTheme, user, onLogout }) {
   const { data } = useApi('/summary')
   const isDark = theme === 'dark'
 
@@ -77,6 +77,29 @@ export default function Header({ theme, onToggleTheme }) {
             TOTAL AUM · AS OF {data ? fmtDate(data.as_of_date) : '…'}
           </div>
         </div>
+
+        {/* User + logout */}
+        {user && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: '1px solid var(--border)', paddingLeft: 20 }}>
+            {user.picture && (
+              <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid var(--border)' }} />
+            )}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>{user.name}</div>
+              <button
+                onClick={onLogout}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 10, color: 'var(--text-muted)', padding: 0,
+                  fontFamily: 'var(--font-ui)', letterSpacing: '0.04em',
+                  textDecoration: 'underline',
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
