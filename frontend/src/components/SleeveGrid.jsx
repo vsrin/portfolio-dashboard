@@ -88,7 +88,7 @@ function AssetCard({ ac, compact }) {
   )
 }
 
-export default function SleeveGrid({ compact }) {
+export default function SleeveGrid({ compact, onNavigate, categoryFilter }) {
   const { data, loading } = useApi('/asset-classes')
 
   if (loading) return (
@@ -97,13 +97,15 @@ export default function SleeveGrid({ compact }) {
     </div>
   )
 
-  const classes = [...(data || [])]
-    .filter(ac => ac.super_category !== 'cash')
-    .sort((a, b) => b.value - a.value)
+  const allClasses = [...(data || [])].filter(ac => ac.super_category !== 'cash')
+  const classes = categoryFilter && categoryFilter !== 'all'
+    ? allClasses.filter(ac => ac.super_category === categoryFilter)
+    : allClasses
+  const sortedClasses = [...classes].sort((a, b) => b.value - a.value)
 
-  const equityCount = classes.filter(ac => ac.super_category === 'equity').length
-  const altsCount   = classes.filter(ac => ac.super_category === 'alternatives').length
-  const total       = classes.reduce((s, a) => s + a.value, 0)
+  const equityCount = sortedClasses.filter(ac => ac.super_category === 'equity').length
+  const altsCount   = sortedClasses.filter(ac => ac.super_category === 'alternatives').length
+  const total       = sortedClasses.reduce((s, a) => s + a.value, 0)
 
   return (
     <div>
@@ -139,7 +141,11 @@ export default function SleeveGrid({ compact }) {
           : 'repeat(auto-fill, minmax(240px, 1fr))',
         gap: 14,
       }}>
-        {classes.map(ac => <AssetCard key={ac.id} ac={ac} compact={compact} />)}
+        {sortedClasses.map(ac => (
+          <div key={ac.id} onClick={() => onNavigate?.(ac.id)} style={{ cursor: onNavigate ? 'pointer' : 'default' }}>
+            <AssetCard ac={ac} compact={compact} />
+          </div>
+        ))}
       </div>
     </div>
   )

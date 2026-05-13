@@ -37,9 +37,16 @@ const PERF_SUBTABS = [
 
 export default function App() {
   const { isLoading, isAuthenticated, logout, user } = useAuth0()
-  const [activeTab, setActiveTab]   = useState('overview')
-  const [perfSubtab, setPerfSubtab] = useState('portfolio')
-  const [equityView, setEquityView] = useState('scorecard')
+  const [activeTab, setActiveTab]         = useState('overview')
+  const [perfSubtab, setPerfSubtab]       = useState('portfolio')
+  const [equityView, setEquityView]       = useState('scorecard')
+  const [selectedAssetClass, setSelectedAssetClass] = useState(null)
+  const [overviewFilter, setOverviewFilter]         = useState('all')
+
+  const navigateToAssetClass = (assetClassId) => {
+    setSelectedAssetClass(assetClassId)
+    setActiveTab('accounts')
+  }
   const [theme, setTheme]           = useState(() =>
     localStorage.getItem('theme') || 'light'
   )
@@ -114,9 +121,9 @@ export default function App() {
           <div style={{ display: 'grid', gap: 20 }}>
             <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
               <PerformanceChart />
-              <AllocationChart />
+              <AllocationChart onFilterChange={setOverviewFilter} />
             </div>
-            <SleeveGrid compact />
+            <SleeveGrid compact onNavigate={navigateToAssetClass} categoryFilter={overviewFilter} />
           </div>
         )}
 
@@ -191,7 +198,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 'accounts'      && <AccountsTable />}
+        {activeTab === 'accounts'      && <AccountsTable selectedAssetClass={selectedAssetClass} onClearSelection={() => setSelectedAssetClass(null)} />}
         {activeTab === 'fees'          && <FeePanel />}
         {activeTab === 'transactions'  && <TransactionTable />}
       </div>

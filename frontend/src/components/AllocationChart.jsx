@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
@@ -25,16 +26,18 @@ const CustomTooltip = ({ active, payload }) => {
           color: p.return_pct >= 0 ? 'var(--green)' : 'var(--red)',
           marginTop: 2,
         }}>
-          {p.return_pct >= 0 ? '+' : ''}{p.return_pct.toFixed(2)}% return
+          {p.return_pct >= 0 ? '+' : ''}{p.return_pct.toFixed(2)}% return ITD
         </div>
       )}
+      <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>Click to filter cards</div>
     </div>
   )
 }
 
-export default function AllocationChart() {
+export default function AllocationChart({ onFilterChange }) {
   const { data, loading } = useApi('/allocation')
   const { data: summary } = useApi('/summary')
+  const [activeCategory, setActiveCategory] = useState(null)
 
   const chartData = (data || []).filter(d => d.value > 0).map(d => ({
     ...d,
@@ -43,11 +46,34 @@ export default function AllocationChart() {
 
   const total = summary?.total_value ?? 0
 
+  const handleSegmentClick = (entry) => {
+    const newCat = activeCategory === entry.category ? null : entry.category
+    setActiveCategory(newCat)
+    onFilterChange?.(newCat || 'all')
+  }
+
+  const handleLegendClick = (category) => {
+    const newCat = activeCategory === category ? null : category
+    setActiveCategory(newCat)
+    onFilterChange?.(newCat || 'all')
+  }
+
   return (
     <div className="card alloc-chart-card" style={{ height: 340 }}>
       <div className="card-header">
         <span className="card-title">Portfolio Allocation</span>
-        <InfoButton title={WIDGET_INFO.allocationDonut.title} content={WIDGET_INFO.allocationDonut.content} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {activeCategory && (
+            <button onClick={() => { setActiveCategory(null); onFilterChange?.('all') }} style={{
+              fontSize: 10, padding: '2px 8px', borderRadius: 3,
+              border: '1px solid var(--border)', background: 'var(--bg-input)',
+              color: 'var(--text-muted)', cursor: 'pointer',
+            }}>
+              Clear filter
+            </button>
+          )}
+          <InfoButton title={WIDGET_INFO.allocationDonut.title} content={WIDGET_INFO.allocationDonut.content} />
+        </div>
       </div>
 
       {loading ? (
@@ -56,7 +82,7 @@ export default function AllocationChart() {
         </div>
       ) : (
         <div className="alloc-chart-inner" style={{ display: 'flex', flexDirection: 'column', height: 280 }}>
-          {/* Donut with center label */}
+          {/* Donut */}
           <div style={{ position: 'relative', height: 180 }}>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
@@ -69,9 +95,17 @@ export default function AllocationChart() {
                   innerRadius={55}
                   outerRadius={80}
                   paddingAngle={3}
+                  onClick={handleSegmentClick}
+                  style={{ cursor: 'pointer' }}
                 >
                   {chartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} stroke="var(--bg-card)" strokeWidth={2} />
+                    <Cell
+                      key={i}
+                      fill={entry.fill}
+                      stroke={activeCategory === entry.category ? '#fff' : 'var(--bg-card)'}
+                      strokeWidth={activeCategory === entry.category ? 3 : 2}
+                      opacity={activeCategory && activeCategory !== entry.category ? 0.35 : 1}
+                    />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
@@ -97,10 +131,20 @@ export default function AllocationChart() {
             )}
           </div>
 
-          {/* Legend rows */}
+          {/* Legend rows — clickable */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 8px' }}>
             {chartData.map(d => (
-              <div key={d.category} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div
+                key={d.category}
+                onClick={() => handleLegendClick(d.category)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  cursor: 'pointer', borderRadius: 4, padding: '2px 4px',
+                  background: activeCategory === d.category ? `${d.fill}18` : 'transparent',
+                  opacity: activeCategory && activeCategory !== d.category ? 0.45 : 1,
+                  transition: 'all 0.15s',
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: d.fill, flexShrink: 0 }} />
                   <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{d.label}</span>
@@ -114,11 +158,9 @@ export default function AllocationChart() {
                   </span>
                   {d.return_pct != null && (
                     <span style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
+                      fontFamily: 'var(--font-mono)', fontSize: 10,
                       color: d.return_pct >= 0 ? 'var(--green)' : 'var(--red)',
-                      minWidth: 48,
-                      textAlign: 'right',
+                      minWidth: 48, textAlign: 'right',
                     }}>
                       {d.return_pct >= 0 ? '+' : ''}{d.return_pct.toFixed(1)}%
                     </span>
