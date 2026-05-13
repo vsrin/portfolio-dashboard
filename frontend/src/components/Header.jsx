@@ -85,7 +85,7 @@ export default function Header({ theme, onToggleTheme, user, onLogout }) {
               <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid var(--border)' }} />
             )}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>{user.name}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Vinod</div>
               <button
                 onClick={onLogout}
                 style={{
