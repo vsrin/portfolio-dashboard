@@ -710,6 +710,8 @@ def asset_classes(super_category: Optional[str] = None):
             "ytd_return_pct":      ytd.get("return_pct"),
             "one_year_gain":       ony.get("gain"),
             "one_year_return_pct": ony.get("return_pct"),
+            "last_reported":       ALT_META.get(ac["id"], {}).get("last_reported"),
+            "reporting_freq":      ALT_META.get(ac["id"], {}).get("reporting_freq"),
         })
     return result
 

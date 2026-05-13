@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 
+function staleDotColor(dateStr) {
+  const days = (Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / 86_400_000
+  if (days <= 7)   return 'var(--green)'
+  if (days <= 100) return 'var(--amber)'
+  return 'var(--red)'
+}
+
 const CATEGORY_COLOR = {
   equity:       'var(--cyan)',
   alternatives: 'var(--amber)',
@@ -293,6 +300,17 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
                     </td>
                     <td>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 12 }}>{ac.label}</div>
+                      {ac.last_reported && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                          <span style={{
+                            width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+                            background: staleDotColor(ac.last_reported),
+                          }} />
+                          <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                            As of {new Date(ac.last_reported + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td>
                       <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', background: `${color}18`, color }}>

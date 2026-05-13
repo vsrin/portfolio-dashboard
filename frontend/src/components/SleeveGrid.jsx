@@ -3,6 +3,13 @@ import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
 
+function lastReportedColor(dateStr) {
+  const days = (Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / 86_400_000
+  if (days <= 7)   return 'var(--green)'
+  if (days <= 100) return 'var(--amber)'
+  return 'var(--red)'
+}
+
 const SUPER_COLOR = {
   equity:       'var(--cyan)',
   alternatives: 'var(--amber)',
@@ -90,6 +97,23 @@ function AssetCard({ ac, compact, period = 'ITD' }) {
           </div>
         )}
       </div>
+
+      {/* Last-reported badge for alternatives */}
+      {ac.last_reported && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 5, marginTop: 2,
+          paddingTop: compact ? 6 : 8, borderTop: '1px solid var(--border)',
+        }}>
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+            background: lastReportedColor(ac.last_reported),
+          }} />
+          <span style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+            As of {new Date(ac.last_reported + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            {ac.reporting_freq && ` · ${ac.reporting_freq}`}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
