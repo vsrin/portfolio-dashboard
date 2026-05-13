@@ -95,6 +95,15 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
 
   const periodLabel = PERIODS.find(p => p.key === period)?.label
 
+  // Sleeve period maps — only YTD and 1Y have per-sleeve data
+  const eqGain = { ITD: d?.equity_gain, YTD: d?.equity_gain_ytd, '1Y': d?.equity_gain_1y }[period] ?? null
+  const eqRet  = { ITD: d?.equity_return_pct, YTD: d?.equity_return_pct_ytd, '1Y': d?.equity_return_pct_1y }[period] ?? null
+  const altGain = { ITD: d?.alternatives_gain, YTD: d?.alternatives_gain_ytd, '1Y': d?.alternatives_gain_1y }[period] ?? null
+  const altRet  = { ITD: d?.alternatives_return_pct, YTD: d?.alternatives_return_pct_ytd, '1Y': d?.alternatives_return_pct_1y }[period] ?? null
+
+  const fmtRet = (v) => v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
+  const fmtGain = (v) => v == null ? '—' : `${v >= 0 ? '+' : ''}${fmt$(v, 0)}`
+
   return (
     <div style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
 
@@ -179,33 +188,53 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           {period !== 'QTD' && period !== 'MTD' && <SubRow label="QTD" value={L ? '…' : `${d?.net_irr_qtd?.toFixed(2)}%`} valueColor="var(--text-secondary)" />}
         </KPI>
 
-        {/* 4. Equity Sleeve */}
+        {/* 4. Equity Sleeve — period-sensitive */}
         <KPI
-          label="EQUITY SLEEVE"
-          value={L ? '…' : `+${d?.equity_return_pct?.toFixed(1)}%`}
-          color="var(--cyan)"
+          label={`EQUITY SLEEVE · ${periodLabel.toUpperCase()}`}
+          value={L ? '…' : fmtRet(eqRet)}
+          color={eqRet == null ? 'var(--text-muted)' : eqRet >= 0 ? 'var(--cyan)' : 'var(--red)'}
           borderColor="var(--cyan)"
           infoKey="equitySleeve"
         >
           <SubRow label="Market value" value={L ? '…' : fmt$(d?.equity_value, 0)} valueColor="var(--text-secondary)" />
-          <SubRow label="Gain ITD" value={L ? '…' : `+${fmt$(d?.equity_gain, 0)}`} valueColor="var(--green)" />
+          <SubRow
+            label={`Gain ${periodLabel}`}
+            value={L ? '…' : fmtGain(eqGain)}
+            valueColor={eqGain == null ? 'var(--text-muted)' : eqGain >= 0 ? 'var(--green)' : 'var(--red)'}
+          />
+          {period !== 'ITD' && (
+            <SubRow label="Return ITD" value={L ? '…' : `+${d?.equity_return_pct?.toFixed(1)}%`} valueColor="var(--text-muted)" />
+          )}
+          {(period === 'MTD' || period === 'QTD') && (
+            <SubRow label="" value="Per-sleeve MTD/QTD not available" valueColor="var(--text-muted)" />
+          )}
         </KPI>
 
-        {/* 5. Alternatives Sleeve */}
+        {/* 5. Alternatives Sleeve — period-sensitive */}
         <KPI
-          label="ALTERNATIVES SLEEVE"
-          value={L ? '…' : `+${d?.alternatives_return_pct?.toFixed(1)}%`}
-          color="var(--amber)"
+          label={`ALTERNATIVES · ${periodLabel.toUpperCase()}`}
+          value={L ? '…' : fmtRet(altRet)}
+          color={altRet == null ? 'var(--text-muted)' : altRet >= 0 ? 'var(--amber)' : 'var(--red)'}
           borderColor="var(--amber)"
           infoKey="altsSleeve"
         >
           <SubRow label="Market value" value={L ? '…' : fmt$(d?.alternatives_value, 0)} valueColor="var(--text-secondary)" />
-          <SubRow label="Gain ITD" value={L ? '…' : `+${fmt$(d?.alternatives_gain, 0)}`} valueColor="var(--green)" />
+          <SubRow
+            label={`Gain ${periodLabel}`}
+            value={L ? '…' : fmtGain(altGain)}
+            valueColor={altGain == null ? 'var(--text-muted)' : altGain >= 0 ? 'var(--green)' : 'var(--red)'}
+          />
+          {period !== 'ITD' && (
+            <SubRow label="Return ITD" value={L ? '…' : `+${d?.alternatives_return_pct?.toFixed(1)}%`} valueColor="var(--text-muted)" />
+          )}
+          {(period === 'MTD' || period === 'QTD') && (
+            <SubRow label="" value="Per-sleeve MTD/QTD not available" valueColor="var(--text-muted)" />
+          )}
         </KPI>
 
-        {/* 6. Fees */}
+        {/* 6. Fees — always ITD, labeled clearly */}
         <KPI
-          label="FEES & COST DRAG"
+          label="FEES & COST DRAG · ITD"
           value={L ? '…' : fmt$(d?.total_fee_impact, 0)}
           color="var(--red)"
           borderColor="var(--red)"

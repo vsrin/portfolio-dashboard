@@ -613,6 +613,35 @@ def summary():
     alt_cost     = alt["value"] - alt_gain
     alt_return   = round(alt_gain / alt_cost * 100, 2) if alt_cost > 0 else 0
 
+    def _sleeve_period(class_data: dict, super_cat: str):
+        """Sum gain + weighted return for a sleeve from per-class period data."""
+        total_g = 0.0
+        total_sv = 0.0
+        has_any = False
+        for ac in ASSET_CLASSES:
+            if ac["super_category"] != super_cat:
+                continue
+            entry = class_data.get(ac["id"], {})
+            g = entry.get("gain")
+            r = entry.get("return_pct")
+            if g is None:
+                continue
+            has_any = True
+            total_g += g
+            if r and r != 0:
+                total_sv += g / (r / 100.0)   # back-compute start value
+            else:
+                total_sv += ac["value"] - g    # fallback: current_value - gain
+        if not has_any:
+            return None, None
+        ret = round(total_g / total_sv * 100, 2) if total_sv > 0 else None
+        return round(total_g, 2), ret
+
+    eq_gain_ytd,  eq_ret_ytd  = _sleeve_period(_YTD_CLASS, "equity")
+    eq_gain_1y,   eq_ret_1y   = _sleeve_period(_1Y_CLASS,  "equity")
+    alt_gain_ytd, alt_ret_ytd = _sleeve_period(_YTD_CLASS, "alternatives")
+    alt_gain_1y,  alt_ret_1y  = _sleeve_period(_1Y_CLASS,  "alternatives")
+
     # Fee breakdown
     # advisor_fees  = directly billed management fees from CSV (Tamarac ~1% advisory)
     # sub_mgr_fees  = fee drag embedded in managed NAVs (gross gain − portal net gain)
@@ -642,16 +671,24 @@ def summary():
         "gain_qtd":  _period_gain(PORTAL_TOTAL, "qtd"),
         "gain_ytd":  _period_gain(PORTAL_TOTAL, "ytd", net_cf=-175_800),
         "gain_1y":   round(_IRR_1Y / 100 * _ANC.get("prev_1y", {}).get("value", PORTAL_TOTAL), 2),
-        # Equity sleeve
-        "equity_value":      round(eq["value"], 2),
-        "equity_pct":        round(eq["value"] / PORTAL_TOTAL * 100, 2),
-        "equity_gain":       round(eq_gain, 2),
-        "equity_return_pct": eq_return,
-        # Alternatives sleeve
-        "alternatives_value":      round(alt["value"], 2),
-        "alternatives_pct":        round(alt["value"] / PORTAL_TOTAL * 100, 2),
-        "alternatives_gain":       round(alt_gain, 2),
-        "alternatives_return_pct": alt_return,
+        # Equity sleeve — ITD + per-period
+        "equity_value":          round(eq["value"], 2),
+        "equity_pct":            round(eq["value"] / PORTAL_TOTAL * 100, 2),
+        "equity_gain":           round(eq_gain, 2),
+        "equity_return_pct":     eq_return,
+        "equity_gain_ytd":       eq_gain_ytd,
+        "equity_return_pct_ytd": eq_ret_ytd,
+        "equity_gain_1y":        eq_gain_1y,
+        "equity_return_pct_1y":  eq_ret_1y,
+        # Alternatives sleeve — ITD + per-period
+        "alternatives_value":          round(alt["value"], 2),
+        "alternatives_pct":            round(alt["value"] / PORTAL_TOTAL * 100, 2),
+        "alternatives_gain":           round(alt_gain, 2),
+        "alternatives_return_pct":     alt_return,
+        "alternatives_gain_ytd":       alt_gain_ytd,
+        "alternatives_return_pct_ytd": alt_ret_ytd,
+        "alternatives_gain_1y":        alt_gain_1y,
+        "alternatives_return_pct_1y":  alt_ret_1y,
         # Cash
         "cash_value":        round(csh["value"], 2),
         "cash_pct":          round(csh["value"] / PORTAL_TOTAL * 100, 2),
