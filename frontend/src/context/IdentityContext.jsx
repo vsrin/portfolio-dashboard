@@ -3,6 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 
 const ALLOWLIST = {
   'vs@artifidata.ai':                       'owner',
+  'vsrinivasanniatl@gmail.com':             'owner',
   'patrick.kennedy@allsourceinvest.com':    'advisor',
 }
 
