@@ -1,7 +1,8 @@
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
-import { WIDGET_INFO } from '../data/widgetInfo'
+import { getWidgetInfo } from '../data/widgetInfo'
+import { useIdentity } from '../context/IdentityContext'
 
 const PERIODS = [
   { key: 'MTD', label: 'MTD' },
@@ -11,7 +12,8 @@ const PERIODS = [
   { key: 'ITD', label: 'Inception' },
 ]
 
-function KPI({ label, value, color, borderColor, infoKey, children }) {
+function KPI({ label, value, color, borderColor, infoKey, role, children }) {
+  const info = infoKey ? getWidgetInfo(infoKey, role) : null
   return (
     <div className="kpi-tile" style={{
       flex: 1,
@@ -22,9 +24,7 @@ function KPI({ label, value, color, borderColor, infoKey, children }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
         <span className="label">{label}</span>
-        {infoKey && WIDGET_INFO[infoKey] && (
-          <InfoButton title={WIDGET_INFO[infoKey].title} content={WIDGET_INFO[infoKey].content} />
-        )}
+        {info && <InfoButton title={info.title} content={info.content} />}
       </div>
       <div style={{
         fontFamily: 'var(--font-mono)',
@@ -72,6 +72,7 @@ function FeeBar({ advisorFees, subMgrFees }) {
 
 export default function KPIBar({ period = 'MTD', onPeriodChange }) {
   const { data: d, loading: L } = useApi('/summary')
+  const { role } = useIdentity()
 
   const periodGain = {
     MTD: d?.gain_mtd,
@@ -147,7 +148,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           value={L ? '…' : fmt$(d?.total_value, 0)}
           color="var(--text-primary)"
           borderColor="var(--cyan)"
-          infoKey="totalAum"
+          infoKey="totalAum" role={role}
         >
           <SubRow label="Cost basis" value={L ? '…' : fmt$(d?.cost_basis, 0)} />
           <SubRow label="As of" value={L ? '…' : (d?.as_of_date ? new Date(d.as_of_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—')} />
@@ -159,7 +160,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           value={L ? '…' : (gain != null ? `${gainPositive ? '+' : ''}${fmt$(gain, 0)}` : '—')}
           color={gainPositive ? 'var(--green)' : 'var(--red)'}
           borderColor={gainPositive ? 'var(--green)' : 'var(--red)'}
-          infoKey="netGain"
+          infoKey="netGain" role={role}
         >
           <SubRow
             label={`Net IRR ${periodLabel}`}
@@ -177,7 +178,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           value={L ? '…' : (irr != null ? `${irr >= 0 ? '+' : ''}${irr.toFixed(2)}%` : '—')}
           color={irr == null || irr >= 0 ? 'var(--green)' : 'var(--red)'}
           borderColor={irr == null || irr >= 0 ? 'var(--green)' : 'var(--red)'}
-          infoKey="irr1y"
+          infoKey="irr1y" role={role}
         >
           <SubRow
             label={`Gain ${periodLabel}`}
@@ -194,7 +195,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           value={L ? '…' : fmtRet(eqRet)}
           color={eqRet == null ? 'var(--text-muted)' : eqRet >= 0 ? 'var(--cyan)' : 'var(--red)'}
           borderColor="var(--cyan)"
-          infoKey="equitySleeve"
+          infoKey="equitySleeve" role={role}
         >
           <SubRow label="Market value" value={L ? '…' : fmt$(d?.equity_value, 0)} valueColor="var(--text-secondary)" />
           <SubRow
@@ -216,7 +217,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           value={L ? '…' : fmtRet(altRet)}
           color={altRet == null ? 'var(--text-muted)' : altRet >= 0 ? 'var(--amber)' : 'var(--red)'}
           borderColor="var(--amber)"
-          infoKey="altsSleeve"
+          infoKey="altsSleeve" role={role}
         >
           <SubRow label="Market value" value={L ? '…' : fmt$(d?.alternatives_value, 0)} valueColor="var(--text-secondary)" />
           <SubRow
@@ -247,7 +248,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
               value={L ? '…' : fmt$(advisorFee, 0)}
               color="var(--red)"
               borderColor="var(--red)"
-              infoKey="feeDrag"
+              infoKey="feeDrag" role={role}
             >
               <SubRow
                 label={`Advisor fees ${periodLabel}`}

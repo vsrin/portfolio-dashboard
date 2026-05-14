@@ -1,9 +1,20 @@
+import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { fmt$, fmtDate } from '../utils/formatters'
+import { generateInsightsToken } from '../utils/insightsAuth'
 
-export default function Header({ theme, onToggleTheme, user, onLogout }) {
+export default function Header({ theme, onToggleTheme, user, onLogout, role = 'owner', name = 'Vinod' }) {
   const { data } = useApi('/summary')
   const isDark = theme === 'dark'
+  const [copied, setCopied] = useState(false)
+
+  const handleShareInsights = async () => {
+    const token = await generateInsightsToken()
+    const url = `${window.location.origin}${window.location.pathname}?insights=${token}`
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
 
   return (
     <div className="app-header" style={{
@@ -78,6 +89,40 @@ export default function Header({ theme, onToggleTheme, user, onLogout }) {
           </div>
         </div>
 
+        {/* Share Insights — owner only */}
+        {role === 'owner' && (
+          <button
+            onClick={handleShareInsights}
+            title="Copy a link that gives Patrick access to the Insights tab for today"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: copied ? 'var(--green)' : 'var(--bg-input)',
+              border: `1px solid ${copied ? 'var(--green)' : 'var(--border-light)'}`,
+              borderRadius: 20, padding: '5px 12px', cursor: 'pointer',
+              fontSize: 11, fontWeight: 600,
+              color: copied ? '#000' : 'var(--text-secondary)',
+              letterSpacing: '0.04em', transition: 'all 0.2s',
+              fontFamily: 'var(--font-ui)',
+            }}
+          >
+            <span style={{ fontSize: 12 }}>{copied ? '✓' : '🔗'}</span>
+            {copied ? 'Copied!' : 'Share Insights'}
+          </button>
+        )}
+
+        {/* Advisor badge */}
+        {role === 'advisor' && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(0,212,255,0.08)', border: '1px solid var(--cyan)',
+            borderRadius: 20, padding: '5px 12px',
+            fontSize: 11, fontWeight: 600, color: 'var(--cyan)',
+            letterSpacing: '0.04em', fontFamily: 'var(--font-ui)',
+          }}>
+            <span style={{ fontSize: 10 }}>◆</span> Advisor View
+          </div>
+        )}
+
         {/* User + logout */}
         {user && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: '1px solid var(--border)', paddingLeft: 20 }}>
@@ -85,7 +130,7 @@ export default function Header({ theme, onToggleTheme, user, onLogout }) {
               <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid var(--border)' }} />
             )}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Vinod</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>{name}</div>
               <button
                 onClick={onLogout}
                 style={{

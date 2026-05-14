@@ -110,4 +110,23 @@ export const WIDGET_INFO = {
     content: `This shows the return on your "bond-proxy" alternatives — the positions your advisor treats as replacements for traditional bonds in your portfolio. J-Curve vehicles (Private Equity, Venture Capital) are excluded because they are still in the capital deployment phase and would unfairly skew the comparison.\n\nThe key question: did these alternatives earn more than you would have gotten in a simple bond index fund (AGG)?\n\n**Included positions:** Hedged Equity (Invenomic), Managed Futures, Hedge Funds, Private Credit.\n\nThe income row shows dividends and distributions these vehicles generated — real cash returned to the portfolio while capital stays invested. This income component is part of what makes alternatives competitive with bonds even when price returns are modest.`,
   },
 
+  // ─── Advisor-safe variants ───────────────────────────────────────────────────
+  // Used when role === 'advisor'. Same structural explanation, neutral framing.
+
+  feeDragAdvisor: {
+    title: 'Fees & Total Cost Drag',
+    content: `The total cost of the portfolio has two parts:\n\n**Advisor fees** — management fees paid to AllSource/Tamarac, visible in the transaction history. Running approximately 1.04% annualised.\n\n**Sub-manager drag** — embedded inside fund NAVs and deducted before portfolio values are reported. Represents the collective cost of active management across all fund positions.\n\nTogether these represent the total fee load on the portfolio. The tile shows advisor fees for the selected period; the sub-manager drag is the inception-to-date aggregate.`,
+  },
+
+  assetClassGridAdvisor: {
+    title: 'Asset Class Cards',
+    content: `All 19 positions with current market value, return since inception, and portfolio weight. Blue border = equity sleeve, amber = alternatives sleeve.\n\n**Three positions to note:**\n\n**Private Equity ($629K)** is the largest single allocation at 26% of the portfolio, returning +15.38% since funding.\n\n**Small-Cap Growth and Small-Cap Value** are small positions (combined 1.36% of portfolio) with negative returns since inception — areas being monitored.\n\n**Gold +62.51%** has been the strongest performer, serving as an effective inflation hedge within the alternatives sleeve.`,
+  },
+
+}
+
+export function getWidgetInfo(key, role = 'owner') {
+  const advisorKey = key + 'Advisor'
+  if (role === 'advisor' && WIDGET_INFO[advisorKey]) return WIDGET_INFO[advisorKey]
+  return WIDGET_INFO[key] || null
 }

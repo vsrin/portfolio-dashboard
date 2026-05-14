@@ -17,7 +17,10 @@ import ManagerScorecard from './components/ManagerScorecard'
 import TargetDatePanel from './components/TargetDatePanel'
 import RiskPanel from './components/RiskPanel'
 import LoginScreen from './components/LoginScreen'
+import AccessDenied from './components/AccessDenied'
+import InsightsAccessGate from './components/InsightsAccessGate'
 import { InfoProvider } from './context/InfoContext'
+import { IdentityProvider, useIdentity } from './context/IdentityContext'
 import InfoDrawer from './components/InfoDrawer'
 
 const TABS = [
@@ -35,8 +38,9 @@ const PERF_SUBTABS = [
   { id: 'risk',       label: 'Risk & Planning' },
 ]
 
-export default function App() {
+function AppShell() {
   const { isLoading, isAuthenticated, logout, user } = useAuth0()
+  const { role, name, email } = useIdentity()
   const [activeTab, setActiveTab]         = useState('overview')
   const [perfSubtab, setPerfSubtab]       = useState('portfolio')
   const [equityView, setEquityView]       = useState('scorecard')
@@ -73,11 +77,15 @@ export default function App() {
 
   const handleLogout = () => logout({ logoutParams: { returnTo: window.location.origin } })
 
+  if (role === 'denied') return <AccessDenied email={email} onLogout={handleLogout} />
+
+  const insightsLabel = role === 'advisor' ? 'Portfolio Insights' : 'My Insights'
+
   return (
     <InfoProvider>
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
       <ChatPanel />
-      <Header theme={theme} onToggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
+      <Header theme={theme} onToggleTheme={toggleTheme} user={user} onLogout={handleLogout} role={role} name={name} />
       <KPIBar period={activePeriod} onPeriodChange={setActivePeriod} />
       <BenchmarkBar />
 
@@ -110,7 +118,7 @@ export default function App() {
               fontFamily: 'var(--font-ui)',
             }}
           >
-            {t.label}
+            {t.id === 'performance' ? insightsLabel : t.label}
           </button>
         ))}
       </div>
@@ -129,6 +137,7 @@ export default function App() {
         )}
 
         {activeTab === 'performance' && (
+          <InsightsAccessGate role={role}>
           <div>
             {/* Sub-tab nav */}
             <div style={{
@@ -197,6 +206,7 @@ export default function App() {
             {perfSubtab === 'alts'      && <AlternativesPanel />}
             {perfSubtab === 'risk'      && <RiskPanel />}
           </div>
+          </InsightsAccessGate>
         )}
 
         {activeTab === 'accounts'      && <AccountsTable selectedAssetClass={selectedAssetClass} onClearSelection={() => setSelectedAssetClass(null)} period={activePeriod} onPeriodChange={setActivePeriod} />}
@@ -206,5 +216,13 @@ export default function App() {
     </div>
     <InfoDrawer />
     </InfoProvider>
+  )
+}
+
+export default function App() {
+  return (
+    <IdentityProvider>
+      <AppShell />
+    </IdentityProvider>
   )
 }

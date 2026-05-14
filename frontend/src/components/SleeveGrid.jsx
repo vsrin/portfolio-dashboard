@@ -1,7 +1,8 @@
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
-import { WIDGET_INFO } from '../data/widgetInfo'
+import { getWidgetInfo } from '../data/widgetInfo'
+import { useIdentity } from '../context/IdentityContext'
 
 function lastReportedColor(dateStr) {
   const days = (Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / 86_400_000
@@ -120,6 +121,7 @@ function AssetCard({ ac, compact, period = 'ITD' }) {
 
 export default function SleeveGrid({ compact, onNavigate, categoryFilter, period = 'ITD' }) {
   const { data, loading } = useApi('/asset-classes')
+  const { role } = useIdentity()
 
   if (loading) return (
     <div className="card">
@@ -143,7 +145,7 @@ export default function SleeveGrid({ compact, onNavigate, categoryFilter, period
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span className="card-title">Asset Classes</span>
-            <InfoButton title={WIDGET_INFO.assetClassGrid.title} content={WIDGET_INFO.assetClassGrid.content} />
+            <InfoButton title={getWidgetInfo('assetClassGrid', role)?.title} content={getWidgetInfo('assetClassGrid', role)?.content} />
           </div>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
             {fmt$(total, 0)} · {classes.length} classes
@@ -158,7 +160,7 @@ export default function SleeveGrid({ compact, onNavigate, categoryFilter, period
                 {fmt$(total, 0)} · {classes.length} asset classes
               </div>
             </div>
-            <InfoButton title={WIDGET_INFO.assetClassGrid.title} content={WIDGET_INFO.assetClassGrid.content} />
+            <InfoButton title={getWidgetInfo('assetClassGrid', role)?.title} content={getWidgetInfo('assetClassGrid', role)?.content} />
           </div>
           <div className="pill cyan">{equityCount} equity · {altsCount} alts</div>
         </div>
