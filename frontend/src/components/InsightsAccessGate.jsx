@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { verifyInsightsToken, getInsightsTokenFromUrl, clearInsightsTokenFromUrl } from '../utils/insightsAuth'
 
-const SESSION_KEY = 'portfolio_insights_access'
+const SESSION_KEY = 'portfolio_insights_unlocked'
 
 export default function InsightsAccessGate({ role, children }) {
   const [authorized, setAuthorized] = useState(

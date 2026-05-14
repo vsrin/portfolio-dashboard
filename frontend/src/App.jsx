@@ -60,7 +60,7 @@ function AppShell() {
     const token = getInsightsTokenFromUrl()
     if (!token) return
     verifyInsightsToken(token).then(valid => {
-      if (valid) sessionStorage.setItem('portfolio_insights_access', 'true')
+      if (valid) sessionStorage.setItem('portfolio_insights_unlocked', 'true')
       clearInsightsTokenFromUrl()
     })
   }, [])

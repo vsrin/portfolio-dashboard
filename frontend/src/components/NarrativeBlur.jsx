@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useIdentity } from '../context/IdentityContext'
 
-const SESSION_KEY = 'portfolio_insights_access'
+const SESSION_KEY = 'portfolio_insights_unlocked'
 
 export default function NarrativeBlur({ children }) {
   const { role } = useIdentity()
