@@ -115,8 +115,25 @@ export default function BenchmarkBar() {
         </div>
       )}
 
-      <div style={{ marginLeft: 'auto', padding: '7px 20px', fontSize: 10, color: 'rgba(255,255,255,0.28)', whiteSpace: 'nowrap' }}>
-        SPY · AGG proxies via Yahoo Finance
+      <div style={{ marginLeft: 'auto', padding: '7px 20px', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+        {bm && (
+          <>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+              background: bm.fetch_ok
+                ? (bm.fetched_at && (Date.now() - new Date(bm.fetched_at + 'T20:00:00').getTime()) / 86_400_000 <= 3 ? '#4ade80' : '#fbbf24')
+                : '#f87171',
+            }} />
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>
+              {bm.fetch_ok && bm.fetched_at
+                ? `Yahoo Finance · as of ${new Date(bm.fetched_at + 'T20:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                : 'Yahoo Finance · offline (showing cached)'}
+            </span>
+          </>
+        )}
+        {!bm && (
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)' }}>SPY · AGG via Yahoo Finance</span>
+        )}
       </div>
     </div>
   )

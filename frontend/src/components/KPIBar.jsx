@@ -232,26 +232,37 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           )}
         </KPI>
 
-        {/* 6. Fees — always ITD, labeled clearly */}
-        <KPI
-          label="FEES & COST DRAG · ITD"
-          value={L ? '…' : fmt$(d?.total_fee_impact, 0)}
-          color="var(--red)"
-          borderColor="var(--red)"
-          infoKey="feeDrag"
-        >
-          <SubRow
-            label={`Advisor ~${d?.advisor_fee_rate_pct?.toFixed(2)}% ann.`}
-            value={L ? '…' : fmt$(d?.total_fees, 0)}
-            valueColor="var(--amber)"
-          />
-          <SubRow
-            label={`Sub-mgr ~${d?.sub_mgr_fee_rate_pct?.toFixed(2)}% ann.`}
-            value={L ? '…' : fmt$(d?.sub_manager_fees, 0)}
-            valueColor="var(--red)"
-          />
-          {!L && <FeeBar advisorFees={d?.total_fees} subMgrFees={d?.sub_manager_fees} />}
-        </KPI>
+        {/* 6. Fees — advisor fees are period-sensitive; sub-mgr drag is ITD */}
+        {(() => {
+          const advisorFeeMap = {
+            MTD: d?.advisor_fees_mtd, QTD: d?.advisor_fees_qtd,
+            YTD: d?.advisor_fees_ytd, '1Y': d?.advisor_fees_1y, ITD: d?.advisor_fees_itd,
+          }
+          const advisorFee = advisorFeeMap[period] ?? 0
+          const subMgr = d?.sub_manager_fees ?? 0
+          const total = advisorFee + (period === 'ITD' ? subMgr : 0)
+          return (
+            <KPI
+              label={`FEES & COST DRAG · ${periodLabel.toUpperCase()}`}
+              value={L ? '…' : fmt$(advisorFee, 0)}
+              color="var(--red)"
+              borderColor="var(--red)"
+              infoKey="feeDrag"
+            >
+              <SubRow
+                label={`Advisor fees ${periodLabel}`}
+                value={L ? '…' : fmt$(advisorFee, 0)}
+                valueColor="var(--amber)"
+              />
+              <SubRow
+                label="Sub-mgr drag (ITD)"
+                value={L ? '…' : fmt$(subMgr, 0)}
+                valueColor="var(--red)"
+              />
+              {period === 'ITD' && !L && <FeeBar advisorFees={d?.total_fees} subMgrFees={subMgr} />}
+            </KPI>
+          )
+        })()}
 
       </div>
     </div>

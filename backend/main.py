@@ -589,14 +589,28 @@ def health():
 def summary():
     txns = _load_transactions()
 
+    # Period start dates from anchors
+    mtd_start = _ANC.get("mtd", {}).get("date", "")
+    qtd_start = _ANC.get("qtd", {}).get("date", "")
+    ytd_start = _ANC.get("ytd", {}).get("date", "")
+    prev1y_start = _ANC.get("prev_1y", {}).get("date", "")
+
     total_fees = 0.0
+    fees_mtd = fees_qtd = fees_ytd = fees_1y = 0.0
     total_income = 0.0
     total_other_exp = 0.0
 
     for t in txns:
         cat = _classify(t["activity"])
         amt = abs(t["amount"])
-        if cat == "fee":           total_fees += amt
+        d_obj = t.get("date")
+        d = d_obj.strftime("%Y-%m-%d") if d_obj else ""
+        if cat == "fee":
+            total_fees += amt
+            if mtd_start and d > mtd_start:       fees_mtd += amt
+            if qtd_start and d > qtd_start:       fees_qtd += amt
+            if ytd_start and d > ytd_start:       fees_ytd += amt
+            if prev1y_start and d > prev1y_start: fees_1y += amt
         elif cat == "income":      total_income += amt
         elif cat == "other_expense": total_other_exp += amt
 
@@ -698,6 +712,12 @@ def summary():
         "total_fee_impact":     round(total_fees + sub_mgr_fees, 2),
         "advisor_fee_rate_pct": advisor_rate,
         "sub_mgr_fee_rate_pct": sub_mgr_rate,
+        # Period-specific advisor fees (from transaction ledger, filtered by date)
+        "advisor_fees_mtd": round(fees_mtd, 2),
+        "advisor_fees_qtd": round(fees_qtd, 2),
+        "advisor_fees_ytd": round(fees_ytd, 2),
+        "advisor_fees_1y":  round(fees_1y,  2),
+        "advisor_fees_itd": round(total_fees, 2),
         "transaction_count": len(txns),
     }
 
@@ -1002,6 +1022,8 @@ def transactions(
 
 @app.get("/api/benchmarks")
 def benchmarks():
+    fetched_at = None
+    fetch_ok = False
     try:
         results = {}
         for ticker, label in [("SPY", "sp500"), ("AGG", "bloomberg_agg")]:
@@ -1012,6 +1034,8 @@ def benchmarks():
                 continue
             latest = hist["Close"].iloc[-1]
             latest_date = hist.index[-1].strftime("%Y-%m-%d")
+            fetched_at = latest_date
+            fetch_ok = True
 
             def pct(days_back):
                 if len(hist) <= days_back: return None
@@ -1031,9 +1055,11 @@ def benchmarks():
                 "as_of":  latest_date,
                 "1d": pct(1), "mtd": mtd, "ytd": ytd, "1y": pct(252),
             }
+        results["fetched_at"] = fetched_at
+        results["fetch_ok"] = fetch_ok
         return results
     except Exception:
-        return BENCHMARK_FALLBACK
+        return {**BENCHMARK_FALLBACK, "fetched_at": None, "fetch_ok": False}
 
 
 @app.get("/api/insights")
@@ -1541,10 +1567,12 @@ class ChatRequest(BaseModel):
 def _get_benchmark_itd() -> dict:
     """Fetch inception-to-date returns for SPY and AGG from yfinance. Cached after first call."""
     inception = PORTFOLIO_INCEPTION
-    result = {"spy_itd": None, "agg_itd": None, "spy_1y": None, "agg_1y": None}
+    today = datetime.today().strftime("%Y-%m-%d")
+    result = {"spy_itd": None, "agg_itd": None, "spy_1y": None, "agg_1y": None,
+              "fetched_at": None, "fetch_ok": False}
     try:
         for ticker, itd_key, y1_key in [("SPY", "spy_itd", "spy_1y"), ("AGG", "agg_itd", "agg_1y")]:
-            hist = yf.Ticker(ticker).history(start=inception, end="2026-05-06")
+            hist = yf.Ticker(ticker).history(start=inception, end=today)
             if hist.empty:
                 continue
             s = float(hist["Close"].iloc[0])
@@ -1553,6 +1581,8 @@ def _get_benchmark_itd() -> dict:
             if len(hist) >= 252:
                 p = float(hist["Close"].iloc[-252])
                 result[y1_key] = round((e - p) / p * 100, 2)
+            result["fetched_at"] = hist.index[-1].strftime("%Y-%m-%d")
+            result["fetch_ok"] = True
     except Exception:
         pass
     result["spy_itd"]  = result["spy_itd"]  or 31.65
@@ -1571,10 +1601,11 @@ def _get_all_etf_returns() -> dict:
     all_tickers.update(TARGET_DATE_FUNDS.keys())
     all_tickers.update(BOND_PROXIES.keys())
 
+    today = datetime.today().strftime("%Y-%m-%d")
     results = {}
     for ticker in all_tickers:
         try:
-            hist = yf.Ticker(ticker).history(start=PORTFOLIO_INCEPTION, end="2026-05-06")
+            hist = yf.Ticker(ticker).history(start=PORTFOLIO_INCEPTION, end=today)
             if hist.empty:
                 results[ticker] = None
                 continue
