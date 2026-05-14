@@ -1,6 +1,6 @@
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, Area,
+  Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { fmt$, fmtShortDate } from '../utils/formatters'
@@ -89,7 +89,20 @@ export default function PerformanceChart() {
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend
-              wrapperStyle={{ fontSize: 10, color: 'var(--text-secondary)', paddingTop: 8 }}
+              content={({ payload }) => (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', paddingTop: 10, justifyContent: 'center' }}>
+                  {payload.map((p) => (
+                    <span key={p.value} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--text-secondary)' }}>
+                      <span style={{
+                        display: 'inline-block', width: 10, height: 10, borderRadius: 2, flexShrink: 0,
+                        background: p.type === 'line' ? 'transparent' : p.color,
+                        border: p.type === 'line' ? `2px dashed ${p.color}` : 'none',
+                      }} />
+                      {p.value}
+                    </span>
+                  ))}
+                </div>
+              )}
             />
             <Bar yAxisId="bar" dataKey="deposits"    name="Deposits"    fill="rgba(0,230,118,0.35)" radius={[2,2,0,0]} />
             <Bar yAxisId="bar" dataKey="withdrawals" name="Withdrawals"  fill="rgba(255,69,96,0.35)"  radius={[2,2,0,0]} />
