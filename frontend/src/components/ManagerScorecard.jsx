@@ -7,6 +7,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import NarrativeBlur from './NarrativeBlur'
 
 // Mirrors EQUITY_ETF_MAP from backend
 const ETF_MAP = {
@@ -110,9 +111,11 @@ export default function ManagerScorecard() {
               {wAvgNetAlpha > 0 ? '+' : ''}{wAvgNetAlpha.toFixed(2)}%
             </div>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 400, lineHeight: 1.5 }}>
-            Weighted average of (manager return &minus; passive ETF &minus; est. sub-manager fee) across all equity positions. Positive = your managers collectively earned their fees.
-          </div>
+          <NarrativeBlur>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 400, lineHeight: 1.5 }}>
+              Weighted average of (manager return &minus; passive ETF &minus; est. sub-manager fee) across all equity positions. Positive = your managers collectively earned their fees.
+            </div>
+          </NarrativeBlur>
         </div>
       )}
 
@@ -186,9 +189,11 @@ export default function ManagerScorecard() {
         </table>
       </div>
 
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 14px', background: 'var(--bg-card)', borderRadius: 6, border: '1px solid var(--border)' }}>
-        <strong style={{ color: 'var(--text-secondary)' }}>How to read this:</strong> Alpha (net) = your manager&apos;s return &minus; passive ETF return &minus; estimated sub-manager fee. &quot;Earned it&quot; = net alpha &gt; +2%. Est. fee uses annualised sub-manager fee rate &times; 22-month hold. Passive ETF is the index fund that would have replaced your active manager at near-zero cost. Figures are inception-to-date (Jul 2024 &rarr; May 2026).
-      </div>
+      <NarrativeBlur>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 14px', background: 'var(--bg-card)', borderRadius: 6, border: '1px solid var(--border)' }}>
+          <strong style={{ color: 'var(--text-secondary)' }}>How to read this:</strong> Alpha (net) = your manager&apos;s return &minus; passive ETF return &minus; estimated sub-manager fee. &quot;Earned it&quot; = net alpha &gt; +2%. Est. fee uses annualised sub-manager fee rate &times; 22-month hold. Passive ETF is the index fund that would have replaced your active manager at near-zero cost. Figures are inception-to-date (Jul 2024 &rarr; May 2026).
+        </div>
+      </NarrativeBlur>
     </div>
   )
 }

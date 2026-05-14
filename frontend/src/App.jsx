@@ -18,10 +18,10 @@ import TargetDatePanel from './components/TargetDatePanel'
 import RiskPanel from './components/RiskPanel'
 import LoginScreen from './components/LoginScreen'
 import AccessDenied from './components/AccessDenied'
-import InsightsAccessGate from './components/InsightsAccessGate'
 import { InfoProvider } from './context/InfoContext'
 import { IdentityProvider, useIdentity } from './context/IdentityContext'
 import InfoDrawer from './components/InfoDrawer'
+import { verifyInsightsToken, getInsightsTokenFromUrl, clearInsightsTokenFromUrl } from './utils/insightsAuth'
 
 const TABS = [
   { id: 'overview',      label: 'Overview' },
@@ -55,6 +55,15 @@ function AppShell() {
   const [theme, setTheme]           = useState(() =>
     localStorage.getItem('theme') || 'light'
   )
+
+  useEffect(() => {
+    const token = getInsightsTokenFromUrl()
+    if (!token) return
+    verifyInsightsToken(token).then(valid => {
+      if (valid) sessionStorage.setItem('portfolio_insights_access', 'true')
+      clearInsightsTokenFromUrl()
+    })
+  }, [])
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -172,40 +181,38 @@ function AppShell() {
               ))}
             </div>
 
-            {/* Panel content — gated for non-owner */}
-            <InsightsAccessGate role={role}>
-              {perfSubtab === 'portfolio' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  <InsightsPanel />
-                  <TargetDatePanel />
+            {/* Panel content */}
+            {perfSubtab === 'portfolio' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <InsightsPanel />
+                <TargetDatePanel />
+              </div>
+            )}
+            {perfSubtab === 'equity' && (
+              <div>
+                <div style={{
+                  display: 'flex', gap: 4, marginBottom: 20,
+                  padding: 4, background: 'var(--bg-card)',
+                  borderRadius: 6, border: '1px solid var(--border)',
+                  width: 'fit-content',
+                }}>
+                  {[['scorecard', 'Scorecard'], ['raw', 'Raw Returns']].map(([v, lbl]) => (
+                    <button key={v} onClick={() => setEquityView(v)} style={{
+                      background: equityView === v ? 'var(--cyan)' : 'transparent',
+                      border: 'none', borderRadius: 4,
+                      color: equityView === v ? 'var(--bg-base)' : 'var(--text-muted)',
+                      padding: '6px 16px', fontSize: 11,
+                      fontWeight: equityView === v ? 700 : 400,
+                      cursor: 'pointer', letterSpacing: '0.04em',
+                      fontFamily: 'var(--font-ui)', transition: 'all 0.15s',
+                    }}>{lbl}</button>
+                  ))}
                 </div>
-              )}
-              {perfSubtab === 'equity' && (
-                <div>
-                  <div style={{
-                    display: 'flex', gap: 4, marginBottom: 20,
-                    padding: 4, background: 'var(--bg-card)',
-                    borderRadius: 6, border: '1px solid var(--border)',
-                    width: 'fit-content',
-                  }}>
-                    {[['scorecard', 'Scorecard'], ['raw', 'Raw Returns']].map(([v, lbl]) => (
-                      <button key={v} onClick={() => setEquityView(v)} style={{
-                        background: equityView === v ? 'var(--cyan)' : 'transparent',
-                        border: 'none', borderRadius: 4,
-                        color: equityView === v ? 'var(--bg-base)' : 'var(--text-muted)',
-                        padding: '6px 16px', fontSize: 11,
-                        fontWeight: equityView === v ? 700 : 400,
-                        cursor: 'pointer', letterSpacing: '0.04em',
-                        fontFamily: 'var(--font-ui)', transition: 'all 0.15s',
-                      }}>{lbl}</button>
-                    ))}
-                  </div>
-                  {equityView === 'scorecard' ? <ManagerScorecard /> : <PerformanceMatrix />}
-                </div>
-              )}
-              {perfSubtab === 'alts'  && <AlternativesPanel />}
-              {perfSubtab === 'risk'  && <RiskPanel />}
-            </InsightsAccessGate>
+                {equityView === 'scorecard' ? <ManagerScorecard /> : <PerformanceMatrix />}
+              </div>
+            )}
+            {perfSubtab === 'alts'  && <AlternativesPanel />}
+            {perfSubtab === 'risk'  && <RiskPanel />}
           </div>
         )}
 

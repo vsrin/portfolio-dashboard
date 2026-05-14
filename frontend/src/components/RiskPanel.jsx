@@ -5,6 +5,7 @@ import {
 import { useApi } from '../hooks/useApi'
 import { fmt$, fmtShortDate } from '../utils/formatters'
 import InfoButton from './InfoButton'
+import NarrativeBlur from './NarrativeBlur'
 
 // ── Educational content for the info drawer ───────────────────────────────────
 const SHARPE_EDU = `**What Is the Sharpe Ratio?**
@@ -206,24 +207,26 @@ function RiskMetrics({ rm, official }) {
         </div>
 
         {/* Body */}
-        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-            A Sharpe of <strong style={{ fontFamily: 'var(--font-mono)', color: sharpeColor }}>{sharpe.toFixed(2)}</strong> means
-            you earned {sharpe.toFixed(2)} units of return per unit of risk —
-            {sharpe >= 0.8
-              ? <> <strong>good</strong>, above the typical 0.6–0.8 range for a passive 60/40. The S&P 500 itself scores {bm.sp500_sharpe?.toFixed(2) ?? '0.70'} ITD on the same period. This portfolio is generating well-compensated risk despite carrying ~3% in all-in annual fees.</>
-              : sharpe >= 0.5
-              ? <> <strong>acceptable</strong> for an alternatives-heavy portfolio absorbing ~3% in all-in annual fees. A pure passive 60/40 typically scores 0.6–0.8 with near-zero costs — fee drag is the gap.</>
-              : <> <strong>below the passive baseline</strong>. Fee drag (~3% all-in annually) is the primary culprit.</>
-            }
-          </p>
+        <NarrativeBlur>
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+              A Sharpe of <strong style={{ fontFamily: 'var(--font-mono)', color: sharpeColor }}>{sharpe.toFixed(2)}</strong> means
+              you earned {sharpe.toFixed(2)} units of return per unit of risk —
+              {sharpe >= 0.8
+                ? <> <strong>good</strong>, above the typical 0.6–0.8 range for a passive 60/40. The S&P 500 itself scores {bm.sp500_sharpe?.toFixed(2) ?? '0.70'} ITD on the same period. This portfolio is generating well-compensated risk despite carrying ~3% in all-in annual fees.</>
+                : sharpe >= 0.5
+                ? <> <strong>acceptable</strong> for an alternatives-heavy portfolio absorbing ~3% in all-in annual fees. A pure passive 60/40 typically scores 0.6–0.8 with near-zero costs — fee drag is the gap.</>
+                : <> <strong>below the passive baseline</strong>. Fee drag (~3% all-in annually) is the primary culprit.</>
+              }
+            </p>
 
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-            Volatility at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{volPct}%</strong> annualised
-            is well below the S&P 500's <strong style={{ fontFamily: 'var(--font-mono)' }}>{sp500Vol}%</strong> — alternatives are doing their job as volatility dampeners.
-            The capture ratio asymmetry (upside {upCap ?? 26}% / downside {dnCap ?? 65}%) reflects the illiquid alternatives sleeve smoothing marks on the downside — the goal is to close that gap on the upside as PE and private credit mature.
-          </p>
-        </div>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+              Volatility at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{volPct}%</strong> annualised
+              is well below the S&P 500's <strong style={{ fontFamily: 'var(--font-mono)' }}>{sp500Vol}%</strong> — alternatives are doing their job as volatility dampeners.
+              The capture ratio asymmetry (upside {upCap ?? 26}% / downside {dnCap ?? 65}%) reflects the illiquid alternatives sleeve smoothing marks on the downside — the goal is to close that gap on the upside as PE and private credit mature.
+            </p>
+          </div>
+        </NarrativeBlur>
 
         {/* Source footer */}
         <div style={{
@@ -350,17 +353,19 @@ function LiquidityProfile({ liq }) {
         ))}
       </div>
 
-      <div style={{
-        padding: '10px 14px', borderRadius: 6,
-        background: liq.locked_pct > 40 ? 'rgba(255,69,96,0.06)' : 'rgba(255,179,0,0.06)',
-        border: `1px solid ${liq.locked_pct > 40 ? 'rgba(255,69,96,0.2)' : 'rgba(255,179,0,0.2)'}`,
-        fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6,
-      }}>
-        <strong style={{ color: liq.locked_pct > 40 ? 'var(--red)' : 'var(--amber)' }}>At age 52 with 13 years to retirement: </strong>
-        {fmt$(liq.locked, 0)} ({liq.locked_pct}% of net worth) is locked in PE, VC, and Private Credit with no redemption option.
-        You can access {fmt$(liq.liquid_30d, 0)} within 30 days and {fmt$(liq.liquid_90d, 0)} within 90 days.
-        Ensure adequate emergency reserves outside this portfolio — the illiquid sleeve cannot be tapped in a crisis.
-      </div>
+      <NarrativeBlur>
+        <div style={{
+          padding: '10px 14px', borderRadius: 6,
+          background: liq.locked_pct > 40 ? 'rgba(255,69,96,0.06)' : 'rgba(255,179,0,0.06)',
+          border: `1px solid ${liq.locked_pct > 40 ? 'rgba(255,69,96,0.2)' : 'rgba(255,179,0,0.2)'}`,
+          fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6,
+        }}>
+          <strong style={{ color: liq.locked_pct > 40 ? 'var(--red)' : 'var(--amber)' }}>At age 52 with 13 years to retirement: </strong>
+          {fmt$(liq.locked, 0)} ({liq.locked_pct}% of net worth) is locked in PE, VC, and Private Credit with no redemption option.
+          You can access {fmt$(liq.liquid_30d, 0)} within 30 days and {fmt$(liq.liquid_90d, 0)} within 90 days.
+          Ensure adequate emergency reserves outside this portfolio — the illiquid sleeve cannot be tapped in a crisis.
+        </div>
+      </NarrativeBlur>
     </Section>
   )
 }
@@ -440,33 +445,35 @@ function RetirementProjection({ ret }) {
         </div>
 
         {/* Body */}
-        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {ret.on_track ? (
-            <>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-                <strong style={{ color: 'var(--green)' }}>Bottom line: you are well ahead of where you need to be.</strong> To reach <strong style={{ fontFamily: 'var(--font-mono)' }}>$5M</strong> by age {ret.retirement_age}, this portfolio only needs to compound at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>{ret.required_return_pct}%</strong> per year. You have been compounding at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--green)' }}>{ret.annualized_return_pct}%</strong> — nearly double the minimum required rate. That {(ret.annualized_return_pct - ret.required_return_pct).toFixed(2)}% buffer means returns could slow down significantly from here and you would still reach your target.
-              </p>
+        <NarrativeBlur>
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {ret.on_track ? (
+              <>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                  <strong style={{ color: 'var(--green)' }}>Bottom line: you are well ahead of where you need to be.</strong> To reach <strong style={{ fontFamily: 'var(--font-mono)' }}>$5M</strong> by age {ret.retirement_age}, this portfolio only needs to compound at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>{ret.required_return_pct}%</strong> per year. You have been compounding at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--green)' }}>{ret.annualized_return_pct}%</strong> — nearly double the minimum required rate. That {(ret.annualized_return_pct - ret.required_return_pct).toFixed(2)}% buffer means returns could slow down significantly from here and you would still reach your target.
+                </p>
 
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-                <strong>All three scenarios reach $5M.</strong> Even the conservative model (6% annually — roughly half your current pace) clears the target. The moderate (8%) and current-pace (10.83%) scenarios project into the $8–10M range, well above what you need. The $5M figure itself is grounded in the <strong>4% withdrawal rule</strong>: a $5M portfolio supports ~$200,000/year of inflation-adjusted income, a practical financial independence threshold.
-              </p>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                  <strong>All three scenarios reach $5M.</strong> Even the conservative model (6% annually — roughly half your current pace) clears the target. The moderate (8%) and current-pace (10.83%) scenarios project into the $8–10M range, well above what you need. The $5M figure itself is grounded in the <strong>4% withdrawal rule</strong>: a $5M portfolio supports ~$200,000/year of inflation-adjusted income, a practical financial independence threshold.
+                </p>
 
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-                <strong>One important caveat: this model assumes zero additional contributions.</strong> If you continue saving — even at a modest pace — the required return hurdle drops further and all scenarios improve. Any ongoing savings are pure upside on top of an already solid projection. The planning conversation to have with your advisor is not whether you will reach $5M, but how to preserve it: as age 58–60 approaches, consider whether the 57% alternatives sleeve should begin rotating toward more liquid, lower-volatility assets to protect what you have built.
-              </p>
-            </>
-          ) : (
-            <>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-                <strong style={{ color: 'var(--amber)' }}>The current pace falls short of what is needed.</strong> To reach <strong style={{ fontFamily: 'var(--font-mono)' }}>$5M</strong> by age {ret.retirement_age}, the portfolio needs to compound at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{ret.required_return_pct}%</strong> per year. Your current annualised return of <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{ret.annualized_return_pct}%</strong> is below that threshold — meaning the conservative scenario misses $5M at retirement.
-              </p>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                  <strong>One important caveat: this model assumes zero additional contributions.</strong> If you continue saving — even at a modest pace — the required return hurdle drops further and all scenarios improve. Any ongoing savings are pure upside on top of an already solid projection. The planning conversation to have with your advisor is not whether you will reach $5M, but how to preserve it: as age 58–60 approaches, consider whether the 57% alternatives sleeve should begin rotating toward more liquid, lower-volatility assets to protect what you have built.
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                  <strong style={{ color: 'var(--amber)' }}>The current pace falls short of what is needed.</strong> To reach <strong style={{ fontFamily: 'var(--font-mono)' }}>$5M</strong> by age {ret.retirement_age}, the portfolio needs to compound at <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{ret.required_return_pct}%</strong> per year. Your current annualised return of <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{ret.annualized_return_pct}%</strong> is below that threshold — meaning the conservative scenario misses $5M at retirement.
+                </p>
 
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-                The gap can be closed in two ways: <strong>higher returns</strong> (discuss with your advisor whether the current allocation is positioned for a 13-year accumulation phase) or <strong>ongoing contributions</strong> (adding savings reduces how much investment return you need to rely on — this is the most controllable lever). Either path narrows the shortfall substantially.
-              </p>
-            </>
-          )}
-        </div>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                  The gap can be closed in two ways: <strong>higher returns</strong> (discuss with your advisor whether the current allocation is positioned for a 13-year accumulation phase) or <strong>ongoing contributions</strong> (adding savings reduces how much investment return you need to rely on — this is the most controllable lever). Either path narrows the shortfall substantially.
+                </p>
+              </>
+            )}
+          </div>
+        </NarrativeBlur>
 
         {/* Disclaimer footer */}
         <div style={{
@@ -582,23 +589,25 @@ function ConcentrationRisk({ con }) {
         </div>
 
         {/* Body */}
-        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-            <strong>Private Equity at 26.3%</strong> is the dominant concentration risk — more than twice the 10–15% ceiling most institutional allocators apply to any single private-markets vehicle. The HHI of <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{con.hhi}</strong> signals meaningful asymmetry: a perfectly balanced six-sleeve portfolio scores ~8, the broad US market scores ~6. A score of {con.hhi} reflects the PE sleeve pulling far above its proportional weight.
-          </p>
+        <NarrativeBlur>
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+              <strong>Private Equity at 26.3%</strong> is the dominant concentration risk — more than twice the 10–15% ceiling most institutional allocators apply to any single private-markets vehicle. The HHI of <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{con.hhi}</strong> signals meaningful asymmetry: a perfectly balanced six-sleeve portfolio scores ~8, the broad US market scores ~6. A score of {con.hhi} reflects the PE sleeve pulling far above its proportional weight.
+            </p>
 
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-            <strong>This is structurally illiquid — it cannot be trimmed.</strong> Unlike public equities, a PE fund commitment cannot be sold or redeemed before the fund's natural wind-down. The only path forward is time: as the fund matures through its harvest years (typically years 5–8), it will distribute capital and the concentration resolves organically. Forcing a secondary-market sale would incur a 15–30% discount to NAV and is rarely advisable unless there is an acute liquidity crisis.
-          </p>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+              <strong>This is structurally illiquid — it cannot be trimmed.</strong> Unlike public equities, a PE fund commitment cannot be sold or redeemed before the fund's natural wind-down. The only path forward is time: as the fund matures through its harvest years (typically years 5–8), it will distribute capital and the concentration resolves organically. Forcing a secondary-market sale would incur a 15–30% discount to NAV and is rarely advisable unless there is an acute liquidity crisis.
+            </p>
 
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
-            <strong>Three advisor questions worth raising explicitly:</strong> (1) Is the next capital deployment intended to counterweight the PE sleeve rather than extend it? (2) As PE distributions arrive, what is the reinvestment policy — back into privates, or rotating toward liquid, lower-correlation assets? (3) Is there a formal alternatives ceiling — say ≤40% of AUM — being actively monitored as a guardrail?
-          </p>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+              <strong>Three advisor questions worth raising explicitly:</strong> (1) Is the next capital deployment intended to counterweight the PE sleeve rather than extend it? (2) As PE distributions arrive, what is the reinvestment policy — back into privates, or rotating toward liquid, lower-correlation assets? (3) Is there a formal alternatives ceiling — say ≤40% of AUM — being actively monitored as a guardrail?
+            </p>
 
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            {con.diversification_note}
-          </p>
-        </div>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              {con.diversification_note}
+            </p>
+          </div>
+        </NarrativeBlur>
 
         {/* Footer */}
         <div style={{

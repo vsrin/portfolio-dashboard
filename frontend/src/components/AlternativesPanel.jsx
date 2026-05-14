@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
+import NarrativeBlur from './NarrativeBlur'
 
 const VEHICLE_COLORS = {
   private_equity:  '#9b59b6',
@@ -640,9 +641,11 @@ export default function AlternativesPanel() {
           </table>
         </div>
 
-        <div style={{ marginTop: 12, padding: '9px 12px', background: 'var(--bg-input)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          Alts are not a pure SPY replacement &mdash; they provide diversification, lower correlation, and downside protection. The bond counterfactual (vs AGG / HYG) is the more appropriate benchmark for hedge funds and private credit.
-        </div>
+        <NarrativeBlur>
+          <div style={{ marginTop: 12, padding: '9px 12px', background: 'var(--bg-input)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            Alts are not a pure SPY replacement &mdash; they provide diversification, lower correlation, and downside protection. The bond counterfactual (vs AGG / HYG) is the more appropriate benchmark for hedge funds and private credit.
+          </div>
+        </NarrativeBlur>
       </div>
 
       {/* ── Committed Capital Tracker ──────────────────────────────────────────── */}
