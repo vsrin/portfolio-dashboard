@@ -137,9 +137,8 @@ function AppShell() {
         )}
 
         {activeTab === 'performance' && (
-          <InsightsAccessGate role={role}>
           <div>
-            {/* Sub-tab nav */}
+            {/* Sub-tab nav — always visible */}
             <div style={{
               display: 'flex',
               gap: 4,
@@ -173,40 +172,41 @@ function AppShell() {
               ))}
             </div>
 
-            {perfSubtab === 'portfolio' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <InsightsPanel />
-                <TargetDatePanel />
-              </div>
-            )}
-            {perfSubtab === 'equity' && (
-              <div>
-                {/* Equity view toggle */}
-                <div style={{
-                  display: 'flex', gap: 4, marginBottom: 20,
-                  padding: 4, background: 'var(--bg-card)',
-                  borderRadius: 6, border: '1px solid var(--border)',
-                  width: 'fit-content',
-                }}>
-                  {[['scorecard', 'Scorecard'], ['raw', 'Raw Returns']].map(([v, lbl]) => (
-                    <button key={v} onClick={() => setEquityView(v)} style={{
-                      background: equityView === v ? 'var(--cyan)' : 'transparent',
-                      border: 'none', borderRadius: 4,
-                      color: equityView === v ? 'var(--bg-base)' : 'var(--text-muted)',
-                      padding: '6px 16px', fontSize: 11,
-                      fontWeight: equityView === v ? 700 : 400,
-                      cursor: 'pointer', letterSpacing: '0.04em',
-                      fontFamily: 'var(--font-ui)', transition: 'all 0.15s',
-                    }}>{lbl}</button>
-                  ))}
+            {/* Panel content — gated for non-owner */}
+            <InsightsAccessGate role={role}>
+              {perfSubtab === 'portfolio' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <InsightsPanel />
+                  <TargetDatePanel />
                 </div>
-                {equityView === 'scorecard' ? <ManagerScorecard /> : <PerformanceMatrix />}
-              </div>
-            )}
-            {perfSubtab === 'alts'      && <AlternativesPanel />}
-            {perfSubtab === 'risk'      && <RiskPanel />}
+              )}
+              {perfSubtab === 'equity' && (
+                <div>
+                  <div style={{
+                    display: 'flex', gap: 4, marginBottom: 20,
+                    padding: 4, background: 'var(--bg-card)',
+                    borderRadius: 6, border: '1px solid var(--border)',
+                    width: 'fit-content',
+                  }}>
+                    {[['scorecard', 'Scorecard'], ['raw', 'Raw Returns']].map(([v, lbl]) => (
+                      <button key={v} onClick={() => setEquityView(v)} style={{
+                        background: equityView === v ? 'var(--cyan)' : 'transparent',
+                        border: 'none', borderRadius: 4,
+                        color: equityView === v ? 'var(--bg-base)' : 'var(--text-muted)',
+                        padding: '6px 16px', fontSize: 11,
+                        fontWeight: equityView === v ? 700 : 400,
+                        cursor: 'pointer', letterSpacing: '0.04em',
+                        fontFamily: 'var(--font-ui)', transition: 'all 0.15s',
+                      }}>{lbl}</button>
+                    ))}
+                  </div>
+                  {equityView === 'scorecard' ? <ManagerScorecard /> : <PerformanceMatrix />}
+                </div>
+              )}
+              {perfSubtab === 'alts'  && <AlternativesPanel />}
+              {perfSubtab === 'risk'  && <RiskPanel />}
+            </InsightsAccessGate>
           </div>
-          </InsightsAccessGate>
         )}
 
         {activeTab === 'accounts'      && <AccountsTable selectedAssetClass={selectedAssetClass} onClearSelection={() => setSelectedAssetClass(null)} period={activePeriod} onPeriodChange={setActivePeriod} />}
