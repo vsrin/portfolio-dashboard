@@ -2,17 +2,17 @@ export const WIDGET_INFO = {
 
   totalAum: {
     title: 'Total AUM',
-    content: `This is the total market value of everything AllSource manages for you — your cost basis was $2,033,371, meaning you put in $2.03M and it is now worth $2.39M. The "as of" date matters — it is a snapshot date, not a live feed. When it goes stale beyond 45 days, your alternatives values become unreliable because PE and VC funds only report quarterly.\n\n**What to watch:** This number should only go up over time unless you are making large withdrawals. The dip you will see in the cash flow chart is not a loss — it was capital being deployed into investments.`,
+    content: `The current market value of everything AllSource manages for you. The cost basis sub-row shows how much you actually deposited — the difference between the two is your total investment gain.\n\nThe "as of" date is a snapshot, not a live feed. It updates each time you run the data refresh script. When it goes stale beyond 45 days, alternatives values become unreliable because PE and VC funds only report quarterly.\n\n**What to watch:** This number should generally only go up over time unless you are making large withdrawals. Compare it to cost basis to get an instant sense of total portfolio profitability.`,
   },
 
   netGain: {
-    title: 'Net Gain · Inception to Date',
-    content: `This is Tamarac's official calculation of your total return since July 10, 2024 — the day your portfolio was funded. It uses Modified Dietz / Time-Weighted Return, which adjusts fairly for the timing of your deposits. This is your single official scorecard number.\n\nThe sub-rows matter: **IRR YTD 2026 is only 0.08%** — meaning this year has been essentially flat. The 20.74% was mostly earned in 2024 and early 2025.\n\n**What to watch:** YTD 0.08% with S&P down -3.4% YTD means you are actually holding up better than the market this year. That is the protection your alternatives are supposed to provide.`,
+    title: 'Investment Gain',
+    content: `The dollar profit your portfolio has generated over the selected period — calculated as ending market value minus starting value, adjusted for any deposits or withdrawals that occurred during the window.\n\nThis is a dollar amount, not a percentage. The sub-row shows the corresponding IRR (percentage return) for the same period.\n\n**Period selector changes both numbers:** MTD shows only this month's gain; YTD shows January 1 through today; 1Y shows the prior calendar year; Inception shows the full period since July 10, 2024.\n\n**What to watch:** Compare the dollar gain across periods to see whether returns are accelerating or decelerating. A large ITD gain with a flat YTD means most of the portfolio's profit was earned in earlier periods.`,
   },
 
   irr1y: {
-    title: '1-Year IRR',
-    content: `IRR (Internal Rate of Return) is a cash-flow-adjusted return — better than simple return for a portfolio where money moved in and out. The 13.11% 1-year figure is the cleanest signal of current portfolio momentum because it avoids the J-curve distortion from PE/VC funds.\n\n**This is the number to use in advisor meetings** — not the 20.74% inception figure, which includes early J-curve drag from private equity funds that showed 0% while capital was being deployed.\n\n**QTD 1.89%** means this quarter is recovering. **MTD 0.07%** means May has barely started.`,
+    title: 'Net IRR',
+    content: `IRR (Internal Rate of Return) is a cash-flow-adjusted percentage return — more accurate than simple return for a portfolio where money moves in and out at different times. It answers: "What annualised rate of return explains all my cash flows and ending value?"\n\n**Why IRR over simple return:** Simple return divides gain by cost, which overstates returns when large deposits arrive late. IRR correctly weights each dollar by how long it was invested.\n\n**Period selector changes this number:** MTD and QTD show short-window IRR; YTD shows calendar-year return; 1Y shows the prior full year; Inception covers July 10, 2024 forward.\n\n**Best number for advisor meetings:** The 1-Year IRR is the cleanest benchmark comparison — it avoids J-curve drag from PE/VC funds still deploying capital, and is directly comparable to what SPY or AGG returned in the same window.`,
   },
 
   equitySleeve: {
