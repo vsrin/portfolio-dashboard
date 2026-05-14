@@ -3,8 +3,10 @@ import { useAuth0 } from '@auth0/auth0-react'
 
 const ALLOWLIST = {
   'vs@artifidata.ai':                       'owner',
-  'vsrinivasanniatl@gmail.com':             'owner',
-  'patrick.kennedy@allsourceinvest.com':    'advisor',
+  'vsrinivasanniatl@gmail.com':             'advisor',
+  'sreeraghavendradmd@gmail.com':           'owner',
+  'vsrin@yahoo.com':                        'owner',
+  'patrick.kennedy@allsourceinvest.com':    'advisor'
 }
 
 const IdentityContext = createContext({ email: null, role: 'owner', name: 'Vinod' })
