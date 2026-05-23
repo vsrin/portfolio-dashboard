@@ -141,7 +141,8 @@ def parse_positions_csv(path: str) -> dict:
         as_of = _parse_date(rows[1][COL_END_DATE] if len(rows[1]) > COL_END_DATE else "")
 
     grand_total = None
-    class_totals = {}   # ac_name → {value, net_gain, return_pct, weight, income}
+    class_totals = {}       # ac_name → {value, net_gain, return_pct, weight, income}
+    positions_by_class = {} # ac_name → [{symbol, name, value, gain, return_pct, income}]
     data_for_name = None
 
     for row in rows[1:]:
@@ -157,10 +158,20 @@ def parse_positions_csv(path: str) -> dict:
         asset_class = g(COL_ASSET_CLASS)
         data_for    = g(COL_DATA_FOR)
 
-        # Skip individual position rows (they have a symbol)
+        # Capture individual position rows (they have a symbol)
         if symbol:
             if data_for_name is None and data_for:
                 data_for_name = data_for
+            if asset_class:
+                pos = {
+                    "symbol":     symbol,
+                    "name":       desc,
+                    "value":      _num(g(COL_VALUE)),
+                    "gain":       _num(g(COL_GAIN)),
+                    "return_pct": _num(g(COL_RETURN)),
+                    "income":     _num(g(COL_DIVIDEND)) + _num(g(COL_INTEREST)),
+                }
+                positions_by_class.setdefault(asset_class, []).append(pos)
             continue
 
         value    = _num(g(COL_VALUE))
@@ -199,7 +210,12 @@ def parse_positions_csv(path: str) -> dict:
     for name, data in class_totals.items():
         ac_id = ASSET_CLASS_MAP.get(name)
         if ac_id:
-            ac_by_id[ac_id] = data
+            positions = sorted(
+                positions_by_class.get(name, []),
+                key=lambda p: p.get("gain", 0) or 0,
+                reverse=True,
+            )
+            ac_by_id[ac_id] = {**data, "positions": positions}
         elif data["value"] > 0:
             unmapped.append(f"{name} (${data['value']:,.0f})")
 

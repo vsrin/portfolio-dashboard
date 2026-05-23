@@ -724,9 +724,29 @@ def summary():
 
 
 def _build_holdings(ac: dict) -> list:
-    """Return explicit holdings if available; otherwise synthesize from top/worst contributors."""
+    """Return full position roster from snapshot if available; fall back to explicit holdings,
+    then synthesize winner/loser rows from hardcoded top/worst contributors."""
+    # Prefer live position data loaded from portal_snapshot.json
+    snap_positions = _SNAP.get("asset_classes", {}).get(ac["id"], {}).get("positions", [])
+    if snap_positions:
+        return [
+            {
+                "symbol":     p["symbol"],
+                "name":       p["name"],
+                "value":      p.get("value"),
+                "gain":       p.get("gain"),
+                "return_pct": p.get("return_pct"),
+                "income":     p.get("income"),
+                "ytd_gain":        None,
+                "ytd_return_pct":  None,
+                "contributor_type": "winner" if (p.get("gain") or 0) >= 0 else "loser",
+            }
+            for p in snap_positions
+        ]
+    # Explicit holdings (alternatives with known full rosters)
     if ac.get("holdings"):
         return ac["holdings"]
+    # Legacy fallback: synthesize from hardcoded top/worst lists
     rows = []
     for sym, gain in ac.get("top", []):
         rows.append({"symbol": sym, "name": sym, "value": None, "gain": gain,
