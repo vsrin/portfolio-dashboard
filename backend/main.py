@@ -719,6 +719,7 @@ def summary():
         "advisor_fees_1y":  round(fees_1y,  2),
         "advisor_fees_itd": round(total_fees, 2),
         "transaction_count": len(txns),
+        "value_series":      _VALUE_SERIES_RAW,
     }
 
 

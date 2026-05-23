@@ -1,8 +1,48 @@
+import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import { getWidgetInfo } from '../data/widgetInfo'
 import { useIdentity } from '../context/IdentityContext'
+
+function AumSparkline({ series }) {
+  if (!series?.length) return null
+  const points = series.slice(-12)
+  const min = Math.min(...points.map(p => p.value))
+  const max = Math.max(...points.map(p => p.value))
+  const range = max - min || 1
+  // Normalise to 0-100 for a stable y-axis that shows relative movement clearly
+  const data = points.map(p => ({ ...p, v: Math.round(((p.value - min) / range) * 100) }))
+  return (
+    <div style={{ marginTop: 8, height: 40 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null
+              const pt = payload[0].payload
+              return (
+                <div style={{
+                  background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                  borderRadius: 4, padding: '4px 8px', fontSize: 10,
+                  color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)',
+                }}>
+                  <div style={{ color: 'var(--text-muted)', marginBottom: 1 }}>{pt.month}</div>
+                  <div style={{ color: 'var(--cyan)', fontWeight: 700 }}>{fmt$(pt.value, 0)}</div>
+                </div>
+              )
+            }}
+          />
+          <Line
+            type="monotone" dataKey="v"
+            stroke="var(--cyan)" strokeWidth={1.5}
+            dot={false} activeDot={{ r: 3, fill: 'var(--cyan)', strokeWidth: 0 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
 
 const PERIODS = [
   { key: 'MTD', label: 'MTD' },
@@ -152,6 +192,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
         >
           <SubRow label="Cost basis" value={L ? '…' : fmt$(d?.cost_basis, 0)} />
           <SubRow label="As of" value={L ? '…' : (d?.as_of_date ? new Date(d.as_of_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—')} />
+          {!L && <AumSparkline series={d?.value_series} />}
         </KPI>
 
         {/* 2. Investment Gain — period-sensitive */}
