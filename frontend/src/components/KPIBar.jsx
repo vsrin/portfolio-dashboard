@@ -52,8 +52,8 @@ const PERIODS = [
   { key: 'ITD', label: 'Inception' },
 ]
 
-function KPI({ label, value, color, borderColor, infoKey, role, children }) {
-  const info = infoKey ? getWidgetInfo(infoKey, role) : null
+function KPI({ label, value, color, borderColor, infoKey, role, data, children }) {
+  const info = infoKey ? getWidgetInfo(infoKey, role, data) : null
   return (
     <div className="kpi-tile" style={{
       flex: 1,
@@ -236,7 +236,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           value={L ? '…' : fmtRet(eqRet)}
           color={eqRet == null ? 'var(--text-muted)' : eqRet >= 0 ? 'var(--cyan)' : 'var(--red)'}
           borderColor="var(--cyan)"
-          infoKey="equitySleeve" role={role}
+          infoKey="equitySleeve" role={role} data={d}
         >
           <SubRow label="Market value" value={L ? '…' : fmt$(d?.equity_value, 0)} valueColor="var(--text-secondary)" />
           <SubRow
@@ -258,7 +258,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
           value={L ? '…' : fmtRet(altRet)}
           color={altRet == null ? 'var(--text-muted)' : altRet >= 0 ? 'var(--amber)' : 'var(--red)'}
           borderColor="var(--amber)"
-          infoKey="altsSleeve" role={role}
+          infoKey="altsSleeve" role={role} data={d}
         >
           <SubRow label="Market value" value={L ? '…' : fmt$(d?.alternatives_value, 0)} valueColor="var(--text-secondary)" />
           <SubRow
@@ -289,7 +289,7 @@ export default function KPIBar({ period = 'MTD', onPeriodChange }) {
               value={L ? '…' : fmt$(advisorFee, 0)}
               color="var(--red)"
               borderColor="var(--red)"
-              infoKey="feeDrag" role={role}
+              infoKey="feeDrag" role={role} data={d}
             >
               <SubRow
                 label={`Advisor fees ${periodLabel}`}

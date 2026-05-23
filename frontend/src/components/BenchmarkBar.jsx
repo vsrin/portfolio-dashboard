@@ -1,7 +1,7 @@
 import { useApi } from '../hooks/useApi'
 import { fmtPct } from '../utils/formatters'
 import InfoButton from './InfoButton'
-import { WIDGET_INFO } from '../data/widgetInfo'
+import { getWidgetInfo } from '../data/widgetInfo'
 
 function PctStat({ label, value, highlight }) {
   if (value == null) return null
@@ -82,7 +82,7 @@ export default function BenchmarkBar() {
         gap: 6,
       }}>
         BENCHMARKS
-        <InfoButton title={WIDGET_INFO.benchmarkBar.title} content={WIDGET_INFO.benchmarkBar.content} />
+        <InfoButton title={getWidgetInfo('benchmarkBar', 'owner', ins)?.title} content={getWidgetInfo('benchmarkBar', 'owner', ins)?.content} />
       </div>
 
       {bmLoading ? (

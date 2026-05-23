@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
-import { WIDGET_INFO } from '../data/widgetInfo'
+import { getWidgetInfo } from '../data/widgetInfo'
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null
@@ -72,7 +72,10 @@ export default function AllocationChart({ onFilterChange }) {
               Clear filter
             </button>
           )}
-          <InfoButton title={WIDGET_INFO.allocationDonut.title} content={WIDGET_INFO.allocationDonut.content} />
+          <InfoButton
+            title={getWidgetInfo('allocationDonut', 'owner', { slices: chartData, cash_value: summary?.cash_value })?.title}
+            content={getWidgetInfo('allocationDonut', 'owner', { slices: chartData, cash_value: summary?.cash_value })?.content}
+          />
         </div>
       </div>
 

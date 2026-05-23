@@ -139,13 +139,37 @@ export default function SleeveGrid({ compact, onNavigate, categoryFilter, period
   const altsCount   = sortedClasses.filter(ac => ac.super_category === 'alternatives').length
   const total       = sortedClasses.reduce((s, a) => s + a.value, 0)
 
+  // Build dynamic info content from live data — replaces hardcoded widgetInfo entries
+  const allPositions = data || []
+  const totalCount   = allPositions.length
+  const biggest      = sortedClasses[0]
+  const byReturn     = [...sortedClasses].sort((a, b) => (b.return_pct || 0) - (a.return_pct || 0))
+  const bestPerformer = byReturn[0]
+  const negPositions  = sortedClasses.filter(ac => (ac.return_pct || 0) < 0)
+  const negWeight     = negPositions.reduce((s, ac) => s + ac.weight_pct, 0)
+
+  const fmtRet = (v) => v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`
+
+  const negSection = negPositions.length > 0
+    ? `\n\n**Negative ITD returns:** ${negPositions.map(p => `${p.label} (${fmtRet(p.return_pct)})`).join(' · ')} — combined ${negWeight.toFixed(2)}% of portfolio. Small positions that won't move the needle, but worth asking the advisor why they are held.`
+    : '\n\n**No asset class shows a negative ITD return** — all positions are above their cost basis since inception.'
+
+  const bestSection = bestPerformer
+    ? `\n\n**Standout: ${bestPerformer.label} ${fmtRet(bestPerformer.return_pct)}** — ${fmt$(bestPerformer.value, 0)} at ${bestPerformer.weight_pct.toFixed(1)}% of portfolio. ${bestPerformer.super_category === 'alternatives' ? 'A genuine outlier inside the alternatives sleeve.' : 'Top equity performer.'}`
+    : ''
+
+  const dynamicAssetGridInfo = biggest ? {
+    title: 'Asset Class Cards',
+    content: `**${totalCount} asset classes** total · Blue border = equity sleeve · Amber = alternatives · Cash shown separately below.\n\n**Largest single allocation: ${biggest.label}** — ${fmt$(biggest.value, 0)} · ${biggest.weight_pct.toFixed(1)}% of portfolio · ITD return ${fmtRet(biggest.return_pct)}. ${biggest.weight_pct > 20 ? `At ${biggest.weight_pct.toFixed(1)}%, this is a concentrated position. Most institutional allocators cap any single illiquid vehicle at 10–15% of AUM.` : ''}${negSection}${bestSection}\n\n**What the colours mean:** Blue border = equity managers (replaces passive ETFs). Amber border = alternatives (PE, VC, hedge funds, private credit, real assets). Red return figure = negative ITD. Return badge shows the selected period (ITD by default).`,
+  } : getWidgetInfo('assetClassGrid', role)
+
   return (
     <div>
       {compact ? (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span className="card-title">Asset Classes</span>
-            <InfoButton title={getWidgetInfo('assetClassGrid', role)?.title} content={getWidgetInfo('assetClassGrid', role)?.content} />
+            <InfoButton title={dynamicAssetGridInfo?.title} content={dynamicAssetGridInfo?.content} />
           </div>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
             {fmt$(total, 0)} · {classes.length} classes
@@ -160,7 +184,7 @@ export default function SleeveGrid({ compact, onNavigate, categoryFilter, period
                 {fmt$(total, 0)} · {classes.length} asset classes
               </div>
             </div>
-            <InfoButton title={getWidgetInfo('assetClassGrid', role)?.title} content={getWidgetInfo('assetClassGrid', role)?.content} />
+            <InfoButton title={dynamicAssetGridInfo?.title} content={dynamicAssetGridInfo?.content} />
           </div>
           <div className="pill cyan">{equityCount} equity · {altsCount} alts</div>
         </div>

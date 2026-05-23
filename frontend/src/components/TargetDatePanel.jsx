@@ -5,7 +5,7 @@
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
-import { WIDGET_INFO } from '../data/widgetInfo'
+import { getWidgetInfo } from '../data/widgetInfo'
 
 export default function TargetDatePanel() {
   const { data, loading } = useApi('/target-date')
@@ -30,7 +30,7 @@ export default function TargetDatePanel() {
     <div className="card">
       <div className="card-header">
         <span className="card-title">Target-Date Fund Comparison</span>
-        <InfoButton title={WIDGET_INFO.targetDate.title} content={WIDGET_INFO.targetDate.content} />
+        <InfoButton title={getWidgetInfo('targetDate', 'owner', data)?.title} content={getWidgetInfo('targetDate', 'owner', data)?.content} />
         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
           Age {data.user_age} &mdash; simplified lump-sum model &middot; {data.inception} &rarr; {data.as_of}
         </span>

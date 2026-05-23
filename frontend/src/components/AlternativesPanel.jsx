@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
 import InfoButton from './InfoButton'
-import { WIDGET_INFO } from '../data/widgetInfo'
+import { WIDGET_INFO, getWidgetInfo } from '../data/widgetInfo'
 import NarrativeBlur from './NarrativeBlur'
 
 function buildCardMath(item, totalAltValue, subMgrFees) {
@@ -683,7 +683,7 @@ export default function AlternativesPanel() {
         <div className="card">
           <div className="card-header">
             <span className="card-title">Committed Capital &mdash; Illiquid Funds</span>
-            <InfoButton title={WIDGET_INFO.committedCapital.title} content={WIDGET_INFO.committedCapital.content} />
+            <InfoButton title={getWidgetInfo('committedCapital', 'owner', cmtData)?.title} content={getWidgetInfo('committedCapital', 'owner', cmtData)?.content} />
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Uncalled commitments represent future cash obligations</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
