@@ -76,7 +76,7 @@ function Section({ title, subtitle, children, action }) {
 }
 
 // ── Metric tile ───────────────────────────────────────────────────────────────
-function MetricTile({ label, value, sub, color, borderColor, note }) {
+function MetricTile({ label, value, sub, color, borderColor, note, info }) {
   return (
     <div style={{
       padding: '14px 18px',
@@ -84,7 +84,10 @@ function MetricTile({ label, value, sub, color, borderColor, note }) {
       borderRadius: 8,
       borderTop: `2px solid ${borderColor || color || 'var(--border)'}`,
     }}>
-      <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>
+        {label}
+        {info && <InfoButton title={info.title} content={info.content} />}
+      </div>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 800, color: color || 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
       {sub  && <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6 }}>{sub}</div>}
       {note && <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 4, opacity: 0.7, fontStyle: 'italic' }}>{note}</div>}
@@ -111,6 +114,146 @@ function RiskMetrics({ rm, official }) {
   const sharpeLabel = sharpe >= 1.0 ? 'Strong (>1.0)' : sharpe >= 0.8 ? 'Good (>0.8)' : sharpe >= 0.5 ? 'Acceptable (0.5–1.0)' : 'Weak (<0.5)'
   const ddColor     = Math.abs(rm.max_drawdown_pct) <= 10 ? 'var(--green)' : Math.abs(rm.max_drawdown_pct) <= 20 ? 'var(--amber)' : 'var(--red)'
 
+  const annReturn = itd.net_return_ann != null ? (itd.net_return_ann * 100).toFixed(2) : rm.annualized_return_pct
+  const rfRate = 5.0
+  const excessReturn = (parseFloat(annReturn) - rfRate).toFixed(2)
+
+  const infoAnnReturn = {
+    title: 'Annualised Return — How It\'s Calculated',
+    content: `**Formula:** (End Value ÷ Begin Value)^(12 ÷ Months) − 1
+
+**Your numbers (inception to date):**
+- Portfolio start: Jul 10, 2024 (~22 months)
+- Annualised return: **+${annReturn}%**
+
+This is a **compound annual growth rate (CAGR)** — it answers: if the portfolio grew at a constant rate every year, what would that rate be?
+
+**vs S&P 500:** The S&P 500 returned ~+16% annualised over the same ITD window (a strong bull market period). Your portfolio ran at ${annReturn}% with 57% in alternatives that dampen both upside and downside — a different risk profile, not a direct comparison.
+
+Source: ${isOfficial ? 'AllSource / Tamarac Account Analytics' : 'Estimated from monthly portfolio value series'}`
+  }
+
+  const infoSharpe = {
+    title: 'Sharpe Ratio — The Math Behind It',
+    content: `**Formula:** (Portfolio Return − Risk-Free Rate) ÷ Annualised Volatility
+
+**Your numbers plugged in (ITD):**
+- Portfolio annualised return: **+${annReturn}%**
+- Risk-free rate (US T-bills, ~22-month avg): **~${rfRate}%**
+- Excess return: ${annReturn}% − ${rfRate}% = **+${excessReturn}%**
+- Annualised volatility: **${volPct}%**
+
+**The arithmetic:** ${excessReturn} ÷ ${volPct} = **${sharpe.toFixed(2)}**
+
+For every 1% of annualised volatility you absorbed, you earned ${sharpe.toFixed(2)} units of return above the risk-free rate.
+
+**Interpreting ${sharpe.toFixed(2)}:** ${sharpeLabel}. A pure passive 60/40 portfolio typically scores 0.6–0.8 with near-zero fees. The ~3% all-in annual fee load on this portfolio directly compresses the numerator — if fees were 1%, the Sharpe would be approximately ${((parseFloat(excessReturn) + 2) / parseFloat(volPct)).toFixed(2)}.
+
+Source: ${isOfficial ? 'AllSource / Tamarac Account Analytics' : 'Estimated — update PORTFOLIO_VALUE_SERIES for official figures'}`
+  }
+
+  const infoSortino = {
+    title: 'Sortino Ratio — Downside-Only Risk',
+    content: `**Formula:** (Portfolio Return − Risk-Free Rate) ÷ Downside Deviation
+
+**Difference from Sharpe:** Sortino only counts months when the portfolio *fell* in the denominator. Upward volatility is not treated as "bad" risk.
+
+**Your numbers (ITD):**
+- Same numerator as Sharpe: excess return of **+${excessReturn}%**
+- Downside deviation is smaller than full volatility (${volPct}%) because positive months are excluded from the std dev calculation
+- Result: **${sortino != null ? sortino.toFixed(2) : 'n/a'}**
+
+**A Sortino higher than Sharpe means** your gains were asymmetric — more consistent upward moves with fewer large losing months. If Sortino < Sharpe, the opposite is true (gains are lumpy, losses are frequent).
+
+Source: ${isOfficial ? 'AllSource / Tamarac' : 'Not yet available — requires full monthly return series from AllSource'}`
+  }
+
+  const infoDD = {
+    title: 'Max Drawdown — Worst Peak-to-Trough Decline',
+    content: `**Formula:** (Trough Value − Peak Value) ÷ Peak Value
+
+**Your drawdown (ITD):**
+- Drawdown period: **${rm.max_drawdown_start} → ${rm.max_drawdown_trough}**
+- Peak-to-trough decline: **${rm.max_drawdown_pct}%**
+
+This is the single worst timing an investor would have experienced if they measured from the portfolio's high-water mark to its lowest point during that decline.
+
+**April 2025 tariff shock context:** The S&P 500 fell approximately 18–20% from its February 2025 high during the same event. Your portfolio's ${rm.max_drawdown_pct}% drawdown on a 38% public equity / 57% alternatives mix reflects the dampening effect of illiquid assets — PE, VC, and private credit funds do not reprice intra-quarter, so they don't "show" the full mark-to-market loss in real time.
+
+**Max drawdown ≠ total loss.** It measures the worst-case entry/exit timing, not your actual experience. Your portfolio recovered after April 2025.
+
+Source: ${isOfficial ? 'AllSource / Tamarac' : 'Estimated from monthly portfolio value snapshots'}`
+  }
+
+  const infoVol = {
+    title: 'Annualised Volatility — How It\'s Computed',
+    content: `**Formula:** Standard Deviation of monthly returns × √12
+
+Monthly returns are computed from the portfolio value series (Jul 2024 → present, ~22 data points). The standard deviation of those monthly return percentages, multiplied by √12 (≈3.46), converts monthly dispersion to an annual figure.
+
+**Your result: ${volPct}%** vs S&P 500 ~${sp500Vol}%
+
+**Why so much lower than the S&P 500?**
+- 57% of the portfolio is in alternatives (PE, VC, private credit, hedge funds)
+- These vehicles report NAV quarterly — they do not mark to market daily or monthly
+- Smoothed reporting suppresses apparent volatility by 2–4 points vs true economic volatility
+- The remaining 38% in public equities does track daily market movements
+
+**Important caveat:** Reported volatility of ${volPct}% likely understates true economic risk. If alternatives marked daily, you would see a higher number. The S&P 500's ~${sp500Vol}% is a fair comparison only for the public equity sleeve.
+
+Source: ${isOfficial ? 'AllSource / Tamarac Account Analytics' : 'Estimated from monthly portfolio snapshots'}`
+  }
+
+  const infoUpCap = {
+    title: 'Upside Capture Ratio — How It\'s Computed',
+    content: `**Formula:** Portfolio cumulative return in S&P 500 up-months ÷ S&P 500 cumulative return in those same months × 100
+
+**Your result: ${upCap != null ? upCap + '%' : 'not yet available'}**
+
+This means: for every 10% the S&P 500 gained in its positive months, your portfolio captured ~${upCap != null ? (upCap / 10).toFixed(1) : '?'} percentage points of that gain.
+
+**Why so low?** The 57% alternatives sleeve does not follow equity market movements month-to-month. When the S&P 500 has a strong month, PE and private credit funds do not reprice to reflect that — they report quarterly. So in any given "up month" for equities, only the 38% public equity portion participates.
+
+**This is intentional, not a failure** — but it creates a structural asymmetry: the alternatives dampen both upswings and downswings. The goal over time is for the alternatives sleeve to generate its own returns (PE exits, private credit distributions) that are uncorrelated with public equity market timing.
+
+Source: ${isOfficial ? 'AllSource / Tamarac' : 'Estimated — requires full monthly return series'}`
+  }
+
+  const infoDnCap = {
+    title: 'Downside Capture Ratio — How It\'s Computed',
+    content: `**Formula:** Portfolio cumulative return in S&P 500 down-months ÷ S&P 500 cumulative return in those same months × 100
+
+**Your result: ${dnCap != null ? dnCap + '%' : 'not yet available'}**
+
+This means: for every 10% the S&P 500 lost in its negative months, your portfolio lost ~${dnCap != null ? (dnCap / 10).toFixed(1) : '?'} percentage points.
+
+**The goal:** Downside capture should be *lower* than upside capture. At ${upCap ?? '?'}% up / ${dnCap ?? '?'}% down, your downside capture currently exceeds upside capture — meaning the portfolio is absorbing a larger share of market losses than it is capturing of market gains.
+
+**Why?** The same alternatives smoothing that suppresses upside participation also affects downside — but during the April 2025 tariff shock, public equity positions marked down immediately while the alternatives NAVs won't reflect the full impact until Q2 2025 quarterly reports. This creates a timing asymmetry that may improve in subsequent quarters.
+
+**Context:** A pure equity portfolio scores ~100% on both measures. A good alternatives-heavy allocation targets something like 40% up / 30% down — consistently capturing more than protecting.
+
+Source: ${isOfficial ? 'AllSource / Tamarac' : 'Estimated — requires full monthly return series'}`
+  }
+
+  const infoAlpha = {
+    title: 'Jensen\'s Alpha — Risk-Adjusted Excess Return',
+    content: `**Formula:** Portfolio Return − [Risk-Free Rate + Beta × (Market Return − Risk-Free Rate)]
+
+Jensen's Alpha measures how much you earned *above* what your market exposure (beta) alone would predict. It isolates manager skill or asset selection from simply riding the market.
+
+**Your result: ${jAlpha != null ? jAlpha + '%' : 'not yet available'}**
+
+${jAlpha != null ? (parseFloat(jAlpha) > 0
+  ? `**Positive alpha of +${jAlpha}% means** your portfolio generated returns that cannot be explained by beta exposure alone. Asset selection, alternatives allocation, or fee-adjusted timing added value beyond passive market participation.`
+  : `**Negative alpha of ${jAlpha}% means** a passive index fund with the same beta exposure would have outperformed after adjusting for risk. Fee drag (~3% all-in annually) is the most common cause of negative alpha in fee-heavy portfolios.`)
+  : 'Alpha requires knowing your portfolio beta (sensitivity to S&P 500 movements), which is estimated from the monthly return correlation between your portfolio and the index.'}
+
+**Important caveat:** With 57% in alternatives (low or zero correlation to S&P 500), your beta is naturally low — this mechanically inflates alpha relative to a pure equity portfolio. For the cleanest reading, Jensen's Alpha should be benchmarked against a **blended index** (e.g., 40% S&P 500 + 60% alternatives composite), not the S&P 500 alone.
+
+Source: ${isOfficial ? 'AllSource / Tamarac Account Analytics' : 'Not yet available — requires portfolio beta estimate'}`
+  }
+
   return (
     <Section
       title="Risk-Adjusted Returns"
@@ -120,9 +263,10 @@ function RiskMetrics({ rm, official }) {
       <div className="grid-4-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <MetricTile
           label="Annualised Return (ITD)"
-          value={`+${(itd.net_return_ann ? (itd.net_return_ann * 100).toFixed(2) : rm.annualized_return_pct)}%`}
+          value={`+${annReturn}%`}
           sub={`vs S&P 500 +${bm.sp500_net_return_ann ? (bm.sp500_net_return_ann * 100).toFixed(1) : '16.1'}% ITD`}
           color="var(--cyan)"
+          info={infoAnnReturn}
         />
         <MetricTile
           label="Sharpe Ratio (ITD)"
@@ -130,6 +274,7 @@ function RiskMetrics({ rm, official }) {
           sub={sharpeLabel}
           color={sharpeColor}
           note="(Return − Risk-Free) ÷ Volatility"
+          info={infoSharpe}
         />
         <MetricTile
           label="Sortino Ratio (ITD)"
@@ -137,6 +282,7 @@ function RiskMetrics({ rm, official }) {
           sub={sortino != null ? (sortino >= 1.0 ? 'Strong (>1.0)' : 'Acceptable') : 'n/a'}
           color={sortino != null && sortino >= 1.0 ? 'var(--green)' : 'var(--amber)'}
           note="Return ÷ Downside deviation only"
+          info={infoSortino}
         />
         <MetricTile
           label="Max Drawdown"
@@ -144,6 +290,7 @@ function RiskMetrics({ rm, official }) {
           sub={`${rm.max_drawdown_start} → ${rm.max_drawdown_trough}`}
           color={ddColor}
           note="Worst peak-to-trough decline ITD"
+          info={infoDD}
         />
       </div>
 
@@ -155,27 +302,31 @@ function RiskMetrics({ rm, official }) {
           sub={`vs S&P 500 ~${sp500Vol}% — portfolio runs far lower`}
           color="var(--text-secondary)"
           note="Std dev of monthly returns (ITD)"
+          info={infoVol}
         />
         <MetricTile
           label="Upside Capture"
           value={upCap != null ? `${upCap}%` : '—'}
-          sub="Captured 26% of S&P 500 gains"
+          sub={`Captured ${upCap ?? 26}% of S&P 500 gains`}
           color="var(--text-secondary)"
           note="Low — alternatives dampen upswings"
+          info={infoUpCap}
         />
         <MetricTile
           label="Downside Capture"
           value={dnCap != null ? `${dnCap}%` : '—'}
-          sub="Absorbed 65% of S&P 500 losses"
+          sub={`Absorbed ${dnCap ?? 65}% of S&P 500 losses`}
           color={dnCap != null && dnCap < 70 ? 'var(--amber)' : 'var(--red)'}
           note="Goal: upside capture > downside capture"
+          info={infoDnCap}
         />
         <MetricTile
           label="Jensen's Alpha"
-          value={jAlpha != null ? `${jAlpha > 0 ? '+' : ''}${jAlpha}%` : '—'}
+          value={jAlpha != null ? `${parseFloat(jAlpha) > 0 ? '+' : ''}${jAlpha}%` : '—'}
           sub={jAlpha != null && parseFloat(jAlpha) > 0 ? 'Positive excess return vs benchmark' : 'Below benchmark after risk adjustment'}
           color={jAlpha != null && parseFloat(jAlpha) > 0 ? 'var(--green)' : 'var(--red)'}
           note="Risk-adjusted excess return (CAPM)"
+          info={infoAlpha}
         />
       </div>
 
