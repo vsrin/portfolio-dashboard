@@ -8,6 +8,33 @@ import InfoButton from './InfoButton'
 import { WIDGET_INFO } from '../data/widgetInfo'
 import NarrativeBlur from './NarrativeBlur'
 
+function buildCardMath(item, totalAltValue, subMgrFees) {
+  const f = (n) => '$' + Math.round(n).toLocaleString('en-US')
+  const costBasis  = item.value - item.net_gain
+  const altPct     = item.alt_alloc_pct.toFixed(1)
+  const portPct    = item.weight_pct.toFixed(1)
+  const totalPortfolio = totalAltValue > 0 ? Math.round(item.value / (item.weight_pct / 100)) : 0
+  const feeDrag    = Math.round(item.value / totalAltValue * subMgrFees)
+  const sign       = item.return_pct >= 0 ? '+' : ''
+
+  let c = `**Return: ${sign}${item.return_pct.toFixed(2)}% since inception**\n\n`
+  c += `You invested ${f(costBasis)}. Today the fund is worth ${f(item.value)}, a gain of +${f(item.net_gain)}.\n\n`
+  c += `Return = Gain ÷ Cost = \`${f(item.net_gain)} ÷ ${f(costBasis)}\` = **${sign}${item.return_pct.toFixed(2)}%**\n\n`
+
+  c += `**What "${altPct}% of alts · ${portPct}% of portfolio" means**\n\n`
+  c += `This fund (${f(item.value)}) is \`${f(item.value)} ÷ ${f(totalAltValue)}\` of your alternatives sleeve → **${altPct}% of alts**\n\n`
+  c += `It is \`${f(item.value)} ÷ ${f(totalPortfolio)}\` of your total portfolio → **${portPct}% of portfolio**\n\n`
+
+  if (totalAltValue > 0 && subMgrFees > 0) {
+    c += `**How the fee drag estimate works**\n\n`
+    c += `Sub-manager fees are deducted from the fund's NAV before AllSource reports your values. You never see a bill — the drag is invisible inside your reported return.\n\n`
+    c += `Total portfolio sub-mgr drag: \`${f(subMgrFees)}\` (sum of all gross gains minus what AllSource reports as net gain).\n\n`
+    c += `This fund's share = its alts weight × total drag = \`${altPct}% × ${f(subMgrFees)}\` = **~${f(feeDrag)}**`
+  }
+
+  return c
+}
+
 const VEHICLE_COLORS = {
   private_equity:  '#9b59b6',
   hedge_fund:      '#3498db',
@@ -95,7 +122,10 @@ function VehicleCard({ item, totalAltValue, subMgrFees }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{item.label}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}>
+            {item.label}
+            <InfoButton title={`${item.label} — How the numbers are calculated`} content={buildCardMath(item, totalAltValue, subMgrFees)} />
+          </div>
           <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, display: 'flex', gap: 10 }}>
             <span>{item.alt_alloc_pct.toFixed(1)}% of alts · {item.weight_pct.toFixed(1)}% of portfolio</span>
             <span style={{

@@ -4,18 +4,20 @@ export default function InfoDrawer() {
   const { panel, hideInfo } = useInfo()
   const open = !!panel
 
-  // Parse simple markdown: **bold** and \n\n for paragraphs
+  // Parse simple markdown: **bold**, `code`, and \n\n for paragraphs
   function renderContent(text) {
     if (!text) return null
     return text.split('\n\n').map((para, i) => {
-      const parts = para.split(/(\*\*[^*]+\*\*)/)
+      const parts = para.split(/(\*\*[^*]+\*\*|`[^`]+`)/)
       return (
         <p key={i} style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-          {parts.map((part, j) =>
-            part.startsWith('**') && part.endsWith('**')
-              ? <strong key={j} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part.slice(2, -2)}</strong>
-              : part
-          )}
+          {parts.map((part, j) => {
+            if (part.startsWith('**') && part.endsWith('**'))
+              return <strong key={j} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part.slice(2, -2)}</strong>
+            if (part.startsWith('`') && part.endsWith('`'))
+              return <code key={j} style={{ fontFamily: 'var(--font-mono)', fontSize: 12, background: 'var(--bg-input)', padding: '1px 5px', borderRadius: 3, color: 'var(--cyan)' }}>{part.slice(1, -1)}</code>
+            return part
+          })}
         </p>
       )
     })
