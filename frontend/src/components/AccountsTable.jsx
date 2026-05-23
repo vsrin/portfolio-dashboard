@@ -1,6 +1,29 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { fmt$ } from '../utils/formatters'
+import InfoButton from './InfoButton'
+
+const HOLDINGS_EXPLAINER = `**What every column means**
+
+**Market Value** — The current market price of all positions in this asset class combined, as of the last AllSource refresh. For alternatives (PE, hedge funds, private credit), this is the last reported NAV — often quarterly, not daily.
+
+**Weight** — This class as a percentage of your total AUM. The bar is scaled relative to the largest single class, not 100%, so you can compare sizes at a glance.
+
+**Cost Basis** — The total amount you actually deposited into this class since inception (Jul 10, 2024). It is the denominator in every return calculation. Market Value − Cost Basis = Net Gain.
+
+**Net Gain (Inception)** — Exact dollar profit since inception, sourced directly from AllSource's Position Performance report. For expanded positions, each row's gain is the exact figure from AllSource — and they sum precisely to the class total shown in the parent row. Nothing is estimated.
+
+**Return (Inception)** — Net Gain ÷ Cost Basis, expressed as a percentage. Example for Large-Cap Growth: \`$148,804 ÷ $123,059\` = **+115.65%**. This is a simple total return, not annualised.
+
+**Income (ITD)** — Dividends and interest received since inception, separate from price appreciation. A class showing $27 income (like Large-Cap Growth) means those positions pay little or no dividends — growth stocks such as CrowdStrike, NVIDIA, and Palantir reinvest earnings rather than distributing them. High income figures appear in dividend-heavy or fixed-income positions.
+
+**Position rows (click ▶ to expand)** — Each row shows the individual stock or fund. Gain ITD is the exact AllSource figure. Return ITD = Gain ÷ (Value − Gain). The position gains sum exactly to the class total — no rounding or estimation. Positions with Value = $0 are exited holdings that still carry a gain from when they were sold.
+
+**WINNERS / LOSERS labels** — Applied automatically: a position is a winner if its ITD gain is positive, a loser if negative. Sorted by gain descending so the biggest contributors appear first.
+
+**Footer TOTAL row** — Portfolio-level total gain and IRR for the selected period. When a category filter is active (Equity, Alternatives, Cash), the total shows only that sleeve's market value — the gain and IRR remain portfolio-level figures from AllSource.
+
+**Why Market Value + Gain don't "add up"** — They aren't supposed to. Market Value is where you are today. Cost Basis is what you put in. Net Gain is the difference. Return is the ratio. These are four different views of the same investment, not components that sum together.`
 
 function staleDotColor(dateStr) {
   const days = (Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / 86_400_000
@@ -225,7 +248,10 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
         </div>
       )}
       <div className="card-header" style={{ flexWrap: 'wrap', gap: 10 }}>
-        <span className="card-title">Asset Class Holdings</span>
+        <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          Asset Class Holdings
+          <InfoButton title="How to read this table" content={HOLDINGS_EXPLAINER} />
+        </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontSize: 10, color: 'var(--text-muted)', marginRight: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Period</span>
