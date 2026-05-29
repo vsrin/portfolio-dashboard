@@ -307,11 +307,11 @@ def update_value_series(existing_snap: dict, as_of: str, mv: float) -> list:
 def parse_period_csv(path: str) -> dict:
     """Parse a Position Performance YTD or Previous-Year CSV into per-class {gain, return_pct}.
 
-    Handles exited positions (end_val=0) by back-computing start value from the row's return %.
+    Uses the Return column (period %) to compute start value, then derives period gain.
     Returns dict keyed by our internal asset-class IDs.
     """
-    gains   = defaultdict(float)
     start_v = defaultdict(float)
+    end_v   = defaultdict(float)
 
     with open(path, encoding="iso-8859-1") as f:
         reader = csv.DictReader(f)
@@ -321,24 +321,52 @@ def parse_period_csv(path: str) -> dict:
             ac_name = r.get("Morningstar/IDC Asset Class", "").strip()
             if not ac_name or ac_name not in ASSET_CLASS_MAP:
                 continue
-            gain    = _num(r.get("Net Investment Gain", ""))
             end_val = _num(r.get(next((k for k in r if "Value" in k and "Accrued" not in k
                                        and k not in ("Net Investment Gain",)), ""), ""))
             ret_pct = _num(r.get("Return", ""))
-            if gain is None:
+            if end_val is None or end_val == 0.0:
                 continue
             ac_id = ASSET_CLASS_MAP[ac_name]
-            gains[ac_id] += gain
-            if end_val is not None and end_val != 0.0:
-                start_v[ac_id] += end_val - gain
-            elif ret_pct is not None and ret_pct != 0.0:
-                start_v[ac_id] += gain / (ret_pct / 100.0)
+            end_v[ac_id] += end_val
+            # Derive period start value from end value and return %
+            if ret_pct is not None and ret_pct != 0.0:
+                start_v[ac_id] += end_val / (1.0 + ret_pct / 100.0)
+            else:
+                start_v[ac_id] += end_val  # 0% return → start == end
 
     result = {}
-    for ac_id, total_gain in gains.items():
-        sv  = start_v[ac_id]
-        ret = round(total_gain / sv * 100, 2) if sv > 0 else None
-        result[ac_id] = {"gain": round(total_gain, 2), "return_pct": ret}
+    for ac_id in end_v:
+        ev = end_v[ac_id]
+        sv = start_v[ac_id]
+        period_gain = ev - sv
+        ret = round(period_gain / sv * 100, 2) if sv > 0 else None
+        result[ac_id] = {"gain": round(period_gain, 2), "return_pct": ret}
+    return result
+
+
+def parse_ytd_by_symbol(path: str) -> dict:
+    """Extract per-symbol YTD {gain, return_pct} from a Position Performance YTD CSV.
+
+    Uses the Return column (AllSource's IRR-computed period %) and derives ytd_gain
+    from end_value and return_pct. Returns dict keyed by symbol.
+    """
+    result = {}
+    with open(path, encoding="iso-8859-1") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            r = {re.sub(r'^="|"$', '', k).strip(): re.sub(r'^="|"$', '', str(v)).strip()
+                 for k, v in row.items()}
+            symbol  = _strip(r.get("Symbol", ""))
+            if not symbol:
+                continue
+            end_val = _num(r.get(next((k for k in r if "Value" in k and "Accrued" not in k
+                                       and k not in ("Net Investment Gain",)), ""), ""))
+            ret_pct = _num(r.get("Return", ""))
+            if end_val is None or end_val == 0.0 or ret_pct is None:
+                continue
+            start_val = end_val / (1.0 + ret_pct / 100.0)
+            ytd_gain  = round(end_val - start_val, 2)
+            result[symbol] = {"gain": ytd_gain, "return_pct": ret_pct}
     return result
 
 
@@ -419,7 +447,8 @@ def main():
     print()
 
     # ── 4a. Parse optional YTD / Previous-Year CSVs ──────────────────────────
-    ytd_class_gains = existing.get("ytd_class_gains", {})
+    ytd_class_gains  = existing.get("ytd_class_gains", {})
+    ytd_by_symbol    = existing.get("ytd_by_symbol", {})
     one_year_class_gains = existing.get("one_year_class_gains", {})
 
     if args.ytd:
@@ -427,7 +456,9 @@ def main():
             parsed_ytd = parse_period_csv(args.ytd)
             ytd_note = ytd_class_gains.get("_note", "")
             ytd_class_gains = {"_note": ytd_note, **parsed_ytd}
+            ytd_by_symbol   = parse_ytd_by_symbol(args.ytd)
             print(f"  ✅ YTD class gains parsed: {len(parsed_ytd)} classes from {os.path.basename(args.ytd)}")
+            print(f"  ✅ YTD by symbol parsed:   {len(ytd_by_symbol)} symbols")
         else:
             print(f"  ⚠️  --ytd file not found: {args.ytd}")
 
@@ -457,6 +488,7 @@ def main():
         "value_series":   value_series,
         "one_year_class_gains": one_year_class_gains,   # preserved / updated
         "ytd_class_gains":      ytd_class_gains,         # preserved / updated
+        "ytd_by_symbol":        ytd_by_symbol,           # per-symbol YTD from Return column
         "asset_classes":  {
             **existing.get("asset_classes", {}),
             **snap.get("asset_classes", {}),

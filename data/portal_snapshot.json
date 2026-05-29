@@ -189,84 +189,498 @@
   "ytd_class_gains": {
     "_note": "YTD gains per asset class from AllSource Position Performance YTD (Dec 31 2025 to May 12 2026). Null = data not yet available (need YTD CSV for equity classes).",
     "commodity": {
-      "gain": 4598.03,
-      "return_pct": 7.97
+      "gain": 4425.77,
+      "return_pct": 7.76
     },
     "hedged_equity": {
-      "gain": -18435.71,
-      "return_pct": -54.95
+      "gain": -2507.66,
+      "return_pct": -14.12
     },
     "managed_futures": {
       "gain": 0.0,
       "return_pct": 0.0
     },
     "hedge_fund": {
-      "gain": 2302.67,
+      "gain": 2308.62,
       "return_pct": 0.93
     },
     "private_equity": {
-      "gain": -246.35,
-      "return_pct": -0.03
+      "gain": -253.65,
+      "return_pct": -0.04
     },
     "private_credit": {
-      "gain": 4612.83,
+      "gain": 4607.09,
       "return_pct": 3.49
     },
     "lc_core": {
-      "gain": 4318.52,
-      "return_pct": 1.89
+      "gain": 7924.64,
+      "return_pct": 3.7
     },
     "lc_growth": {
-      "gain": 33488.34,
-      "return_pct": 13.55
+      "gain": 13229.81,
+      "return_pct": 5.07
     },
     "lc_value": {
-      "gain": 8680.93,
-      "return_pct": 5.82
+      "gain": 10789.97,
+      "return_pct": 7.72
     },
     "sc_core": {
-      "gain": -1417.04,
-      "return_pct": -8.1
+      "gain": -881.56,
+      "return_pct": -5.06
     },
     "sc_value": {
-      "gain": -8289.5,
-      "return_pct": -22.78
+      "gain": -4702.63,
+      "return_pct": -14.15
     },
     "mc_core": {
-      "gain": 5249.37,
-      "return_pct": 8.4
+      "gain": 5594.87,
+      "return_pct": 9.62
     },
     "mc_growth": {
-      "gain": 11184.34,
-      "return_pct": 13.52
+      "gain": 1609.42,
+      "return_pct": 1.78
     },
     "mc_value": {
-      "gain": 1299.02,
-      "return_pct": 2.54
+      "gain": 1589.13,
+      "return_pct": 3.14
     },
     "foreign_lc_growth": {
-      "gain": 15409.11,
-      "return_pct": 18.33
+      "gain": 4605.51,
+      "return_pct": 5.82
     },
     "intl_developed": {
-      "gain": 6678.07,
-      "return_pct": 20.89
-    },
-    "venture": {
-      "gain": 0.0,
-      "return_pct": null
+      "gain": 250.08,
+      "return_pct": 1.4
     },
     "cash": {
-      "gain": 1464.3,
-      "return_pct": 1.34
-    },
-    "sc_growth": {
-      "gain": -8611.13,
-      "return_pct": -44.33
+      "gain": 1219.34,
+      "return_pct": 1.11
     },
     "foreign_sm_growth": {
-      "gain": -466.38,
-      "return_pct": -2.09
+      "gain": -1242.48,
+      "return_pct": -5.56
+    }
+  },
+  "ytd_by_symbol": {
+    "GLDM": {
+      "gain": 4425.77,
+      "return_pct": 7.76
+    },
+    "BIVIX": {
+      "gain": -2507.66,
+      "return_pct": -14.12
+    },
+    "MARSFXLP": {
+      "gain": 0.0,
+      "return_pct": 0.0
+    },
+    "CXSCHONPTLTD": {
+      "gain": 851.7,
+      "return_pct": 0.72
+    },
+    "RACAPINTL": {
+      "gain": 1456.92,
+      "return_pct": 1.13
+    },
+    "CAZGPOCFTEL": {
+      "gain": 0.0,
+      "return_pct": 0.0
+    },
+    "CAZPSOFIIITT": {
+      "gain": 0.0,
+      "return_pct": 0.0
+    },
+    "HAMLANVENCAP": {
+      "gain": 0.0,
+      "return_pct": 0.0
+    },
+    "48130F306": {
+      "gain": 3033.43,
+      "return_pct": 2.62
+    },
+    "NORTHHAVIII": {
+      "gain": 0.0,
+      "return_pct": 0.0
+    },
+    "VISTAONETELP": {
+      "gain": -3287.08,
+      "return_pct": -1.25
+    },
+    "PRFDIILP": {
+      "gain": 4607.09,
+      "return_pct": 3.49
+    },
+    "ADBE": {
+      "gain": -1375.26,
+      "return_pct": -30.75
+    },
+    "GOOG": {
+      "gain": 2765.97,
+      "return_pct": 21.16
+    },
+    "GOOGL": {
+      "gain": 6704.77,
+      "return_pct": 30.84
+    },
+    "AMZN": {
+      "gain": 8025.6,
+      "return_pct": 25.13
+    },
+    "BA": {
+      "gain": 18.37,
+      "return_pct": 0.75
+    },
+    "BKNG": {
+      "gain": -6154.81,
+      "return_pct": -17.91
+    },
+    "SCHW": {
+      "gain": -521.11,
+      "return_pct": -8.94
+    },
+    "COST": {
+      "gain": 1646.74,
+      "return_pct": 17.5
+    },
+    "META": {
+      "gain": -651.6,
+      "return_pct": -1.86
+    },
+    "KLAC": {
+      "gain": 2933.95,
+      "return_pct": 59.94
+    },
+    "MA": {
+      "gain": -3656.82,
+      "return_pct": -12.41
+    },
+    "MSFT": {
+      "gain": -2101.25,
+      "return_pct": -17.42
+    },
+    "PLD": {
+      "gain": 510.76,
+      "return_pct": 10.1
+    },
+    "WMT": {
+      "gain": -220.68,
+      "return_pct": -5.34
+    },
+    "AMD": {
+      "gain": 944.0,
+      "return_pct": 12.62
+    },
+    "COIN": {
+      "gain": -1663.5,
+      "return_pct": -19.31
+    },
+    "CRWD": {
+      "gain": 16549.38,
+      "return_pct": 33.15
+    },
+    "NVDA": {
+      "gain": 7325.85,
+      "return_pct": 13.07
+    },
+    "PLTR": {
+      "gain": -15480.39,
+      "return_pct": -18.49
+    },
+    "PANW": {
+      "gain": 6007.93,
+      "return_pct": 26.05
+    },
+    "TSLA": {
+      "gain": -453.45,
+      "return_pct": -1.41
+    },
+    "BAC": {
+      "gain": 558.54,
+      "return_pct": 8.67
+    },
+    "BLK": {
+      "gain": 729.75,
+      "return_pct": 12.82
+    },
+    "COF": {
+      "gain": 297.82,
+      "return_pct": 5.55
+    },
+    "CSCO": {
+      "gain": 7749.77,
+      "return_pct": 54.31
+    },
+    "C": {
+      "gain": 2432.48,
+      "return_pct": 17.54
+    },
+    "KO": {
+      "gain": 351.12,
+      "return_pct": 4.07
+    },
+    "COP": {
+      "gain": -340.76,
+      "return_pct": -6.44
+    },
+    "CVS": {
+      "gain": 68.57,
+      "return_pct": 1.61
+    },
+    "XOM": {
+      "gain": -974.05,
+      "return_pct": -6.89
+    },
+    "FISV": {
+      "gain": -130.2,
+      "return_pct": -4.65
+    },
+    "GS": {
+      "gain": 1211.4,
+      "return_pct": 25.41
+    },
+    "MCK": {
+      "gain": -1692.49,
+      "return_pct": -19.91
+    },
+    "NEE": {
+      "gain": -347.33,
+      "return_pct": -6.1
+    },
+    "NKE": {
+      "gain": -1398.93,
+      "return_pct": -23.15
+    },
+    "NOC": {
+      "gain": -1438.12,
+      "return_pct": -22.47
+    },
+    "PFE": {
+      "gain": 459.43,
+      "return_pct": 13.86
+    },
+    "PM": {
+      "gain": 279.19,
+      "return_pct": 2.98
+    },
+    "QCOM": {
+      "gain": 2335.15,
+      "return_pct": 76.99
+    },
+    "TMUS": {
+      "gain": -308.15,
+      "return_pct": -9.72
+    },
+    "TMO": {
+      "gain": -110.59,
+      "return_pct": -1.98
+    },
+    "UNH": {
+      "gain": 1057.37,
+      "return_pct": 33.39
+    },
+    "BJ": {
+      "gain": -444.1,
+      "return_pct": -14.15
+    },
+    "ELAN": {
+      "gain": -437.46,
+      "return_pct": -3.06
+    },
+    "BAX": {
+      "gain": -449.09,
+      "return_pct": -11.72
+    },
+    "BF.B": {
+      "gain": -356.48,
+      "return_pct": -10.05
+    },
+    "CPB": {
+      "gain": -1710.89,
+      "return_pct": -32.67
+    },
+    "BTU": {
+      "gain": -2186.16,
+      "return_pct": -10.6
+    },
+    "KMX": {
+      "gain": 444.69,
+      "return_pct": 16.32
+    },
+    "CTVA": {
+      "gain": 68.74,
+      "return_pct": 1.48
+    },
+    "DD": {
+      "gain": 711.76,
+      "return_pct": 26.17
+    },
+    "EL": {
+      "gain": -839.23,
+      "return_pct": -21.3
+    },
+    "IR": {
+      "gain": -609.13,
+      "return_pct": -16.02
+    },
+    "NRG": {
+      "gain": -227.2,
+      "return_pct": -8.38
+    },
+    "PPL": {
+      "gain": -326.97,
+      "return_pct": -7.35
+    },
+    "URI": {
+      "gain": 5567.88,
+      "return_pct": 18.44
+    },
+    "BE": {
+      "gain": 8155.08,
+      "return_pct": 246.89
+    },
+    "EFX": {
+      "gain": -1403.33,
+      "return_pct": -24.1
+    },
+    "FTNT": {
+      "gain": 8428.69,
+      "return_pct": 50.25
+    },
+    "FCX": {
+      "gain": 1019.54,
+      "return_pct": 15.41
+    },
+    "HLT": {
+      "gain": 964.34,
+      "return_pct": 13.55
+    },
+    "IDXX": {
+      "gain": -3245.59,
+      "return_pct": -21.12
+    },
+    "PODD": {
+      "gain": -13026.7,
+      "return_pct": -45.01
+    },
+    "LUV": {
+      "gain": 717.39,
+      "return_pct": 11.36
+    },
+    "ALL": {
+      "gain": -4.68,
+      "return_pct": -0.07
+    },
+    "BIIB": {
+      "gain": 338.49,
+      "return_pct": 9.4
+    },
+    "FDX": {
+      "gain": 1051.41,
+      "return_pct": 16.53
+    },
+    "GM": {
+      "gain": 963.7,
+      "return_pct": 16.24
+    },
+    "IFF": {
+      "gain": 391.87,
+      "return_pct": 11.59
+    },
+    "KHC": {
+      "gain": -184.19,
+      "return_pct": -4.92
+    },
+    "PHM": {
+      "gain": -62.86,
+      "return_pct": -1.37
+    },
+    "REGN": {
+      "gain": -783.5,
+      "return_pct": -17.22
+    },
+    "VLO": {
+      "gain": 108.65,
+      "return_pct": 2.2
+    },
+    "WBD": {
+      "gain": -346.08,
+      "return_pct": -8.24
+    },
+    "ZBH": {
+      "gain": 116.32,
+      "return_pct": 4.46
+    },
+    "ASML": {
+      "gain": 41.18,
+      "return_pct": 356.43
+    },
+    "BAESY": {
+      "gain": 4343.71,
+      "return_pct": 25.73
+    },
+    "NVO": {
+      "gain": 371.56,
+      "return_pct": 20.02
+    },
+    "RYCEY": {
+      "gain": 967.5,
+      "return_pct": 8.93
+    },
+    "SAFRY": {
+      "gain": 144.89,
+      "return_pct": 0.55
+    },
+    "STX": {
+      "gain": 3625.9,
+      "return_pct": 108.58
+    },
+    "GSK": {
+      "gain": 1165.76,
+      "return_pct": 36.81
+    },
+    "JCI": {
+      "gain": 240.37,
+      "return_pct": 4.32
+    },
+    "LVMUY": {
+      "gain": -1202.65,
+      "return_pct": -21.91
+    },
+    "SNY": {
+      "gain": 46.61,
+      "return_pct": 1.28
+    },
+    "FCASH": {
+      "gain": 0.0,
+      "return_pct": 0.0
+    },
+    "FDRXX": {
+      "gain": 1219.34,
+      "return_pct": 1.16
+    },
+    "21256C407": {
+      "gain": 0.0,
+      "return_pct": 0.0
+    },
+    "APO": {
+      "gain": 804.33,
+      "return_pct": 27.05
+    },
+    "AZN": {
+      "gain": -103.92,
+      "return_pct": -1.96
+    },
+    "RNMBY": {
+      "gain": -4785.31,
+      "return_pct": -32.92
+    },
+    "CLS": {
+      "gain": -1242.48,
+      "return_pct": -5.56
+    },
+    "INFQ": {
+      "gain": -1393.11,
+      "return_pct": -9.73
     }
   },
   "asset_classes": {

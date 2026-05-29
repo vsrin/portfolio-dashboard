@@ -5,25 +5,25 @@ import InfoButton from './InfoButton'
 
 const HOLDINGS_EXPLAINER = `**What every column means**
 
-**Market Value** — The current market price of all positions in this asset class combined, as of the last AllSource refresh. For alternatives (PE, hedge funds, private credit), this is the last reported NAV — often quarterly, not daily.
+**Market Value** — Current price of all positions in this asset class, as of the last AllSource refresh. For alternatives (PE, hedge funds, private credit), this is the last reported NAV — often quarterly.
 
-**Weight** — This class as a percentage of your total AUM. The bar is scaled relative to the largest single class, not 100%, so you can compare sizes at a glance.
+**Weight** — This class as a percentage of your total AUM. Bar is scaled relative to the largest class.
 
-**Cost Basis** — The total amount you actually deposited into this class since inception (Jul 10, 2024). It is the denominator in every return calculation. Market Value − Cost Basis = Net Gain.
+**Cost Basis** — Total amount deposited into this class since inception (Jul 10, 2024). Market Value − Cost Basis = Net Gain.
 
-**Net Gain (Inception)** — Exact dollar profit since inception, sourced directly from AllSource's Position Performance report. For expanded positions, each row's gain is the exact figure from AllSource — and they sum precisely to the class total shown in the parent row. Nothing is estimated.
+**Net Gain / Return (period)** — Dollar profit and percentage return for the selected period. Use the MTD / QTD / YTD / 1Y / Inception pills to switch periods.
 
-**Return (Inception)** — Net Gain ÷ Cost Basis, expressed as a percentage. Example for Large-Cap Growth: \`$148,804 ÷ $123,059\` = **+115.65%**. This is a simple total return, not annualised.
+**Position detail (click ▶ to expand)** — Matches the AllSource Position Performance report layout:
+- **Start Value** — position value at the beginning of the selected period (derived from return %)
+- **Current Value** — latest NAV or market price
+- **Weight** — position as % of the asset class total
+- **Net Flows** — cash in/out during the period (not available in exported data — shown as —)
+- **Return %** — period return sourced from AllSource
+- **Net Gain** — dollar gain for the period
 
-**Income (ITD)** — Dividends and interest received since inception, separate from price appreciation. A class showing $27 income (like Large-Cap Growth) means those positions pay little or no dividends — growth stocks such as CrowdStrike, NVIDIA, and Palantir reinvest earnings rather than distributing them. High income figures appear in dividend-heavy or fixed-income positions.
+**WINNERS / LOSERS** — Applied automatically by ITD gain sign. Sorted by gain descending.
 
-**Position rows (click ▶ to expand)** — Each row shows the individual stock or fund. Gain ITD is the exact AllSource figure. Return ITD = Gain ÷ (Value − Gain). The position gains sum exactly to the class total — no rounding or estimation. Positions with Value = $0 are exited holdings that still carry a gain from when they were sold.
-
-**WINNERS / LOSERS labels** — Applied automatically: a position is a winner if its ITD gain is positive, a loser if negative. Sorted by gain descending so the biggest contributors appear first.
-
-**Footer TOTAL row** — Portfolio-level total gain and IRR for the selected period. When a category filter is active (Equity, Alternatives, Cash), the total shows only that sleeve's market value — the gain and IRR remain portfolio-level figures from AllSource.
-
-**Why Market Value + Gain don't "add up"** — They aren't supposed to. Market Value is where you are today. Cost Basis is what you put in. Net Gain is the difference. Return is the ratio. These are four different views of the same investment, not components that sum together.`
+**Footer TOTAL** — Portfolio-level total gain and IRR for the selected period.`
 
 function staleDotColor(dateStr) {
   const days = (Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / 86_400_000
@@ -73,7 +73,32 @@ function PeriodBtn({ active, onClick, label }) {
   )
 }
 
-function HoldingsRow({ holdings, colSpan }) {
+const PERIOD_START_LABELS = {
+  MTD:  'Apr 30, 2026',
+  QTD:  'Mar 31, 2026',
+  YTD:  'Dec 31, 2025',
+  '1Y': 'May 28, 2025',
+  ITD:  'Jul 10, 2024',
+}
+
+function holdingPeriodData(h, period) {
+  if (period === 'ITD') {
+    return {
+      gain:     h.gain,
+      ret:      h.return_pct,
+      startVal: h.gain != null && h.value != null ? h.value - h.gain : null,
+    }
+  }
+  if (period === 'YTD') {
+    const startVal = h.ytd_return_pct != null && h.value != null
+      ? h.value / (1 + h.ytd_return_pct / 100)
+      : null
+    return { gain: h.ytd_gain, ret: h.ytd_return_pct, startVal }
+  }
+  return { gain: null, ret: null, startVal: null }
+}
+
+function HoldingsRow({ holdings, colSpan, period = 'ITD', classValue }) {
   if (!holdings || holdings.length === 0) return (
     <tr>
       <td colSpan={colSpan} style={{ paddingLeft: 32, paddingBottom: 12, color: 'var(--text-muted)', fontSize: 11 }}>
@@ -87,7 +112,9 @@ function HoldingsRow({ holdings, colSpan }) {
   const losers  = isContributorOnly ? holdings.filter(h => h.contributor_type === 'loser')  : []
   const fullPositions = isContributorOnly ? [] : holdings
 
-  const thStyle = { padding: '6px 16px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em' }
+  const thStyle = { padding: '6px 12px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em', whiteSpace: 'nowrap' }
+  const startLabel = PERIOD_START_LABELS[period] || 'Start'
+  const hasData = period === 'ITD' || period === 'YTD'
 
   return (
     <tr>
@@ -97,16 +124,22 @@ function HoldingsRow({ holdings, colSpan }) {
             Top ITD contributors — full position roster not stored
           </div>
         )}
+        {!hasData && !isContributorOnly && (
+          <div style={{ padding: '6px 32px', fontSize: 10, color: 'var(--amber)', borderBottom: '1px solid var(--border)' }}>
+            Per-symbol {period} data not available — switch to YTD or Inception for full detail
+          </div>
+        )}
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg-card)' }}>
               <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 32 }}>SYMBOL</th>
-              {!isContributorOnly && <th style={{ ...thStyle, textAlign: 'left' }}>NAME</th>}
-              {!isContributorOnly && <th style={thStyle}>VALUE</th>}
-              <th style={thStyle}>GAIN ITD</th>
-              {!isContributorOnly && <th style={thStyle}>RETURN ITD</th>}
-              {!isContributorOnly && <th style={thStyle}>GAIN YTD</th>}
-              {!isContributorOnly && <th style={thStyle}>RETURN YTD</th>}
+              {!isContributorOnly && <th style={{ ...thStyle, textAlign: 'left' }}>DESCRIPTION</th>}
+              {!isContributorOnly && <th style={thStyle}>{startLabel.toUpperCase()} VALUE</th>}
+              {!isContributorOnly && <th style={thStyle}>CURRENT VALUE</th>}
+              {!isContributorOnly && <th style={thStyle}>WEIGHT</th>}
+              {!isContributorOnly && <th style={thStyle}>NET FLOWS</th>}
+              <th style={thStyle}>RETURN</th>
+              <th style={thStyle}>NET GAIN</th>
             </tr>
           </thead>
           <tbody>
@@ -122,7 +155,7 @@ function HoldingsRow({ holdings, colSpan }) {
                 {winners.map((h, i) => (
                   <tr key={`w${i}`} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '7px 16px 7px 32px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--cyan)' }}>{h.symbol}</td>
-                    <td style={{ padding: '7px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)' }}>+{fmt$(h.gain, 0)}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--green)' }}>+{fmt$(h.gain, 0)}</td>
                   </tr>
                 ))}
                 {losers.length > 0 && (
@@ -135,32 +168,36 @@ function HoldingsRow({ holdings, colSpan }) {
                 {losers.map((h, i) => (
                   <tr key={`l${i}`} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '7px 16px 7px 32px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--cyan)' }}>{h.symbol}</td>
-                    <td style={{ padding: '7px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--red)' }}>{fmt$(h.gain, 0)}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--red)' }}>{fmt$(h.gain, 0)}</td>
                   </tr>
                 ))}
               </>
             ) : (
               fullPositions.map((h, i) => {
-                const itdColor = h.gain >= 0 ? 'var(--green)' : 'var(--red)'
-                const ytdColor = h.ytd_gain == null ? 'var(--text-muted)' : (h.ytd_gain >= 0 ? 'var(--green)' : 'var(--red)')
+                const { gain, ret, startVal } = holdingPeriodData(h, period)
+                const gainColor = gain == null ? 'var(--text-muted)' : (gain >= 0 ? 'var(--green)' : 'var(--red)')
+                const weightPct = classValue && h.value ? (h.value / classValue * 100) : null
                 return (
                   <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
-                    <td style={{ padding: '8px 16px 8px 32px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--cyan)' }}>{h.symbol}</td>
-                    <td style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-secondary)' }}>{h.name}</td>
-                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)' }}>
-                      {h.value == null ? '—' : fmt$(h.value, 0)}
+                    <td style={{ padding: '8px 12px 8px 32px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--cyan)', whiteSpace: 'nowrap' }}>{h.symbol}</td>
+                    <td style={{ padding: '8px 12px', fontSize: 11, color: 'var(--text-secondary)', maxWidth: 200 }}>{h.name}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
+                      {startVal != null ? fmt$(startVal, 0) : '—'}
                     </td>
-                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: itdColor }}>
-                      {h.gain >= 0 ? '+' : ''}{fmt$(h.gain, 0)}
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)', fontWeight: 600 }}>
+                      {h.value != null ? fmt$(h.value, 0) : '—'}
                     </td>
-                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: itdColor }}>
-                      {h.return_pct == null ? '—' : `${h.return_pct > 0 ? '+' : ''}${h.return_pct.toFixed(2)}%`}
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)' }}>
+                      {weightPct != null ? `${weightPct.toFixed(1)}%` : '—'}
                     </td>
-                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: ytdColor }}>
-                      {h.ytd_gain == null ? '—' : `${h.ytd_gain >= 0 ? '+' : ''}${fmt$(h.ytd_gain, 0)}`}
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
+                      —
                     </td>
-                    <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: ytdColor }}>
-                      {h.ytd_return_pct == null ? '—' : `${h.ytd_return_pct > 0 ? '+' : ''}${h.ytd_return_pct.toFixed(2)}%`}
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: gainColor }}>
+                      {ret != null ? `${ret > 0 ? '+' : ''}${ret.toFixed(2)}%` : '—'}
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: gainColor }}>
+                      {gain != null ? `${gain >= 0 ? '+' : ''}${fmt$(gain, 0)}` : '—'}
                     </td>
                   </tr>
                 )
@@ -368,7 +405,7 @@ export default function AccountsTable({ selectedAssetClass, onClearSelection, pe
                     )}
                   </tr>,
                   isExpanded && (
-                    <HoldingsRow key={`${ac.id}-holdings`} holdings={ac.holdings} colSpan={colSpan} />
+                    <HoldingsRow key={`${ac.id}-holdings`} holdings={ac.holdings} colSpan={colSpan} period={period} classValue={ac.value} />
                   ),
                 ]
               })}

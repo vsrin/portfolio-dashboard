@@ -71,7 +71,8 @@ def _period_gain(mv_end: float, anchor_key: str, net_cf: float = 0.0) -> float:
     start = _ANC.get(anchor_key, {}).get("value", mv_end)
     return round(mv_end - start - net_cf, 2)
 
-_YTD_CLASS = _SNAP.get("ytd_class_gains", {})
+_YTD_CLASS  = _SNAP.get("ytd_class_gains", {})
+_YTD_SYM    = _SNAP.get("ytd_by_symbol", {})
 _1Y_CLASS  = _SNAP.get("one_year_class_gains", {})
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -737,8 +738,8 @@ def _build_holdings(ac: dict) -> list:
                 "gain":       p.get("gain"),
                 "return_pct": p.get("return_pct"),
                 "income":     p.get("income"),
-                "ytd_gain":        None,
-                "ytd_return_pct":  None,
+                "ytd_gain":        _YTD_SYM.get(p["symbol"], {}).get("gain"),
+                "ytd_return_pct":  _YTD_SYM.get(p["symbol"], {}).get("return_pct"),
                 "contributor_type": "winner" if (p.get("gain") or 0) >= 0 else "loser",
             }
             for p in snap_positions
