@@ -740,7 +740,6 @@ def _build_holdings(ac: dict) -> list:
                 "income":     p.get("income"),
                 "ytd_gain":        _YTD_SYM.get(p["symbol"], {}).get("gain"),
                 "ytd_return_pct":  _YTD_SYM.get(p["symbol"], {}).get("return_pct"),
-                "contributor_type": "winner" if (p.get("gain") or 0) >= 0 else "loser",
             }
             for p in snap_positions
         ]
