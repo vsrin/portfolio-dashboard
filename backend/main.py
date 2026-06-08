@@ -263,7 +263,10 @@ ASSET_CLASSES = [
         "income": 0.0,
         "top": [("MARS FX",7.57)],
         "worst": [],
-        "holdings": [{"symbol":"MARSFXLP","name":"MARS FX LP","value":107568.18,"gain":7568.18,"return_pct":7.57,"ytd_gain":0.0,"ytd_return_pct":0.0}],
+        "holdings": [
+            {"symbol":"MARSFXLP","name":"MARS FX LP","value":107568.18,"gain":7568.18,"return_pct":7.57,"ytd_gain":0.0,"ytd_return_pct":0.0},
+            {"symbol":"STATAR","name":"Statar Capital Partners","value":0.0,"gain":0.0,"return_pct":0.0,"ytd_gain":None,"ytd_return_pct":None,"_note":"Confirmed in AllSource Jun 2026. Individual NAV not available from YTD aggregate report — value populates on next ITD CSV refresh. Strategy: CTA/systematic natural gas. Manager: Ron Oser (ex-Citadel/DE Shaw). ~27% net CAGR. Monthly liquidity."},
+        ],
     },
     {
         "id": "hedge_fund",
