@@ -698,10 +698,11 @@ def summary():
         "net_irr_1y":        _IRR_1Y,
         # Period dollar gains (mv_end − mv_start − net_cf)
         # MTD/QTD: intra-HH transfers net ~$0, so CF=0
-        # YTD: net external outflow = −$175,800
+        # YTD 2026: net external contribution = +$100,000 (AllSource: Net Contributions & Withdrawals)
+        # Formula: gain = mv_end - ytd_start - net_cf → 2,787,927 - 2,428,004 - 100,000 = 259,923 ✓
         "gain_mtd":  _period_gain(PORTAL_TOTAL, "mtd"),
         "gain_qtd":  _period_gain(PORTAL_TOTAL, "qtd"),
-        "gain_ytd":  _period_gain(PORTAL_TOTAL, "ytd", net_cf=-175_800),
+        "gain_ytd":  _period_gain(PORTAL_TOTAL, "ytd", net_cf=100_000),
         "gain_1y":   round(_IRR_1Y / 100 * _ANC.get("prev_1y", {}).get("value", PORTAL_TOTAL), 2),
         # Equity sleeve — ITD + per-period
         "equity_value":          round(eq["value"], 2),
