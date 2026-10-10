@@ -2,18 +2,18 @@
   "_note": "Period-start portfolio MVs for Modified Dietz return computation. Update when a period boundary passes: set mtd to the last month-end MV, qtd to last quarter-end MV, ytd to last year-end MV. Values come from AllSource portal → Account Analytics → Period Returns.",
   "ytd": {
     "date": "2025-12-31",
-    "value": 2566789,
-    "_source": "Inferred from Tamarac YTD return 0.88% + ending MV + net YTD flow -$175,800"
+    "value": 2428004,
+    "_source": "AllSource Account Analytics — YTD start value 12/31/2025, confirmed 2026-10-10"
   },
   "qtd": {
-    "date": "2026-03-31",
-    "value": 2349655,
-    "_source": "Tamarac AllSource portal — last quarter-end value"
+    "date": "2026-09-30",
+    "value": 2778034,
+    "_source": "AllSource Account Analytics — MTD start value = Sep 30 ending MV, confirmed 2026-10-10"
   },
   "mtd": {
-    "date": "2026-05-31",
-    "value": 2520037,
-    "_source": "AllSource portal snapshot as of 2026-06-05 (closest available to May 31 month-end)"
+    "date": "2026-09-30",
+    "value": 2778034,
+    "_source": "AllSource Account Analytics — MTD start value = Sep 30 ending MV, confirmed 2026-10-10"
   },
   "prev_1y": {
     "date": "2025-05-12",
