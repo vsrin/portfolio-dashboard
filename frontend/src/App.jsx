@@ -15,6 +15,7 @@ import InsightsPanel from './components/InsightsPanel'
 import ChatPanel from './components/ChatPanel'
 import ManagerScorecard from './components/ManagerScorecard'
 import TargetDatePanel from './components/TargetDatePanel'
+import ReconciliationPanel from './components/ReconciliationPanel'
 import RiskPanel from './components/RiskPanel'
 import LoginScreen from './components/LoginScreen'
 import AccessDenied from './components/AccessDenied'
@@ -186,6 +187,7 @@ function AppShell() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <InsightsPanel />
                 <TargetDatePanel />
+                <ReconciliationPanel />
               </div>
             )}
             {perfSubtab === 'equity' && (
