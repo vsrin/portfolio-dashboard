@@ -891,7 +891,7 @@ def alternatives():
             "weight_pct":     ac["weight"],
             "alt_alloc_pct":  round(ac["value"] / total_alt_value * 100, 2),
             "income":         round(ac.get("income", 0), 2),
-            "holdings":       ac.get("holdings", []),
+            "holdings":       _build_holdings(ac),
             # ALT_META fields
             "reporting_freq": meta.get("reporting_freq", "quarterly"),
             "last_reported":  meta.get("last_reported"),
