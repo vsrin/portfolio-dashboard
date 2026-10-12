@@ -33,6 +33,7 @@ Updating period anchors (do this when a period boundary passes):
 """
 import argparse
 import csv
+import io
 import json
 import os
 import re
@@ -45,6 +46,7 @@ ROOT          = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SNAPSHOT_PATH = os.path.join(ROOT, "data", "portal_snapshot.json")
 ANCHORS_PATH  = os.path.join(ROOT, "data", "period_anchors.json")
 TXN_PATH      = os.path.join(ROOT, "data", "transactions.csv")
+RECON_PATH    = os.path.join(ROOT, "data", "reconciliation.json")
 
 # Mapping from AllSource/Tamarac asset class names → our internal IDs
 ASSET_CLASS_MAP = {
@@ -370,6 +372,67 @@ def parse_ytd_by_symbol(path: str) -> dict:
     return result
 
 
+def parse_summary_csv(path: str) -> dict:
+    """Parse AllSource Summary CSV (Account Analytics → Summary export).
+
+    Returns a dict with:
+      irr: {mtd, qtd, ytd}          — Net IRR percentages from AllSource
+      waterfall: {mtd, qtd, ytd}    — Each is a dict of row_label → dollar amount
+    """
+    with open(path, encoding="cp1252") as f:
+        raw = f.read()
+    raw = re.sub(r'="([^"]*)"', r"\1", raw)
+    reader = csv.DictReader(io.StringIO(raw))
+    rows = list(reader)
+
+    def pn(s):
+        if not s or not s.strip() or s.strip() in ("-", "N/A", "--"):
+            return 0.0
+        s = s.strip().replace(",", "").replace("%", "").replace("$", "")
+        if s.startswith("(") and s.endswith(")"):
+            return -float(s[1:-1])
+        try:
+            return float(s)
+        except ValueError:
+            return 0.0
+
+    # Detect period columns (anything that isn't 'Data For' or empty)
+    if not rows:
+        return {}
+    col_names = list(rows[0].keys())
+    period_cols = [c for c in col_names if c not in ("Data For", "")]
+
+    # Identify which column is MTD, QTD, YTD by matching header text
+    col_mtd = col_qtd = col_ytd = None
+    for c in period_cols:
+        cl = c.lower()
+        if "month to date" in cl or "month-to-date" in cl:
+            col_mtd = c
+        elif "quarter to date" in cl or "quarter-to-date" in cl:
+            col_qtd = c
+        else:
+            col_ytd = c  # e.g. "12/31/2025 to 10/09/2026"
+
+    waterfall = {"mtd": {}, "qtd": {}, "ytd": {}}
+    irr = {}
+
+    for r in rows:
+        label = r.get("", "").strip()
+        if not label:
+            continue
+        for period, col in [("mtd", col_mtd), ("qtd", col_qtd), ("ytd", col_ytd)]:
+            if col:
+                waterfall[period][label] = pn(r.get(col, ""))
+
+    # Extract IRR and anchor values
+    for period in ("mtd", "qtd", "ytd"):
+        irr_val = waterfall[period].get("Net IRR")
+        if irr_val is not None:
+            irr[period] = irr_val
+
+    return {"irr": irr, "waterfall": waterfall}
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="One-command portfolio data refresh.",
@@ -385,6 +448,9 @@ def main():
     parser.add_argument("--prev-year",
         metavar="PREV_YEAR_CSV",
         help="Position Performance Previous Year CSV — updates per-class 1Y gains (annual)")
+    parser.add_argument("--summary",
+        metavar="SUMMARY_CSV",
+        help="AllSource Summary CSV — auto-extracts IRR values and saves reconciliation waterfall")
     args = parser.parse_args()
 
     positions_path = args.positions_csv
@@ -426,24 +492,50 @@ def main():
     period_rets = compute_period_returns(mv, anchors, txn_path, as_of_dt)
 
     irr_1y = existing.get("irr_1y", 13.11)  # kept until prev_1y anchor is updated
-    print(f"  1Y:  {irr_1y:+.2f}%  (kept — update irr_1y manually each quarter in period_anchors.json)")
 
-    # ── 3. Prompt for confirmation / overrides ────────────────────────────────
-    print(f"\n  Computed returns (press Enter to accept, or type the correct % value):")
-    final_irr = {}
-    for key, label, default in [
-        ("mtd", "MTD", period_rets.get("mtd")),
-        ("qtd", "QTD", period_rets.get("qtd")),
-        ("ytd", "YTD", period_rets.get("ytd")),
-        ("1y",  "1Y",  irr_1y),
-    ]:
-        if default is None:
-            default = existing.get(f"irr_{key}", 0.0)
+    # ── 3. IRR collection: auto from Summary CSV, or prompt ──────────────────
+    summary_data = {}
+    recon_waterfall = existing.get("reconciliation_waterfall", {})
+
+    if args.summary and os.path.exists(args.summary):
+        summary_data = parse_summary_csv(args.summary)
+        recon_waterfall = summary_data.get("waterfall", {})
+        auto_irr = summary_data.get("irr", {})
+        irr_1y_auto = auto_irr.get("1y", irr_1y)
+        print(f"\n  IRR from Summary CSV (auto): MTD={auto_irr.get('mtd','?')}%  QTD={auto_irr.get('qtd','?')}%  YTD={auto_irr.get('ytd','?')}%")
+        print(f"  ✅ Reconciliation waterfall stored ({sum(len(v) for v in recon_waterfall.values())} cells)")
+        final_irr = {
+            "mtd": auto_irr.get("mtd", period_rets.get("mtd") or existing.get("irr_mtd", 0.0)),
+            "qtd": auto_irr.get("qtd", period_rets.get("qtd") or existing.get("irr_qtd", 0.0)),
+            "ytd": auto_irr.get("ytd", period_rets.get("ytd") or existing.get("irr_ytd", 0.0)),
+            "1y":  auto_irr.get("1y", irr_1y),
+        }
+        # Still allow override
+        print(f"  (press Enter to accept, or type a correction)")
         try:
-            user_in = input(f"    {label} [{default:.2f}%]: ").strip()
-            final_irr[key] = float(user_in) if user_in else default
+            for key, label in [("mtd", "MTD"), ("qtd", "QTD"), ("ytd", "YTD"), ("1y", "1Y")]:
+                user_in = input(f"    {label} [{final_irr[key]:.2f}%]: ").strip()
+                if user_in:
+                    final_irr[key] = float(user_in)
         except (EOFError, ValueError):
-            final_irr[key] = default
+            pass
+    else:
+        print(f"  1Y:  {irr_1y:+.2f}%  (kept — pass --summary CSV to auto-extract)")
+        print(f"\n  Computed returns (press Enter to accept, or type the correct % value):")
+        final_irr = {}
+        for key, label, default in [
+            ("mtd", "MTD", period_rets.get("mtd")),
+            ("qtd", "QTD", period_rets.get("qtd")),
+            ("ytd", "YTD", period_rets.get("ytd")),
+            ("1y",  "1Y",  irr_1y),
+        ]:
+            if default is None:
+                default = existing.get(f"irr_{key}", 0.0)
+            try:
+                user_in = input(f"    {label} [{default:.2f}%]: ").strip()
+                final_irr[key] = float(user_in) if user_in else default
+            except (EOFError, ValueError):
+                final_irr[key] = default
     print()
 
     # ── 4a. Parse optional YTD / Previous-Year CSVs ──────────────────────────
@@ -486,9 +578,10 @@ def main():
         "irr_ytd":        final_irr["ytd"],
         "irr_1y":         final_irr["1y"],
         "value_series":   value_series,
-        "one_year_class_gains": one_year_class_gains,   # preserved / updated
-        "ytd_class_gains":      ytd_class_gains,         # preserved / updated
-        "ytd_by_symbol":        ytd_by_symbol,           # per-symbol YTD from Return column
+        "one_year_class_gains": one_year_class_gains,
+        "ytd_class_gains":      ytd_class_gains,
+        "ytd_by_symbol":        ytd_by_symbol,
+        "reconciliation_waterfall": recon_waterfall,   # from --summary CSV
         "asset_classes":  {
             **existing.get("asset_classes", {}),
             **snap.get("asset_classes", {}),
@@ -498,6 +591,21 @@ def main():
     with open(SNAPSHOT_PATH, "w") as f:
         json.dump(new_snap, f, indent=2)
     print(f"  ✅ portal_snapshot.json written")
+
+    # Write standalone reconciliation.json (consumed by ReconciliationPanel)
+    if recon_waterfall:
+        recon_out = {
+            "as_of":      as_of,
+            "allsource":  recon_waterfall,
+            "dashboard": {
+                "mtd": {"Ending Value": new_snap["total_value"], "Investment Gain": None, "Net IRR": final_irr["mtd"]},
+                "qtd": {"Ending Value": new_snap["total_value"], "Investment Gain": None, "Net IRR": final_irr["qtd"]},
+                "ytd": {"Ending Value": new_snap["total_value"], "Investment Gain": None, "Net IRR": final_irr["ytd"]},
+            },
+        }
+        with open(RECON_PATH, "w") as f:
+            json.dump(recon_out, f, indent=2)
+        print(f"  ✅ reconciliation.json written")
 
     # ── 5. Merge transactions (if provided) ──────────────────────────────────
     if args.transactions_csv:

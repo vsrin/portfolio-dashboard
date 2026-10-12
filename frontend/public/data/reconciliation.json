@@ -1,0 +1,67 @@
+{
+  "as_of": "2026-10-09",
+  "allsource": {
+    "mtd": {
+      "Start Value": 2778034.0,
+      "Net Contributions & Withdrawals": 0.0,
+      "Transfers": 0.0,
+      "Change in Value of Securities Held": 32704.0,
+      "Change in Value of Securities Sold": 23.0,
+      "Dividend Income": 330.0,
+      "Interest Income": 0.0,
+      "Management Fees": -3514.0,
+      "Other Expenses": 0.0,
+      "Change in Accrued": 0.0,
+      "Ending Value": 2807577.0,
+      "Investment Gain": 29543.0,
+      "Net IRR": 1.06
+    },
+    "qtd": {
+      "Start Value": 2778034.0,
+      "Net Contributions & Withdrawals": 0.0,
+      "Transfers": 0.0,
+      "Change in Value of Securities Held": 32704.0,
+      "Change in Value of Securities Sold": 23.0,
+      "Dividend Income": 330.0,
+      "Interest Income": 0.0,
+      "Management Fees": -3514.0,
+      "Other Expenses": 0.0,
+      "Change in Accrued": 0.0,
+      "Ending Value": 2807577.0,
+      "Investment Gain": 29543.0,
+      "Net IRR": 1.06
+    },
+    "ytd": {
+      "Start Value": 2428004.0,
+      "Net Contributions & Withdrawals": 100000.0,
+      "Transfers": 13439.0,
+      "Change in Value of Securities Held": 254245.0,
+      "Change in Value of Securities Sold": 27198.0,
+      "Dividend Income": 10419.0,
+      "Interest Income": 62.0,
+      "Management Fees": -25460.0,
+      "Other Expenses": -331.0,
+      "Change in Accrued": 0.0,
+      "Ending Value": 2807577.0,
+      "Investment Gain": 279573.0,
+      "Net IRR": 11.31
+    }
+  },
+  "dashboard": {
+    "mtd": {
+      "Ending Value": 2807577.26,
+      "Investment Gain": null,
+      "Net IRR": 1.06
+    },
+    "qtd": {
+      "Ending Value": 2807577.26,
+      "Investment Gain": null,
+      "Net IRR": 1.06
+    },
+    "ytd": {
+      "Ending Value": 2807577.26,
+      "Investment Gain": null,
+      "Net IRR": 11.31
+    }
+  }
+}

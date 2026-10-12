@@ -139,6 +139,14 @@ ctx = {
 }
 write('system_context', ctx)
 
+# Copy reconciliation.json from data/ if it exists
+import shutil
+recon_src = os.path.join(ROOT, 'data', 'reconciliation.json')
+if os.path.exists(recon_src):
+    recon_dst = os.path.join(OUT_DIR, 'reconciliation.json')
+    shutil.copy2(recon_src, recon_dst)
+    print(f'  ✓  reconciliation.json  ({os.path.getsize(recon_dst):,} bytes)')
+
 print('─' * 56)
 print('  Done. Commit frontend/public/data/ and push to deploy.')
 print('─' * 56)
