@@ -1,22 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
-
-const WELCOME = {
-  role: 'assistant',
-  content: `Hello! I'm your Portfolio Intelligence AI, powered by LLaMA 3.3 via Groq.
-
-I have full context on your Srinivasan household portfolio as of **May 5, 2026**, including:
-- All 20 asset class values, gains, and returns
-- Every KPI formula (AUM, net gain, IRR, fees, fee drag)
-- The two data sources: Tamarac CSV ledger + AllSource portal snapshot
-- Fee breakdown by account and month
-
-Try asking me:
-• *"How is the 20.74% return calculated?"*
-• *"Why is gross gain $27K higher than net gain?"*
-• *"Break down the fee drag formula"*
-• *"Which equity class performed best and why?"*
-• *"What's in Private Equity and what's the return?"*`,
-}
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 function renderContent(text) {
   const lines = text.split('\n')
@@ -183,12 +165,14 @@ function Message({ msg, isStreaming }) {
 }
 
 export default function ChatPanel() {
-  const [open, setOpen]         = useState(false)
-  const [messages, setMessages] = useState([WELCOME])
-  const [input, setInput]       = useState('')
-  const [streaming, setStreaming] = useState(false)
-  const bottomRef = useRef(null)
-  const inputRef  = useRef(null)
+  const [open, setOpen]           = useState(false)
+  const [messages, setMessages]   = useState([])
+  const [input, setInput]         = useState('')
+  const [streaming, setStreaming]  = useState(false)
+  const [preloading, setPreloading] = useState(false)
+  const bottomRef    = useRef(null)
+  const inputRef     = useRef(null)
+  const preloadDone  = useRef(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -198,30 +182,12 @@ export default function ChatPanel() {
     if (open) setTimeout(() => inputRef.current?.focus(), 150)
   }, [open])
 
-  const send = async () => {
-    const text = input.trim()
-    if (!text || streaming) return
-
-    const userMsg   = { role: 'user', content: text }
-    const history   = messages.filter(m => m !== WELCOME)
-    setMessages(prev => [...prev, userMsg, { role: 'assistant', content: '' }])
-    setInput('')
-    setStreaming(true)
-
+  const streamResponse = useCallback(async (fetchPromise, onToken, onDone, onError) => {
     try {
-      const resp = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          history: history.map(m => ({ role: m.role, content: m.content })),
-        }),
-      })
-
+      const resp    = await fetchPromise
       const reader  = resp.body.getReader()
       const decoder = new TextDecoder()
       let accumulated = ''
-
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -232,28 +198,89 @@ export default function ChatPanel() {
           if (payload.trim() === '[DONE]') break
           try {
             const parsed = JSON.parse(payload)
-            if (parsed.error) {
-              accumulated = `⚠️ ${parsed.error}`
-            } else if (parsed.token) {
-              accumulated += parsed.token
-            }
-            setMessages(prev => {
-              const updated = [...prev]
-              updated[updated.length - 1] = { role: 'assistant', content: accumulated }
-              return updated
-            })
+            if (parsed.error) { onError(`⚠️ ${parsed.error}`); return }
+            if (parsed.token) { accumulated += parsed.token; onToken(accumulated) }
           } catch {}
         }
       }
+      onDone(accumulated)
     } catch (err) {
-      setMessages(prev => {
-        const updated = [...prev]
-        updated[updated.length - 1] = { role: 'assistant', content: `⚠️ Network error: ${err.message}` }
-        return updated
-      })
-    } finally {
-      setStreaming(false)
+      onError(`⚠️ Network error: ${err.message}`)
     }
+  }, [])
+
+  // Fire pre-loaded analyst brief on first open
+  useEffect(() => {
+    if (!open || preloadDone.current) return
+    preloadDone.current = true
+    setPreloading(true)
+    setMessages([{ role: 'assistant', content: '' }])
+
+    streamResponse(
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: '__PRELOAD__', history: [] }),
+      }),
+      (accumulated) => setMessages([{ role: 'assistant', content: accumulated }]),
+      () => setPreloading(false),
+      (errMsg) => { setMessages([{ role: 'assistant', content: errMsg }]); setPreloading(false) }
+    )
+  }, [open, streamResponse])
+
+  const send = async () => {
+    const text = input.trim()
+    if (!text || streaming || preloading) return
+
+    const userMsg = { role: 'user', content: text }
+    const history = messages.map(m => ({ role: m.role, content: m.content }))
+    setMessages(prev => [...prev, userMsg, { role: 'assistant', content: '' }])
+    setInput('')
+    setStreaming(true)
+
+    await streamResponse(
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history }),
+      }),
+      (accumulated) => setMessages(prev => {
+        const updated = [...prev]
+        updated[updated.length - 1] = { role: 'assistant', content: accumulated }
+        return updated
+      }),
+      () => setStreaming(false),
+      (errMsg) => {
+        setMessages(prev => {
+          const updated = [...prev]
+          updated[updated.length - 1] = { role: 'assistant', content: errMsg }
+          return updated
+        })
+        setStreaming(false)
+      }
+    )
+  }
+
+  const handleClear = () => {
+    preloadDone.current = false
+    setMessages([])
+    setInput('')
+    setStreaming(false)
+    setPreloading(false)
+    // Re-fire preload immediately
+    preloadDone.current = true
+    setPreloading(true)
+    setMessages([{ role: 'assistant', content: '' }])
+    streamResponse(
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: '__PRELOAD__', history: [] }),
+      }),
+      (accumulated) => setMessages([{ role: 'assistant', content: accumulated }]),
+      () => setPreloading(false),
+      (errMsg) => { setMessages([{ role: 'assistant', content: errMsg }]); setPreloading(false) }
+    )
   }
 
   const handleKey = (e) => {
@@ -334,12 +361,12 @@ export default function ChatPanel() {
                   PORTFOLIO AI
                 </div>
                 <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.06em', marginTop: 1 }}>
-                  GROQ · LLAMA 3.3 70B · FULL CONTEXT
+                  GROQ · GPT-OSS 120B · INDEPENDENT ANALYST
                 </div>
               </div>
             </div>
             <button
-              onClick={() => { setMessages([WELCOME]); setInput('') }}
+              onClick={handleClear}
               style={{
                 background: 'none', border: '1px solid var(--border)',
                 borderRadius: 4, color: 'var(--text-muted)',
@@ -357,11 +384,26 @@ export default function ChatPanel() {
             overflowY: 'auto',
             padding: '16px 14px',
           }}>
+            {messages.length === 0 && preloading && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 4px' }}>
+                <div style={{
+                  width: 22, height: 22,
+                  background: 'linear-gradient(135deg, var(--cyan), var(--cyan-dim))',
+                  borderRadius: 4,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontWeight: 800, color: '#070b14', fontFamily: 'var(--font-mono)',
+                  flexShrink: 0,
+                }}>AI</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                  Analyzing your portfolio…
+                </div>
+              </div>
+            )}
             {messages.map((msg, i) => (
               <Message
                 key={i}
                 msg={msg}
-                isStreaming={streaming && i === messages.length - 1 && msg.role === 'assistant'}
+                isStreaming={(streaming || preloading) && i === messages.length - 1 && msg.role === 'assistant'}
               />
             ))}
             <div ref={bottomRef} />
@@ -380,7 +422,7 @@ export default function ChatPanel() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKey}
-                placeholder="Ask about any KPI, formula, or asset class…"
+                placeholder={preloading ? 'Analyst brief loading…' : 'Ask about strategy, risk, fees, specific holdings…'}
                 rows={2}
                 style={{
                   flex: 1,
@@ -401,16 +443,16 @@ export default function ChatPanel() {
               />
               <button
                 onClick={send}
-                disabled={!input.trim() || streaming}
+                disabled={!input.trim() || streaming || preloading}
                 style={{
-                  background: (!input.trim() || streaming) ? 'var(--bg-input)' : 'var(--cyan)',
+                  background: (!input.trim() || streaming || preloading) ? 'var(--bg-input)' : 'var(--cyan)',
                   border: 'none',
                   borderRadius: 6,
-                  color: (!input.trim() || streaming) ? 'var(--text-muted)' : '#070b14',
+                  color: (!input.trim() || streaming || preloading) ? 'var(--text-muted)' : '#070b14',
                   padding: '8px 14px',
                   fontSize: 11,
                   fontWeight: 700,
-                  cursor: (!input.trim() || streaming) ? 'not-allowed' : 'pointer',
+                  cursor: (!input.trim() || streaming || preloading) ? 'not-allowed' : 'pointer',
                   letterSpacing: '0.06em',
                   alignSelf: 'stretch',
                   transition: 'all 0.15s',

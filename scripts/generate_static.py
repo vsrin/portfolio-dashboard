@@ -87,13 +87,49 @@ write('transactions', all_items)
 print(f'       → {len(all_items):,} transaction rows')
 
 # ── System context — used by Cloudflare chat function to build the AI prompt ──
-summary   = get('/api/summary')   or {}
-insights  = get('/api/insights')  or {}
-ac_list   = get('/api/asset-classes') or []
-td_data   = get('/api/target-date') or {}
-bd_data   = get('/api/benchmarks-detail') or {}
+summary      = get('/api/summary')       or {}
+insights     = get('/api/insights')      or {}
+ac_list      = get('/api/asset-classes') or []
+td_data      = get('/api/target-date')   or {}
+risk_metrics = get('/api/risk-metrics')  or {}
+alts_data    = get('/api/alternatives')  or {}
+
+# Build alternatives detail: each category with its holdings
+def _alt_detail(alts):
+    out = []
+    for item in alts.get('items', []):
+        if not item.get('label') or item.get('value', 0) == 0:
+            continue
+        holdings = []
+        for h in item.get('holdings', []):
+            if h.get('value', 0) > 0 or h.get('gain', 0) != 0:
+                holdings.append({
+                    'name':       h.get('name', ''),
+                    'value':      h.get('value', 0),
+                    'return_pct': h.get('return_pct', 0),
+                })
+        out.append({
+            'category':   item.get('label'),
+            'value':      item.get('value', 0),
+            'return_pct': item.get('return_pct', 0),
+            'net_gain':   item.get('net_gain', 0),
+            'weight_pct': item.get('weight_pct', 0),
+            'holdings':   holdings,
+        })
+    return out
+
+# Pre-compute key analytical insights
+alt_total   = summary.get('alternatives_value', 0)
+commodity_v = 191526.03   # Statar + Gold ETF (from alternatives data)
+commodity_g = 36614.52    # commodity net gain
+ex_comm_v   = alt_total - commodity_v                  # ~$1.36M
+ex_comm_g   = summary.get('alternatives_gain', 0) - commodity_g
+ex_comm_ret = (ex_comm_g / (ex_comm_v - ex_comm_g) * 100) if ex_comm_v > ex_comm_g else 0
+
+rm_itd = risk_metrics.get('itd', {})
 
 ctx = {
+    # ── Portfolio summary ──────────────────────────────────────
     'as_of_date':             summary.get('as_of_date'),
     'inception_date':         summary.get('inception_date'),
     'total_value':            summary.get('total_value'),
@@ -102,24 +138,55 @@ ctx = {
     'total_gain_pct':         summary.get('total_gain_pct'),
     'net_irr_1y':             summary.get('net_irr_1y'),
     'net_irr_ytd':            summary.get('net_irr_ytd'),
-    'equity_value':           summary.get('equity_value'),
-    'equity_return_pct':      summary.get('equity_return_pct'),
-    'equity_gain':            summary.get('equity_gain'),
-    'equity_pct':             summary.get('equity_pct'),
-    'alternatives_value':     summary.get('alternatives_value'),
-    'alternatives_return_pct':summary.get('alternatives_return_pct'),
-    'alternatives_gain':      summary.get('alternatives_gain'),
-    'alternatives_pct':       summary.get('alternatives_pct'),
-    'total_fees':             summary.get('total_fees'),
-    'sub_manager_fees':       summary.get('sub_manager_fees'),
-    'advisor_fee_rate_pct':   summary.get('advisor_fee_rate_pct'),
-    'sub_mgr_fee_rate_pct':   summary.get('sub_mgr_fee_rate_pct'),
-    'spy_itd':                insights.get('spy_itd'),
-    'agg_itd':                insights.get('agg_itd'),
-    'benchmark_itd':          insights.get('benchmark_itd'),
-    'alpha_itd':              insights.get('alpha_itd'),
-    'gross_gain':             insights.get('gross_gain'),
-    'fee_gap':                insights.get('fee_gap'),
+    'net_irr_qtd':            summary.get('net_irr_qtd'),
+
+    # ── Sleeves ────────────────────────────────────────────────
+    'equity_value':            summary.get('equity_value'),
+    'equity_return_pct':       summary.get('equity_return_pct'),
+    'equity_return_pct_1y':    summary.get('equity_return_pct_1y'),
+    'equity_gain':             summary.get('equity_gain'),
+    'equity_pct':              summary.get('equity_pct'),
+    'alternatives_value':      summary.get('alternatives_value'),
+    'alternatives_return_pct': summary.get('alternatives_return_pct'),
+    'alternatives_return_pct_1y': summary.get('alternatives_return_pct_1y'),
+    'alternatives_gain':       summary.get('alternatives_gain'),
+    'alternatives_pct':        summary.get('alternatives_pct'),
+    'cash_value':              summary.get('cash_value'),
+    'cash_pct':                summary.get('cash_pct'),
+
+    # ── Fees ────────────────────────────────────────────────────
+    'advisor_fees_itd':        summary.get('advisor_fees_itd'),
+    'advisor_fees_1y':         summary.get('advisor_fees_1y'),
+    'advisor_fees_ytd':        summary.get('advisor_fees_ytd'),
+    'advisor_fee_rate_pct':    summary.get('advisor_fee_rate_pct'),
+    'sub_manager_fees':        summary.get('sub_manager_fees'),
+    'total_fee_impact':        summary.get('total_fee_impact'),
+
+    # ── Benchmarks ──────────────────────────────────────────────
+    'spy_itd':                 insights.get('spy_itd'),
+    'agg_itd':                 insights.get('agg_itd'),
+    'benchmark_itd':           insights.get('benchmark_itd'),
+    'alpha_itd':               insights.get('alpha_itd'),
+    'spy_1y':                  insights.get('spy_1y'),
+    'gross_gain':              insights.get('gross_gain'),
+    'fee_gap':                 insights.get('fee_gap'),
+
+    # ── Risk metrics (Tamarac official, May 2026) ──────────────
+    'risk': {
+        'sharpe_itd':           rm_itd.get('sharpe'),
+        'sortino_itd':          rm_itd.get('sortino'),
+        'beta_itd':             rm_itd.get('beta'),
+        'upside_capture_itd':   rm_itd.get('upside_capture'),
+        'downside_capture_itd': rm_itd.get('downside_capture'),
+        'r_squared_itd':        rm_itd.get('r_squared'),
+        'sp500_sharpe':         risk_metrics.get('benchmark_itd', {}).get('sp500_sharpe'),
+        'source':               f"Tamarac official as of {risk_metrics.get('as_of', 'May 2026')}",
+    },
+
+    # ── Alternatives detail ──────────────────────────────────────
+    'alternatives_detail': _alt_detail(alts_data),
+
+    # ── Asset class table ────────────────────────────────────────
     'asset_classes': [
         {
             'label':      ac.get('label'),
@@ -131,11 +198,22 @@ ctx = {
         }
         for ac in ac_list
     ],
-    'target_date_comparison': (
-        f"Portfolio +{td_data.get('portfolio_return_pct', 0):.2f}% vs VTTHX "
-        f"+{td_data.get('target_date', {}).get('primary', {}).get('return_pct', 17.1):.1f}% (est.)"
-    ),
-    'manager_scorecard_summary': 'Active equity managers vs passive ETF benchmarks — see benchmarks-detail endpoint for per-class breakdown.',
+
+    # ── Pre-computed analytical insights ─────────────────────────
+    'pre_computed': {
+        'ex_commodity_alt_return_pct': round(ex_comm_ret, 1),
+        'ex_commodity_alt_value':      round(ex_comm_v),
+        'commodity_return_pct':        81.04,
+        'commodity_value':             round(commodity_v),
+        'vistaone_value':              268268,
+        'vistaone_return_pct':         8.35,
+        'pe_avg_return_pct':           28.06,
+        'small_cap_underperformance':  'Small-Cap Value –44.0%, Small-Cap Core –45.3%, Small-Cap Growth –60.8% ITD vs broadly flat small-cap market',
+        'small_cap_combined_value':    55147,
+        'capture_story':               '26% upside / 65% downside — captures <1/3 of market gains but >2/3 of losses',
+        'fee_as_pct_of_net_gain':      round(summary.get('total_fee_impact', 0) / summary.get('total_gain', 1) * 100, 1),
+        'spy_gap_itd':                 round(insights.get('spy_itd', 0) - summary.get('total_gain_pct', 0), 2),
+    },
 }
 write('system_context', ctx)
 
