@@ -24,98 +24,54 @@ function buildSystemPrompt(ctx) {
   const risk = ctx.risk || {}
   const pc   = ctx.pre_computed || {}
 
-  const altRows = (ctx.alternatives_detail || []).map(a => {
-    const holdingLines = (a.holdings || []).map(h =>
-      `      • ${h.name}: ${$(h.value)} | ${pct(h.return_pct)} ITD`
-    ).join('\n')
-    return `  ${a.category} (${pct1(a.weight_pct)} of portfolio)\n    Value: ${$(a.value)} | ITD Return: ${pct(a.return_pct)} | Net Gain: ${$(a.net_gain)}\n${holdingLines}`
-  }).join('\n\n')
+  // Top-5 alternatives by value for the brief
+  const topAlts = (ctx.alternatives_detail || [])
+    .filter(a => a.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6)
+    .map(a => `  ${a.category}: ${$(a.value)} | ${pct(a.return_pct)} ITD`)
+    .join('\n')
 
-  const acRows = (ctx.asset_classes || []).map(ac =>
-    `  ${ac.label} (${ac.category}): ${$(ac.value)} | ${pct(ac.return_pct)} ITD | ${ac.weight_pct?.toFixed(1)}% weight`
-  ).join('\n')
+  // Equity classes with notable performance
+  const equityHighlights = (ctx.asset_classes || [])
+    .filter(ac => ac.category === 'equity' && ac.value > 0)
+    .map(ac => `  ${ac.label}: ${$(ac.value)} | ${pct(ac.return_pct)} ITD`)
+    .join('\n')
 
-  return `You are an independent, fiduciary portfolio analyst reviewing the Srinivasan household investment portfolio.
+  return `You are an independent portfolio analyst for the Srinivasan household ($${(ctx.total_value || 0).toLocaleString()} AUM, managed by AllSource RIA).
+Your data is verified and current. Give direct, opinionated answers. Cite exact numbers. Never hedge with "it depends."
 
-YOUR ROLE AND MANDATE:
-- You have verified, current data on this portfolio — reconciled daily to AllSource custodian to ±$1 tolerance.
-- You are NOT the advisor (Patrick Kennedy, AllSource RIA). You are an independent analyst reviewing his work.
-- You form opinions and state them clearly. You flag underperformance, concentration risk, and fee drag without hedging.
-- You think like a CFA charterholder who is not paid to keep money in alternatives.
-- When asked a question, answer it precisely with numbers. Never say "for illustration purposes" or guess any figure.
-- You can say things like "This is a concern" or "The data suggests the advisor should explain X." That is your job.
-- Always cite the specific number that supports your point.
-
-=== PORTFOLIO DATA (as of ${ctx.as_of_date || '2026-10-09'}, inception ${ctx.inception_date || '2024-07-10'}) ===
-
-PORTFOLIO SUMMARY
-  Total AUM:        ${$(ctx.total_value)}
-  Cost Basis:       ${$(ctx.cost_basis)}
-  Net Gain ITD:     ${$(ctx.total_gain)}  (${pct(ctx.total_gain_pct)})
-  Gross Gain ITD:   ${$(ctx.gross_gain)}  (before fee drag)
-  1-Year Net IRR:   ${pct(ctx.net_irr_1y)}
-  YTD Net IRR:      ${pct(ctx.net_irr_ytd)}
-  QTD Net IRR:      ${pct(ctx.net_irr_qtd)}
+PORTFOLIO (as of ${ctx.as_of_date}, inception ${ctx.inception_date})
+  AUM: ${$(ctx.total_value)} | Cost basis: ${$(ctx.cost_basis)} | Net gain: ${$(ctx.total_gain)} (${pct(ctx.total_gain_pct)})
+  1Y IRR: ${pct(ctx.net_irr_1y)} | YTD IRR: ${pct(ctx.net_irr_ytd)} | QTD: ${pct(ctx.net_irr_qtd)}
 
 SLEEVES
-  Equity:        ${$(ctx.equity_value)} (${pct1(ctx.equity_pct)}) | ITD ${pct(ctx.equity_return_pct)} | 1Y ${pct(ctx.equity_return_pct_1y)} | Gain ${$(ctx.equity_gain)}
-  Alternatives:  ${$(ctx.alternatives_value)} (${pct1(ctx.alternatives_pct)}) | ITD ${pct(ctx.alternatives_return_pct)} | 1Y ${pct(ctx.alternatives_return_pct_1y)} | Gain ${$(ctx.alternatives_gain)}
-  Cash:          ${$(ctx.cash_value)} (${pct1(ctx.cash_pct)})
+  Equity ${pct1(ctx.equity_pct)}: ${$(ctx.equity_value)} | ITD ${pct(ctx.equity_return_pct)} | 1Y ${pct(ctx.equity_return_pct_1y)}
+  Alternatives ${pct1(ctx.alternatives_pct)}: ${$(ctx.alternatives_value)} | ITD ${pct(ctx.alternatives_return_pct)} | 1Y ${pct(ctx.alternatives_return_pct_1y)}
+  Cash ${pct1(ctx.cash_pct)}: ${$(ctx.cash_value)}
 
-BENCHMARKS (inception-to-date, Jul 2024 → Oct 2026)
-  S&P 500 (SPY):              ${pct(ctx.spy_itd)}
-  Bloomberg Aggregate (AGG):  ${pct(ctx.agg_itd)}
-  Blended benchmark:          ${pct(ctx.benchmark_itd)}  (${pct1(ctx.equity_pct)} SPY + ${pct1(ctx.alternatives_pct)} AGG + cash)
-  Portfolio alpha vs blend:   ${pct(ctx.alpha_itd)}
-  Portfolio gap vs SPY:       ${pct(pc.spy_gap_itd)} (portfolio trails S&P by this margin ITD)
+BENCHMARKS (ITD)
+  S&P 500: ${pct(ctx.spy_itd)} | AGG: ${pct(ctx.agg_itd)} | Blended: ${pct(ctx.benchmark_itd)} | Portfolio alpha: ${pct(ctx.alpha_itd)}
 
-FEES (AllSource transaction ledger — verified)
-  Advisor fees ITD:       ${$(ctx.advisor_fees_itd)}
-  Advisor fees (1-Year):  ${$(ctx.advisor_fees_1y)}
-  Advisor fees (YTD):     ${$(ctx.advisor_fees_ytd)}
-  Advisor fee rate:       ~${(ctx.advisor_fee_rate_pct || 1.16).toFixed(2)}% annualized on AUM
-  Sub-manager drag:       ${$(ctx.sub_manager_fees)} ITD (embedded in fund NAVs — inferred from gross vs net gap)
-  Total fee impact ITD:   ${$(ctx.total_fee_impact)}  (${pc.fee_as_pct_of_net_gain}% of net gain paid in fees)
+FEES
+  Advisor ITD: ${$(ctx.advisor_fees_itd)} | 1Y: ${$(ctx.advisor_fees_1y)} | YTD: ${$(ctx.advisor_fees_ytd)}
+  Sub-mgr drag: ${$(ctx.sub_manager_fees)} | Total fee impact: ${$(ctx.total_fee_impact)} (${pc.fee_as_pct_of_net_gain}% of net gain)
 
-RISK METRICS (${risk.source || 'Tamarac official, May 2026'})
-  Sharpe ratio ITD:       ${risk.sharpe_itd || '0.84'}  (S&P 500: ${risk.sp500_sharpe || '0.70'})
-  Sortino ratio ITD:      ${risk.sortino_itd || '1.26'}
-  Beta ITD:               ${risk.beta_itd || '0.43'}
-  Upside capture ITD:     ${((risk.upside_capture_itd || 0.26) * 100).toFixed(0)}%
-  Downside capture ITD:   ${((risk.downside_capture_itd || 0.65) * 100).toFixed(0)}%
-  R-squared ITD:          ${((risk.r_squared_itd || 0.7331) * 100).toFixed(1)}%
+RISK (Tamarac official May 2026)
+  Sharpe: ${risk.sharpe_itd} | Sortino: ${risk.sortino_itd} | Beta: ${risk.beta_itd}
+  Upside capture: ${((risk.upside_capture_itd || 0.26) * 100).toFixed(0)}% | Downside capture: ${((risk.downside_capture_itd || 0.65) * 100).toFixed(0)}%
 
 ALTERNATIVES DETAIL
-  [Benchmark note: PE should be judged vs PME, not AGG. Hedge funds vs HFRI. Credit vs CDLI. Futures vs SG CTA.]
+${topAlts}
+  Note: Core alts ex-commodity (${$(pc.ex_commodity_alt_value)}) returned only +${pc.ex_commodity_alt_return_pct}% ITD vs S&P +${pct(ctx.spy_itd)}.
+  VistaOne: ${$(pc.vistaone_value)} — largest PE position but weakest at +${pc.vistaone_return_pct}% vs PE avg +${pc.pe_avg_return_pct}%.
+  Small-caps: ${pc.small_cap_underperformance}.
+  Capture: ${pc.capture_story}.
 
-${altRows}
+EQUITY CLASSES
+${equityHighlights}
 
-EQUITY ASSET CLASSES
-${acRows}
-
-=== PRE-COMPUTED ANALYTICAL FINDINGS ===
-
-1. EX-COMMODITY ALTERNATIVES
-   Core alternatives (ex Statar + Gold): ~${$(pc.ex_commodity_alt_value)} at +${pc.ex_commodity_alt_return_pct}% ITD.
-   S&P 500 returned ${pct(ctx.spy_itd)} in the same window. Core alts lag equity by a significant margin.
-
-2. VISTAONE FLAG
-   VistaOne is the largest PE position (${$(pc.vistaone_value)}) but weakest PE performer at +${pc.vistaone_return_pct}% ITD vs PE avg +${pc.pe_avg_return_pct}%.
-
-3. SMALL-CAP MANAGER FAILURE
-   ${pc.small_cap_underperformance}. Combined value ~${$(pc.small_cap_combined_value)}.
-
-4. CAPTURE RATIO
-   ${pc.capture_story}. This means alts dampen returns without protecting against downside proportionally.
-
-5. FEE IMPACT
-   Total fees = ${$(ctx.total_fee_impact)} ITD = ${pc.fee_as_pct_of_net_gain}% of net gain paid in fees.
-
-=== FORMATTING RULES (STRICT) ===
-NEVER use markdown tables or pipe characters. Structure all data as bullet points:
-  • Label: **value** — context note
-Use ## for section headers. Use numbered lists for ranked items.
-Bold (**) key numbers only. Keep responses under 400 words unless asked for more detail.`
+FORMAT RULES: Never use markdown tables or pipe characters. Use bullet points and bold numbers. Short answers unless asked for detail.`
 }
 
 const PRELOAD_PROMPT = `Generate a portfolio analyst brief. Use bullet points ONLY — no tables, no pipe characters.
@@ -149,6 +105,31 @@ export async function onRequestPost(context) {
 
   const { message, history = [] } = body
   const isPreload = message === '__PRELOAD__'
+
+  // Raw GROQ test — type __RAWTEST__ in chat to see raw SSE stream from model
+  if (message === '__RAWTEST__') {
+    const testResp = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant. Keep responses short.' },
+          { role: 'user', content: 'Say exactly: HELLO WORLD' },
+        ],
+        stream: true,
+        temperature: 0,
+        max_tokens: 20,
+      }),
+    })
+    const status = testResp.status
+    const rawText = await testResp.text()
+    const preview = rawText.slice(0, 800).replace(/\n/g, '\\n')
+    return new Response(
+      `data: ${JSON.stringify({ token: `RAWTEST model=${model} http=${status}\n\n${preview}` })}\ndata: [DONE]\n\n`,
+      { headers: { 'Content-Type': 'text/event-stream' } }
+    )
+  }
 
   // Debug endpoint — type __DEBUG__ in chat to see what the function loaded
   if (message === '__DEBUG__') {
