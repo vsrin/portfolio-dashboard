@@ -71,7 +71,7 @@ ${topAlts}
 EQUITY CLASSES
 ${equityHighlights}
 
-FORMAT RULES: Never use markdown tables or pipe characters. Use bullet points and bold numbers. Short answers unless asked for detail.`
+FORMAT RULES: Never use markdown tables or pipe characters. Use bullet points and bold numbers. Always write at least 3–5 sentences per answer. Never truncate.`
 }
 
 const PRELOAD_PROMPT = `Generate a portfolio analyst brief. Use bullet points ONLY — no tables, no pipe characters.
@@ -152,9 +152,23 @@ export async function onRequestPost(context) {
 
   const systemPrompt = buildSystemPrompt(PORTFOLIO_CTX)
 
+  // Strip garbled history: remove assistant messages with < 30 chars (truncated prior responses)
+  // and their paired user messages so the model doesn't try to "continue" a broken sentence.
+  const cleanHistory = []
+  for (let i = 0; i < history.length; i++) {
+    const msg = history[i]
+    if (msg.role === 'assistant' && (msg.content || '').trim().length < 30) {
+      if (cleanHistory.length > 0 && cleanHistory[cleanHistory.length - 1].role === 'user') {
+        cleanHistory.pop()
+      }
+      continue
+    }
+    cleanHistory.push(msg)
+  }
+
   const messages = [
     { role: 'system', content: systemPrompt },
-    ...(isPreload ? [] : history),
+    ...(isPreload ? [] : cleanHistory),
     { role: 'user', content: isPreload ? PRELOAD_PROMPT : message },
   ]
 
@@ -168,8 +182,8 @@ export async function onRequestPost(context) {
       model,
       messages,
       stream:      true,
-      temperature: isPreload ? 0.2 : 0.3,
-      max_tokens:  isPreload ? 600 : 1024,
+      temperature: isPreload ? 0.2 : 0.5,
+      max_tokens:  isPreload ? 600 : 2048,
     }),
   })
 
