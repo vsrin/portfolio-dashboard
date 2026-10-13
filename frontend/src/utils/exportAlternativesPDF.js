@@ -162,8 +162,8 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
 
     body {
       font-family: 'Source Serif 4', Georgia, serif;
-      font-size: 11pt;
-      line-height: 1.65;
+      font-size: 10pt;
+      line-height: 1.5;
       color: #1a1a2e;
       background: #fff;
     }
@@ -171,26 +171,26 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
     .page {
       max-width: 820px;
       margin: 0 auto;
-      padding: 48px 52px;
+      padding: 36px 48px;
     }
 
     /* ── Cover ─────────────────────────────────────────────────── */
     .cover-header {
-      border-bottom: 3px double #1a1a2e;
-      padding-bottom: 18px;
-      margin-bottom: 26px;
+      border-bottom: 2px solid #1a1a2e;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     .exhibit-title {
-      font-size: 20pt;
+      font-size: 17pt;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: #1a1a2e;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .exhibit-subtitle {
-      font-size: 11pt;
+      font-size: 9.5pt;
       color: #444;
       font-style: italic;
     }
@@ -199,14 +199,14 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 0;
-      margin-top: 14px;
-      font-size: 9.5pt;
+      margin-top: 10px;
+      font-size: 9pt;
     }
 
     .meta-label {
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      font-size: 7.5pt;
+      font-size: 7pt;
       color: #888;
       font-family: 'JetBrains Mono', monospace;
     }
@@ -214,53 +214,55 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
     .meta-value {
       font-weight: 600;
       color: #1a1a2e;
+      font-size: 9.5pt;
     }
 
     /* ── Section shell ──────────────────────────────────────────── */
-    .section { margin-bottom: 34px; }
+    .section { margin-bottom: 20px; }
 
     .section-header {
       background: #1a1a2e;
       color: #fff;
-      padding: 6px 14px;
-      font-size: 9pt;
+      padding: 5px 12px;
+      font-size: 8pt;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .section-header.tinted { background: #2d3a6e; }
 
-    p { margin-bottom: 10px; }
+    p { margin-bottom: 7px; }
 
     /* ── KPI row ───────────────────────────────────────────────── */
     .kpi-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 18px;
+      gap: 8px;
+      margin-bottom: 12px;
     }
 
     .kpi-box {
       border: 1px solid #ddd;
       border-top: 3px solid #1a1a2e;
-      padding: 10px 12px;
+      padding: 7px 10px;
     }
 
     .kpi-label {
-      font-size: 7.5pt;
+      font-size: 7pt;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.07em;
       color: #888;
       font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
+      line-height: 1.3;
     }
 
     .kpi-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 14pt;
+      font-size: 12.5pt;
       font-weight: 600;
       color: #1a1a2e;
       line-height: 1;
@@ -271,18 +273,19 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
     .kpi-value.amber    { color: #b45309; }
 
     .kpi-sub {
-      font-size: 8pt;
+      font-size: 7.5pt;
       color: #666;
-      margin-top: 4px;
+      margin-top: 3px;
+      line-height: 1.3;
     }
 
     /* ── Insight boxes ──────────────────────────────────────────── */
     .insight-box {
-      padding: 14px 18px;
-      margin-bottom: 14px;
+      padding: 9px 14px;
+      margin-bottom: 10px;
       border-left: 4px solid;
-      font-size: 10.5pt;
-      line-height: 1.7;
+      font-size: 9.5pt;
+      line-height: 1.55;
     }
 
     .insight-box.key {
@@ -301,40 +304,41 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
     }
 
     .insight-box h4 {
-      font-size: 8.5pt;
+      font-size: 7.5pt;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #555;
       font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
     }
 
     /* ── Comparison block ───────────────────────────────────────── */
     .comparison-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 8px;
+      margin-bottom: 10px;
     }
 
     .cmp-box {
       border: 1px solid #ddd;
-      padding: 14px;
+      padding: 9px 10px;
       text-align: center;
     }
 
     .cmp-label {
-      font-size: 8pt;
+      font-size: 7pt;
       text-transform: uppercase;
       letter-spacing: 0.07em;
       color: #888;
       font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
+      line-height: 1.3;
     }
 
     .cmp-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 22pt;
+      font-size: 18pt;
       font-weight: 700;
       line-height: 1.1;
     }
@@ -345,46 +349,48 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
     .cmp-value.neutral  { color: #1a1a2e; }
 
     .cmp-sub {
-      font-size: 8.5pt;
+      font-size: 8pt;
       color: #666;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     /* ── Tables (shared) ────────────────────────────────────────── */
     table.exhibit {
       width: 100%;
       border-collapse: collapse;
-      font-size: 9.5pt;
-      margin-bottom: 14px;
+      font-size: 9pt;
+      margin-bottom: 10px;
     }
 
     table.exhibit th {
       background: #1a1a2e;
       color: #fff;
-      padding: 7px 10px;
+      padding: 5px 8px;
       text-align: right;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 7.5pt;
+      font-size: 7pt;
       letter-spacing: 0.06em;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     table.exhibit th:first-child { text-align: left; }
 
     table.exhibit td {
-      padding: 6px 10px;
+      padding: 4px 8px;
       border-bottom: 1px solid #eee;
-      vertical-align: top;
+      vertical-align: middle;
     }
 
     table.exhibit td.num {
       text-align: right;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     table.exhibit td.bmark {
-      font-size: 8.5pt;
+      font-size: 8pt;
       color: #666;
       font-style: italic;
     }
@@ -412,8 +418,8 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       background: #1a1a2e;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 6.5pt;
-      padding: 1px 5px;
+      font-size: 6pt;
+      padding: 1px 4px;
       letter-spacing: 0.06em;
       vertical-align: middle;
       margin-left: 4px;
@@ -424,8 +430,8 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       background: #b45309;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 6.5pt;
-      padding: 1px 5px;
+      font-size: 6pt;
+      padding: 1px 4px;
       letter-spacing: 0.06em;
       vertical-align: middle;
       margin-left: 4px;
@@ -441,20 +447,20 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
 
     .questions-list li {
       counter-increment: q;
-      padding: 12px 14px 12px 48px;
+      padding: 8px 12px 8px 44px;
       border-bottom: 1px solid #eee;
       position: relative;
-      font-size: 10.5pt;
-      line-height: 1.65;
+      font-size: 9.5pt;
+      line-height: 1.55;
     }
 
     .questions-list li::before {
       content: "Q" counter(q);
       position: absolute;
-      left: 12px;
-      top: 12px;
+      left: 10px;
+      top: 9px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 8pt;
+      font-size: 7.5pt;
       font-weight: 700;
       color: #0891b2;
     }
@@ -462,19 +468,20 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
     .questions-list li:last-child { border-bottom: none; }
 
     .q-detail {
-      font-size: 9pt;
+      font-size: 8.5pt;
       color: #555;
-      margin-top: 4px;
+      margin-top: 3px;
       font-style: italic;
+      line-height: 1.45;
     }
 
     /* ── Def grid ───────────────────────────────────────────────── */
     .def-grid {
       display: grid;
       grid-template-columns: 240px 1fr;
-      gap: 4px 20px;
-      font-size: 10pt;
-      margin-bottom: 12px;
+      gap: 3px 16px;
+      font-size: 9.5pt;
+      margin-bottom: 10px;
     }
 
     .def-label { color: #555; font-style: italic; }
@@ -487,21 +494,20 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
 
     /* ── Disclaimer ─────────────────────────────────────────────── */
     .disclaimer {
-      margin-top: 28px;
-      padding-top: 14px;
+      margin-top: 18px;
+      padding-top: 10px;
       border-top: 1px solid #ddd;
-      font-size: 8pt;
+      font-size: 7.5pt;
       color: #888;
-      line-height: 1.6;
+      line-height: 1.5;
       font-style: italic;
     }
 
     /* ── Print ──────────────────────────────────────────────────── */
     @media print {
-      body { padding: 0; }
-      .page { padding: 32px 44px; }
+      body { padding: 0; font-size: 9.5pt; }
+      .page { padding: 28px 40px; }
       .no-print { display: none !important; }
-      .section { page-break-inside: avoid; }
       .section-header { page-break-after: avoid; }
     }
   </style>
@@ -592,9 +598,8 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
 
     <div class="insight-box attention">
       <h4>Ex-Commodity Formula</h4>
-      Cost basis = ${fmt$(exCommodityValue)} − ${fmt$(exCommodityGain)} = ${fmt$(exCommodityCost)}<br/>
-      Return = ${fmt$(exCommodityGain)} ÷ ${fmt$(exCommodityCost)} = <strong>${fmtPct(exCommodityReturn)}</strong><br/>
-      <br/>
+      Cost basis = ${fmt$(exCommodityValue)} − ${fmt$(exCommodityGain)} = ${fmt$(exCommodityCost)}.
+      Return = ${fmt$(exCommodityGain)} ÷ ${fmt$(exCommodityCost)} = <strong>${fmtPct(exCommodityReturn)}</strong>.
       This is the return earned by the illiquid, complex, locked-up book — PE, hedge funds, credit, futures, and hedged equity.
       The proper question is not "did alternatives beat bonds" (AGG: +${aggItd.toFixed(2)}%) but
       "did illiquid complexity earn enough premium over public equity (+${spyItd.toFixed(2)}%)."
@@ -859,11 +864,10 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
         <div class="def-label">Holding period</div>
         <div class="def-value neutral">~27 months (inception to present)</div>
       </div>
-      <br/>
-      This ${fmt$(opportunityCostGap)} is the cost of diversification in a bull equity market —
+      <p style="margin-top:7px; margin-bottom:0;">This ${fmt$(opportunityCostGap)} is the cost of diversification in a bull equity market —
       it does not mean alternatives are wrong. Diversification's value is asymmetric: it pays in down markets.
       The question is whether Patrick's model allocation of 55% alts is a deliberate diversification posture
-      or a legacy of capital committed to illiquid vehicles that cannot be easily rebalanced.
+      or a legacy of capital committed to illiquid vehicles that cannot be easily rebalanced.</p>
     </div>
   </div>
 
