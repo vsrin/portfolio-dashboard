@@ -43,6 +43,28 @@ export function exportRetirementPDF({ ret, rm, official, asOf, inception, summar
   const factor = ((fv / pv) ** (1 / years)).toFixed(6)
   const reqDisplay = reqRaw.toFixed(2)
 
+  // Inflation adjustment — 3% CPI
+  const CPI = 3.0
+  const cpiFactorAtRetirement = Math.pow(1 + CPI / 100, years)
+  // What $5M nominal in 2039 is worth in today's purchasing power
+  const nominalTargetInTodayDollars = Math.round(fv / cpiFactorAtRetirement)
+  // To maintain $200K/year in TODAY's dollars, the nominal portfolio target is higher
+  const annualIncomeToday  = fv * 0.04                          // $200K
+  const annualIncomeNominal = annualIncomeToday * cpiFactorAtRetirement  // ~$294K in 2039 dollars
+  const inflationAdjustedFV  = Math.round(annualIncomeNominal / 0.04)    // nominal target for same real income
+  const reqRawReal  = ((inflationAdjustedFV / pv) ** (1 / years) - 1) * 100
+  const reqDisplayReal = reqRawReal.toFixed(2)
+  const ratioReal  = (inflationAdjustedFV / pv).toFixed(4)
+  const factorReal = ((inflationAdjustedFV / pv) ** (1 / years)).toFixed(6)
+
+  // Per-scenario real purchasing power at retirement
+  const scenarioRealValues = ret.scenarios.map(s => ({
+    ...s,
+    realValue:       Math.round(s.projected_value / cpiFactorAtRetirement),
+    annualRealIncome:Math.round(s.projected_value / cpiFactorAtRetirement * 0.04),
+    passesRealTarget:s.projected_value >= inflationAdjustedFV,
+  }))
+
   // Full year-by-year projection table
   const tableRows = ret.projection_series.map((row) => {
     const age = ret.current_age + (row.year - 2026)
@@ -55,15 +77,18 @@ export function exportRetirementPDF({ ret, rm, official, asOf, inception, summar
       </tr>`
   }).join('')
 
-  // Per-scenario arithmetic block
-  const scenarioMath = ret.scenarios.map(s => {
+  // Per-scenario arithmetic block — uses scenarioRealValues to show both nominal and real outcomes
+  const scenarioMath = scenarioRealValues.map(s => {
     const r      = s.rate
     const f      = fmtFactor(r, years)
     const result = fmt$(s.projected_value)
     const diff   = s.projected_value - fv
-    const outcome = diff >= 0
-      ? `<span class="pass">Exceeds target by ${fmt$(diff)} ✓</span>`
-      : `<span class="fail">Misses target by ${fmt$(Math.abs(diff))} ✗</span>`
+    const nominalOutcome = diff >= 0
+      ? `<span class="pass">Nominal: Exceeds $5M by ${fmt$(diff)} ✓</span>`
+      : `<span class="fail">Nominal: Misses $5M by ${fmt$(Math.abs(diff))} ✗</span>`
+    const realOutcome = s.passesRealTarget
+      ? `<span class="pass">Real: Exceeds $5M real target ✓</span>`
+      : `<span class="fail">Real: Only ${fmt$(s.realValue)} in today's $ ✗</span>`
     return `
       <div class="scenario-block">
         <div class="scenario-label">${s.label}</div>
@@ -75,7 +100,11 @@ export function exportRetirementPDF({ ret, rm, official, asOf, inception, summar
           = ${fmt$(pv)} × ${f}
           = <strong>${result}</strong>
         </div>
-        <div class="outcome">${outcome}</div>
+        <div class="outcome">${nominalOutcome}</div>
+        <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #ddd; font-size:8.5pt;">
+          ${realOutcome}
+          <div style="color:#666; margin-top:2px;">${fmt$(s.annualRealIncome)}/yr in today's purchasing power</div>
+        </div>
       </div>`
   }).join('')
 
@@ -513,6 +542,24 @@ export function exportRetirementPDF({ ret, rm, official, asOf, inception, summar
           <strong>${fmt$(fv * 0.04)}</strong> — a practical threshold for financial independence at this household's cost structure.
         </p>
       </div>
+
+      <div class="derivation-box" style="border-left-color: #c0392b; margin-top: 14px;">
+        <h4>Inflation Adjustment — What $5M is Really Worth</h4>
+        <div class="formula-display">
+          <div><span class="label">CPI assumption:           </span>  ${CPI}% per year (long-run US average)</div>
+          <div><span class="label">Inflation factor (${years} yrs): </span>  (1 + ${CPI / 100})^${years} = <strong>${cpiFactorAtRetirement.toFixed(4)}</strong></div>
+          <div><span class="label">$5M nominal in today's $: </span>  ${fmt$(fv)} ÷ ${cpiFactorAtRetirement.toFixed(4)} = <strong>${fmt$(nominalTargetInTodayDollars)}</strong></div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid #ddd;">
+            <span class="label">Corrected nominal target to preserve $200K/yr income in today's dollars: </span>
+            <span class="required">${fmt$(inflationAdjustedFV)}</span>
+          </div>
+        </div>
+        <p style="font-size:9.5pt; color:#555; margin-top:10px; margin-bottom:0;">
+          The original $5M target equals only <strong>${fmt$(nominalTargetInTodayDollars)}</strong> in today's purchasing power after
+          ${years} years of ${CPI}% inflation. To truly preserve the $200K/yr income stream in today's dollars,
+          the corrected nominal portfolio target is <strong>${fmt$(inflationAdjustedFV)}</strong>.
+        </p>
+      </div>
     </div>
 
     <!-- ── Section 3: Required Return Calculation ─────────────────── -->
@@ -530,11 +577,28 @@ export function exportRetirementPDF({ ret, rm, official, asOf, inception, summar
         </div>
       </div>
 
+      <div class="derivation-box" style="border-left-color: #c0392b; margin-top: 14px;">
+        <h4>Inflation-Adjusted Required Return</h4>
+        <div class="formula-display">
+          <div><span class="label">Corrected FV (nominal):  </span>  ${fmt$(inflationAdjustedFV)}</div>
+          <div><span class="label">Variables:               </span>  PV = ${fmt$(pv)},  FV = ${fmt$(inflationAdjustedFV)},  n = ${years} years</div>
+          <div><span class="label">Step 1 — ratio:          </span>  ${fmt$(inflationAdjustedFV)} ÷ ${fmt$(pv)} = <strong>${ratioReal}</strong></div>
+          <div><span class="label">Step 2 — root:           </span>  ${ratioReal}^(1÷${years}) = <strong>${factorReal}</strong></div>
+          <div><span class="label">Step 3 — rate:           </span>  ${factorReal} − 1 = <span class="required">${reqDisplayReal}% per year</span></div>
+        </div>
+      </div>
+
       <div class="verdict-banner ${ret.on_track ? 'on-track' : 'off-track'}">
         ${ret.on_track
-          ? `✓ ON TRACK — Required return: ${reqDisplay}% / year. Current annualised return: ${fmtPct(displayAnnReturn)}. Buffer: ${fmtPct(displayAnnReturn - parseFloat(reqDisplay))} above minimum hurdle. Returns would need to decline by ${fmtPct(displayAnnReturn - parseFloat(reqDisplay))} annually before the $5M target is missed.`
-          : `✗ NEEDS ATTENTION — Required return: ${reqDisplay}% / year. Current annualised return: ${fmtPct(displayAnnReturn)}. The portfolio is running ${fmtPct(parseFloat(reqDisplay) - displayAnnReturn)} below the minimum required rate.`
+          ? `✓ NOMINAL TARGET ON TRACK — Required return: ${reqDisplay}% / year. Current annualised return: ${fmtPct(displayAnnReturn)}. Buffer: ${fmtPct(displayAnnReturn - parseFloat(reqDisplay))} above minimum hurdle.`
+          : `✗ NOMINAL TARGET NEEDS ATTENTION — Required return: ${reqDisplay}% / year. Current annualised return: ${fmtPct(displayAnnReturn)}. The portfolio is running ${fmtPct(parseFloat(reqDisplay) - displayAnnReturn)} below the minimum required rate.`
         }
+      </div>
+
+      <div class="verdict-banner off-track" style="margin-top:8px; background:#fdf3f0; border-color:#c0392b; color:#c0392b;">
+        ⚠ REAL-TERMS HURDLE — ${reqDisplayReal}% / year required to preserve $200K/yr income in today's dollars.
+        Current pace (${fmtPct(displayAnnReturn)}) is ${fmtPct(parseFloat(reqDisplayReal) - displayAnnReturn)} short of the inflation-adjusted target.
+        Only scenarios returning ≥ ${reqDisplayReal}% fully preserve purchasing power at retirement.
       </div>
     </div>
 
@@ -582,7 +646,9 @@ export function exportRetirementPDF({ ret, rm, official, asOf, inception, summar
 
       <p style="font-size:8.5pt; color:#888; font-style:italic;">
         Green row = target retirement year (age ${ret.retirement_age}, ${2026 + years}).
-        All figures in nominal dollars — not adjusted for inflation.
+        All figures in nominal dollars. To convert to today's purchasing power, divide by ${cpiFactorAtRetirement.toFixed(2)} (${CPI}% CPI × ${years} years).
+        Example: ${fmt$(fv)} nominal at retirement = ${fmt$(nominalTargetInTodayDollars)} in today's dollars.
+        Corrected real-terms nominal target: ${fmt$(inflationAdjustedFV)}.
       </p>
     </div>
 
@@ -662,7 +728,7 @@ export function exportRetirementPDF({ ret, rm, official, asOf, inception, summar
           </tr>
           <tr>
             <td>Inflation</td>
-            <td>Projections in nominal (not inflation-adjusted) dollars. Real return is approximately nominal return minus CPI (~3%).</td>
+            <td>CPI assumed at ${CPI}% / year (long-run US average). Inflation factor over ${years} years: ${cpiFactorAtRetirement.toFixed(4)}. The $5M nominal target equals ${fmt$(nominalTargetInTodayDollars)} in today's purchasing power. Preserving $200K/yr income in real terms requires a corrected nominal target of ${fmt$(inflationAdjustedFV)} and a ${reqDisplayReal}% annualised return — vs. ${reqDisplay}% for the nominal-only target.</td>
           </tr>
           <tr>
             <td>Return assumption basis</td>
