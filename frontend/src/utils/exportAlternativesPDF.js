@@ -58,6 +58,29 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
   const impliedEquityGain  = totalValue * (spyItd / 100)
   const opportunityCostGap = impliedEquityGain - totalGain
 
+  // ── Architecture analysis — structural counterfactual comparisons ─────────
+  const portfolioReturnPct = summary?.total_gain_pct ?? 20.74
+  const altsFrac  = portfolioPct / 100           // e.g. 0.55
+  const cashFrac  = 0.045                        // ~4.5% cash estimate
+  const equityFrac = Math.max(0, 1 - altsFrac - cashFrac)
+
+  // Counterfactual blended returns (ITD, same period)
+  const conv7030Return        = spyItd * 0.70 + aggItd * 0.30
+  const conv6015alts25bonds   = spyItd * 0.60 + totalReturnPct * 0.15 + aggItd * 0.25
+
+  // What alts needed to return so this portfolio matched the 70/30
+  // equityFrac*spy + altsFrac*x + cashFrac*0 = conv7030
+  const requiredAltsForParity = altsFrac > 0
+    ? (conv7030Return - equityFrac * spyItd) / altsFrac
+    : 0
+  const altsUnderdelivery = requiredAltsForParity - totalReturnPct
+
+  // Risk metric proxies (for the valuation-smoothing caveat)
+  const sharpe = official?.itd?.sharpe ?? null
+  const stdDev = official?.itd?.std_dev != null
+    ? (official.itd.std_dev * 100).toFixed(1)
+    : null
+
   // ── Section 2: Category table rows ────────────────────────────────────────
   const BENCHMARK_MAP = {
     'private equity':        'PME vs S&P 500',
@@ -492,6 +515,78 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       color: #1a1a2e;
     }
 
+    /* ── Architecture challenge grid ───────────────────────────── */
+    .challenge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .challenge-box {
+      border: 1px solid #ddd;
+      border-top: 3px solid #b45309;
+      padding: 9px 11px;
+    }
+
+    .challenge-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #b45309;
+      margin-bottom: 5px;
+    }
+
+    .challenge-body {
+      font-size: 8.5pt;
+      line-height: 1.5;
+      color: #333;
+    }
+
+    /* ── Structural comparison table ────────────────────────────── */
+    .struct-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+      margin-bottom: 10px;
+    }
+
+    .struct-table th {
+      background: #2d3a6e;
+      color: #fff;
+      padding: 5px 8px;
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7pt;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .struct-table th:first-child { text-align: left; }
+
+    .struct-table td {
+      padding: 4px 8px;
+      border-bottom: 1px solid #eee;
+      vertical-align: middle;
+    }
+
+    .struct-table td.num {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .struct-table tr:nth-child(even) td { background: #f9f9fc; }
+
+    .struct-table tr.highlight td {
+      background: #fef3c7 !important;
+      font-weight: 700;
+    }
+
     /* ── Disclaimer ─────────────────────────────────────────────── */
     .disclaimer {
       margin-top: 18px;
@@ -539,43 +634,103 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
     </div>
   </div>
 
-  <!-- ── Section 1: Core Analytical Insight ───────────────────────────── -->
+  <!-- ── Section 1: Investment Architecture ───────────────────────────── -->
   <div class="section">
-    <div class="section-header">1 — Core Analytical Insight: Ex-Commodity Analysis</div>
+    <div class="section-header">1 — Investment Architecture: The Bond Substitution Thesis</div>
 
     <div class="insight-box key">
-      <h4>The Headline Number vs. The Strategic Question</h4>
-      The reported alternatives ITD return of <strong>${fmtPct(totalReturnPct)}</strong> includes
-      the commodity bucket (${fmt$(commodityValue)}, ITD +${(commodityItem?.return_pct ?? 0).toFixed(2)}%),
-      which is driven primarily by gold ETF and a quant momentum fund —
-      neither of which carries an illiquidity premium, a lock-up, or a complexity premium.
-      Stripping commodity out reveals the true core alternatives book: PE, hedge funds, credit, futures, and hedged equity
-      returned <strong>${fmtPct(exCommodityReturn)}</strong> ITD vs. the S&amp;P 500 at
-      <strong>+${spyItd.toFixed(2)}%</strong> over the same period.
-      That gap — ${(spyItd - exCommodityReturn).toFixed(1)} percentage points — is the strategic question for the advisor meeting.
+      <h4>The Structural Premise</h4>
+      This portfolio holds <strong>${fmtPctAbs(portfolioPct)}</strong> of AUM in private alternatives — 2–3× the typical 15–25% model allocation.
+      The implied thesis: replace the traditional fixed income sleeve with private credit, PE, and hedge funds, which may offer
+      better risk-adjusted returns than bonds while providing structural uncorrelation through private valuation mechanisms.
+      The premise has merit — core bonds have shown equity correlation during systemic shocks (2008, early 2020).
+      What matters is whether the execution earns its specific mechanics.
+      An extended equity bull market is the hardest environment to validate this thesis.
+    </div>
+
+    <div class="challenge-grid">
+      <div class="challenge-box">
+        <div class="challenge-title">I — Illiquidity Premium</div>
+        <div class="challenge-body">Private credit and equity lock up capital for 5–10 years. The premium is real, but it is earned through structural illiquidity, not risk reduction. Capital is unavailable for rebalancing or opportunistic deployment during market dislocations — precisely when liquidity would be most valuable.</div>
+      </div>
+      <div class="challenge-box">
+        <div class="challenge-title">II — Valuation Lag ≠ Diversification</div>
+        <div class="challenge-body">Quarterly NAV creates an <em>appearance</em> of low correlation during equity crashes. The reported Sharpe${sharpe != null ? ' (' + sharpe.toFixed(2) + ')' : ''} and volatility${stdDev != null ? ' (' + stdDev + '%)' : ''} are likely understated — 55% of AUM does not reprice during public market drawdowns. True economic correlation surfaces at exit or recapitalization, years later. This is measurement smoothing, not genuine diversification.</div>
+      </div>
+      <div class="challenge-box">
+        <div class="challenge-title">III — Required Return Bar</div>
+        <div class="challenge-body">At 55% concentration, the alternatives book must deliver near-top-quartile results to outperform a conventional 70/30 structure. Median PE and VC historically track — or slightly lag — public equity after fees and J-curve drag. This is a concentrated bet on manager selection, not just asset class diversification.</div>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-box">
+        <div class="kpi-label">Actual Portfolio Return ITD</div>
+        <div class="kpi-value ${portfolioReturnPct >= conv7030Return ? 'positive' : 'negative'}">${fmtPct(portfolioReturnPct)}</div>
+        <div class="kpi-sub">${fmtPctAbs(portfolioPct)} alts · ~${(equityFrac * 100).toFixed(0)}% equity · ~${(cashFrac * 100).toFixed(0)}% cash</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-label">70/30 Equity/Bond (No Alts)</div>
+        <div class="kpi-value neutral">${fmtPct(conv7030Return)}</div>
+        <div class="kpi-sub">SPY +${spyItd.toFixed(2)}% × 70% + AGG +${aggItd.toFixed(2)}% × 30%</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-label">60/25/15 Equity/Bond/Alts</div>
+        <div class="kpi-value neutral">${fmtPct(conv6015alts25bonds)}</div>
+        <div class="kpi-sub">Typical model with 15% alts sleeve</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-label">Alts Return Needed for 70/30 Parity</div>
+        <div class="kpi-value amber">${fmtPct(requiredAltsForParity)}</div>
+        <div class="kpi-sub">Delivered ${fmtPct(totalReturnPct)} — ${fmtPct(altsUnderdelivery)} short of breakeven</div>
+      </div>
+    </div>
+
+    <div class="insight-box attention">
+      <h4>Note on Reported Risk Metrics</h4>
+      The portfolio's Sharpe ratio${sharpe != null ? ' (' + sharpe.toFixed(2) + ')' : ''} and annualised volatility${stdDev != null ? ' (' + stdDev + '%)' : ''} should not be taken at face value.
+      With approximately ${fmtPctAbs(portfolioPct)} of AUM in quarterly-priced private assets, the standard deviation calculation
+      reflects smoothed monthly values — not daily mark-to-market pricing. During the April 2025 equity drawdown,
+      private holdings did not reprice; the measured volatility is lower than true economic risk.
+      Any comparison to public-market Sharpe benchmarks overstates this portfolio's risk-adjusted performance on a like-for-like basis.
+    </div>
+  </div>
+
+  <!-- ── Section 2: Core Analytical Insight ───────────────────────────── -->
+  <div class="section">
+    <div class="section-header">2 — Core Analytical Insight: Ex-Commodity Analysis</div>
+
+    <div class="insight-box key">
+      <h4>The Headline Number vs. The Real Question</h4>
+      The reported alternatives ITD return of <strong>${fmtPct(totalReturnPct)}</strong> includes the commodity bucket
+      (${fmt$(commodityValue)}, ITD ${fmtPct(commodityItem?.return_pct)}), driven primarily by gold ETF and a quant momentum fund —
+      neither carries an illiquidity premium, a lock-up, or a complexity premium.
+      Stripping commodity reveals the true illiquid book: PE, hedge funds, credit, futures, and hedged equity returned
+      <strong>${fmtPct(exCommodityReturn)}</strong> ITD vs. the S&amp;P 500 at <strong>+${spyItd.toFixed(2)}%</strong>.
+      That ${(spyItd - exCommodityReturn).toFixed(1)}-point gap is the core question — and it compounds the architecture concern in Section 1.
     </div>
 
     <div class="comparison-grid">
       <div class="cmp-box">
         <div class="cmp-label">Alternatives Reported ITD</div>
         <div class="cmp-value positive">${fmtPct(totalReturnPct)}</div>
-        <div class="cmp-sub">All 6 categories incl. commodity</div>
+        <div class="cmp-sub">All categories incl. commodity</div>
       </div>
       <div class="cmp-box">
-        <div class="cmp-label">Core Alternatives Ex-Commodity</div>
+        <div class="cmp-label">Core Alts Ex-Commodity</div>
         <div class="cmp-value amber">${fmtPct(exCommodityReturn)}</div>
         <div class="cmp-sub">${fmt$(exCommodityValue)} value · ${fmt$(exCommodityGain)} gain</div>
       </div>
       <div class="cmp-box">
         <div class="cmp-label">S&amp;P 500 ITD (Same Period)</div>
         <div class="cmp-value positive">+${spyItd.toFixed(2)}%</div>
-        <div class="cmp-sub">Equity benchmark</div>
+        <div class="cmp-sub">Public equity benchmark</div>
       </div>
     </div>
 
     <div class="kpi-row">
       <div class="kpi-box">
-        <div class="kpi-label">Commodity Bucket Value</div>
+        <div class="kpi-label">Commodity Value</div>
         <div class="kpi-value neutral">${fmt$(commodityValue)}</div>
         <div class="kpi-sub">${fmtPctAbs((commodityValue / totalValue) * 100)} of alts sleeve</div>
       </div>
@@ -587,12 +742,12 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       <div class="kpi-box">
         <div class="kpi-label">Ex-Commodity Value</div>
         <div class="kpi-value neutral">${fmt$(exCommodityValue)}</div>
-        <div class="kpi-sub">Core alternatives book</div>
+        <div class="kpi-sub">Illiquid core book</div>
       </div>
       <div class="kpi-box">
         <div class="kpi-label">Ex-Commodity ITD Return</div>
         <div class="kpi-value amber">${fmtPct(exCommodityReturn)}</div>
-        <div class="kpi-sub">vs. S&amp;P +${spyItd.toFixed(2)}% equity benchmark</div>
+        <div class="kpi-sub">vs. S&amp;P +${spyItd.toFixed(2)}% · AGG +${aggItd.toFixed(2)}%</div>
       </div>
     </div>
 
@@ -600,26 +755,15 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       <h4>Ex-Commodity Formula</h4>
       Cost basis = ${fmt$(exCommodityValue)} − ${fmt$(exCommodityGain)} = ${fmt$(exCommodityCost)}.
       Return = ${fmt$(exCommodityGain)} ÷ ${fmt$(exCommodityCost)} = <strong>${fmtPct(exCommodityReturn)}</strong>.
-      This is the return earned by the illiquid, complex, locked-up book — PE, hedge funds, credit, futures, and hedged equity.
-      The proper question is not "did alternatives beat bonds" (AGG: +${aggItd.toFixed(2)}%) but
-      "did illiquid complexity earn enough premium over public equity (+${spyItd.toFixed(2)}%)."
-    </div>
-
-    <div class="insight-box attention">
-      <h4>Why Commodity Should Be Assessed Separately</h4>
-      <ul style="margin-left: 18px; margin-top: 4px; line-height: 1.8;">
-        <li>GLD ETF is a liquid public security — zero illiquidity premium, intraday redemption.</li>
-        <li>Statar Capital is a quant fund with monthly liquidity — no lock-up, no J-curve, no complexity premium.</li>
-        <li>Both perform well precisely because gold had an exceptional run — this is market beta, not manager alpha.</li>
-        <li>Including them inflates the alternatives headline return by ~${((totalReturnPct - exCommodityReturn)).toFixed(1)} percentage points.</li>
-        <li>The blended benchmark of ${fmtPct(benchmarkItd)} uses AGG (bond index) as the alternatives comparator — structurally wrong for PE and credit.</li>
-      </ul>
+      The proper benchmark is not AGG (+${aggItd.toFixed(2)}%) but public equity (+${spyItd.toFixed(2)}%) —
+      the illiquid complexity premium must be measured against the liquid alternative foregone.
+      Commodity excluded: GLD ETF and Statar are liquid public strategies; including them masks the illiquid book's underperformance.
     </div>
   </div>
 
-  <!-- ── Section 2: Alternatives Sleeve Overview ───────────────────────── -->
+  <!-- ── Section 3: Alternatives Sleeve Overview ───────────────────────── -->
   <div class="section">
-    <div class="section-header">2 — Alternatives Sleeve Overview</div>
+    <div class="section-header">3 — Alternatives Sleeve Overview</div>
 
     <div class="kpi-row">
       <div class="kpi-box">
@@ -630,7 +774,7 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       <div class="kpi-box">
         <div class="kpi-label">% of Portfolio</div>
         <div class="kpi-value neutral">${fmtPctAbs(portfolioPct)}</div>
-        <div class="kpi-sub">vs. typical 15–25% model allocation</div>
+        <div class="kpi-sub">vs. typical 15–25% model</div>
       </div>
       <div class="kpi-box">
         <div class="kpi-label">ITD Return (All Alts)</div>
@@ -661,15 +805,15 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       </tbody>
     </table>
 
-    <p style="font-size:8.5pt; color:#888; font-style:italic;">
-      J-CURVE badge: fund is &lt;3 years old and early capital deployment suppresses reported returns; long-term IRR is expected to improve materially.
-      Benchmarks shown are industry-standard comparators for each strategy, not the blended AGG benchmark currently reported.
+    <p style="font-size:8pt; color:#888; font-style:italic;">
+      J-CURVE: fund &lt;3 years old; early capital deployment suppresses reported returns.
+      Benchmarks are industry-standard per strategy — not the blended AGG benchmark currently in use.
     </p>
   </div>
 
-  <!-- ── Section 3: Private Equity Deep Dive ──────────────────────────── -->
+  <!-- ── Section 4: Private Equity Deep Dive ──────────────────────────── -->
   <div class="section">
-    <div class="section-header">3 — Private Equity Deep Dive (${fmtPctAbs(peItem?.alt_alloc_pct ?? peItem?.weight_pct)} of Alternatives Sleeve)</div>
+    <div class="section-header">4 — Private Equity Deep Dive (${fmtPctAbs(peItem?.alt_alloc_pct ?? peItem?.weight_pct)} of Alternatives Sleeve)</div>
 
     <div class="kpi-row">
       <div class="kpi-box">
@@ -695,13 +839,12 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
     </div>
 
     <div class="insight-box flag">
-      <h4>VistaOne Flag: Largest Position, Weakest Performance</h4>
+      <h4>VistaOne: Largest Position, Weakest Return</h4>
       VistaOne is the single largest PE holding at <strong>${fmt$(peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.value)}</strong>,
       yet its ITD return of <strong>${fmtPct(peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.return_pct)}</strong>
-      is substantially below the PE category average of <strong>${fmtPct(peAvgReturn)}</strong>.
-      At current cost basis, VistaOne would need to return approximately <strong>${fmtPct(peAvgReturn)}</strong> from here
-      to close the relative gap — requiring a material acceleration in distributions or NAV appreciation.
-      Key question: what is the expected harvest timeline and return trajectory?
+      is substantially below the category average of <strong>${fmtPct(peAvgReturn)}</strong>.
+      Unlike the other J-curve funds, VistaOne is old enough that the early-NAV-suppression explanation no longer applies.
+      Key question: expected harvest timeline and distribution trajectory.
     </div>
 
     <table class="exhibit">
@@ -714,23 +857,22 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
           <th>YTD Return</th>
         </tr>
       </thead>
-      <tbody>
-        ${peRows}
-      </tbody>
+      <tbody>${peRows}</tbody>
     </table>
 
     <div class="insight-box key">
-      <h4>J-Curve Context</h4>
-      Most of the PE funds in this portfolio are &lt;2 years old. Private equity funds typically show flat or negative early returns as management fees are charged before capital is deployed and investments begin compounding.
-      True fund performance is measured by the net IRR at harvest (year 5–10), not reported NAV at year 1–2.
-      The current reported returns should be read as early-innings NAV marks, not performance conclusions.
-      Exception: VistaOne is old enough to warrant scrutiny.
+      <h4>J-Curve Context — and Why Median PE May Not Justify the Allocation</h4>
+      Most funds here are &lt;2 years old; reported NAV marks are early-innings estimates, not performance conclusions.
+      True PE performance is measured at net IRR at harvest (year 5–10).
+      However, academic PME studies consistently show that <em>median</em> PE funds, after fees and J-curve, track or slightly lag public equity.
+      Top-quartile funds outperform — but that is exactly the bar this 52% allocation must clear.
+      The advisor should be able to show vintage-year PME expectations for each fund, not just narrative.
     </div>
   </div>
 
-  <!-- ── Section 4: Hedge Funds, Managed Futures & Hedged Equity ──────── -->
+  <!-- ── Section 5: Hedge Funds & Liquid Alternatives ─────────────────── -->
   <div class="section">
-    <div class="section-header">4 — Hedge Funds &amp; Liquid Alternatives</div>
+    <div class="section-header">5 — Hedge Funds &amp; Liquid Alternatives</div>
 
     <div class="kpi-row">
       <div class="kpi-box">
@@ -755,52 +897,39 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
       </div>
     </div>
 
-    <p style="font-size: 10.5pt; color: #333; margin-bottom: 12px;">
-      <strong>Hedge Funds</strong> (${fmt$(hfItem?.value)}, ${fmtPct(hfItem?.return_pct)} ITD):
-      Both positions are performing well. RA Capital International leads at ${fmtPct((hfItem?.holdings ?? [])[0]?.return_pct)} ITD —
-      strong relative to the HFRI Equity Hedge benchmark. This is the sleeve where active manager selection
-      has demonstrated clear value.
+    <p style="font-size:9.5pt; color:#333; margin-bottom:8px;">
+      <strong>Hedge Funds</strong> (${fmt$(hfItem?.value)}, ${fmtPct(hfItem?.return_pct)} ITD): both positions performing well.
+      RA Capital International at ${fmtPct((hfItem?.holdings ?? [])[0]?.return_pct)} ITD is strong relative to HFRI Equity Hedge.
+      This is the sleeve where active manager selection has demonstrated clear value.
     </p>
 
     <table class="exhibit">
       <thead>
-        <tr>
-          <th>Fund</th>
-          <th>Value</th>
-          <th>ITD Return</th>
-          <th>$ Gain</th>
-          <th>YTD Return</th>
-        </tr>
+        <tr><th>Fund</th><th>Value</th><th>ITD Return</th><th>$ Gain</th><th>YTD Return</th></tr>
       </thead>
-      <tbody>
-        ${buildHoldingRows(hfItem)}
-      </tbody>
+      <tbody>${buildHoldingRows(hfItem)}</tbody>
     </table>
 
     <div class="insight-box attention">
-      <h4>MARS FX LP: CTA Performance Below Target</h4>
-      MARS FX LP returned ${fmtPct(futuresItem?.return_pct)} ITD.
-      Managed futures / CTA funds typically target 8–15% annualized returns,
-      with a purpose of uncorrelated returns during equity drawdowns.
-      At ${fmtPctAbs(futuresItem?.return_pct)} over the holding period, annualized return is approximately
-      ${((futuresItem?.return_pct ?? 0) / 2.25).toFixed(1)}% — below typical CTA targets.
-      The relevant question is whether MARS FX delivered its diversification mandate during drawdown periods,
-      even if the headline return is subdued.
+      <h4>MARS FX LP: CTA Below Target — Was the Diversification Mandate Met?</h4>
+      MARS FX LP returned ${fmtPct(futuresItem?.return_pct)} ITD (~${((futuresItem?.return_pct ?? 0) / 2.25).toFixed(1)}% annualised vs. 8–15% CTA target).
+      The headline return is secondary. The test for a managed futures allocation is whether MARS FX
+      delivered positive or uncorrelated returns during the April 2025 equity drawdown.
+      If it did not provide a hedge precisely when equities fell, the diversification premise failed.
     </div>
 
     ${hedgedItem ? `
     <div class="insight-box attention">
-      <h4>Hedged Equity (Invenomic): Rounding Error</h4>
-      Invenomic represents ${fmt$(hedgedItem?.value)} — approximately ${fmtPctAbs((hedgedItem?.value / portfolioTotal) * 100)} of total portfolio.
-      At ${fmtPct(hedgedItem?.return_pct)} ITD, it is the only negative-returning position.
-      Given its size, the P&amp;L impact is de minimis. The question is whether this position serves a strategic purpose
-      or should be redeployed into a better-performing sleeve.
+      <h4>Invenomic: Only Negative Position — Strategic or Residual?</h4>
+      ${fmt$(hedgedItem?.value)} (${fmtPctAbs((hedgedItem?.value / portfolioTotal) * 100)} of total AUM), ${fmtPct(hedgedItem?.return_pct)} ITD.
+      P&amp;L impact is de minimis. The question is whether this is a deliberate long/short equity allocation
+      or a residual position that should be consolidated into the core hedge fund sleeve.
     </div>` : ''}
   </div>
 
-  <!-- ── Section 5: Private Credit & Risk/Return Analysis ─────────────── -->
+  <!-- ── Section 6: Private Credit & Risk/Return Matrix ───────────────── -->
   <div class="section">
-    <div class="section-header">5 — Private Credit &amp; Full Risk/Return Matrix</div>
+    <div class="section-header">6 — Private Credit &amp; Full Risk/Return Matrix</div>
 
     ${(() => {
       const creditItem = items.find(i => i.label?.toLowerCase().includes('credit'))
@@ -823,113 +952,129 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
         </div>
         <div class="kpi-box">
           <div class="kpi-label">Risk Profile</div>
-          <div class="kpi-value neutral" style="font-size:10pt;">Illiquid / Income</div>
+          <div class="kpi-value neutral" style="font-size:9pt; line-height:1.2;">Illiquid / Income</div>
           <div class="kpi-sub">Quarterly liquidity, senior secured</div>
         </div>
       </div>
-
-      <p style="font-size:10.5pt; color:#333; margin-bottom:12px;">
-        PRF Fund II is the strongest performer in the core alternatives book at ${fmtPct(creditItem?.return_pct)} ITD.
-        Private credit at this return level meaningfully exceeds its Cliffwater DLI benchmark
-        and justifies the illiquidity taken on. This is the position with the strongest risk-adjusted case.
+      <p style="font-size:9.5pt; color:#333; margin-bottom:8px;">
+        PRF Fund II is the strongest performer in the core book at ${fmtPct(creditItem?.return_pct)} ITD — and the clearest risk-adjusted case.
+        Private credit replacing bonds is structurally more defensible than PE replacing bonds:
+        both are income-oriented and illiquid, but credit offers more predictable cash flows.
       </p>`
     })()}
 
-    <p style="font-size:10pt; font-weight:700; margin-bottom: 8px; color: #1a1a2e;">Full Alternatives Risk/Return Matrix (sorted by ITD return)</p>
+    <p style="font-size:9pt; font-weight:700; margin-bottom:6px; color:#1a1a2e;">Full Risk/Return Matrix (sorted by ITD return)</p>
 
     <table class="exhibit">
       <thead>
         <tr>
-          <th>Category</th>
-          <th>ITD Return</th>
-          <th>% of Alts</th>
-          <th>$ Gain</th>
-          <th>Risk Profile</th>
+          <th>Category</th><th>ITD Return</th><th>% of Alts</th><th>$ Gain</th><th>Risk Profile</th>
         </tr>
       </thead>
-      <tbody>
-        ${riskMatrixRows}
-      </tbody>
+      <tbody>${riskMatrixRows}</tbody>
     </table>
 
     <div class="insight-box attention">
-      <h4>Opportunity Cost: 55% Alternatives vs. 100% Equity</h4>
-      <div class="def-grid" style="margin-top: 8px;">
-        <div class="def-label">Alternatives actual gain (ITD)</div>
-        <div class="def-value positive">${fmt$(totalGain)}</div>
-        <div class="def-label">If alternatives had matched S&amp;P 500 (+${spyItd.toFixed(2)}%)</div>
-        <div class="def-value neutral">${fmt$(impliedEquityGain)}</div>
-        <div class="def-label">Opportunity cost gap (nominal)</div>
-        <div class="def-value amber">${fmt$(opportunityCostGap)}</div>
-        <div class="def-label">Holding period</div>
-        <div class="def-value neutral">~27 months (inception to present)</div>
-      </div>
-      <p style="margin-top:7px; margin-bottom:0;">This ${fmt$(opportunityCostGap)} is the cost of diversification in a bull equity market —
-      it does not mean alternatives are wrong. Diversification's value is asymmetric: it pays in down markets.
-      The question is whether Patrick's model allocation of 55% alts is a deliberate diversification posture
-      or a legacy of capital committed to illiquid vehicles that cannot be easily rebalanced.</p>
+      <h4>Structural Opportunity Cost: This Portfolio vs. Conventional Alternatives</h4>
+      <table class="struct-table" style="margin-top:6px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Portfolio Structure</th>
+            <th>Alts %</th>
+            <th>Est. ITD Return</th>
+            <th>vs. Actual</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight">
+            <td>This Portfolio (actual)</td>
+            <td class="num">${fmtPctAbs(portfolioPct)}</td>
+            <td class="num ${portfolioReturnPct >= 0 ? 'positive' : 'negative'}">${fmtPct(portfolioReturnPct)}</td>
+            <td class="num">—</td>
+          </tr>
+          <tr>
+            <td>70/30 Equity/Bond (no alternatives)</td>
+            <td class="num">0%</td>
+            <td class="num neutral">${fmtPct(conv7030Return)}</td>
+            <td class="num ${conv7030Return > portfolioReturnPct ? 'negative' : 'positive'}">${fmtPct(conv7030Return - portfolioReturnPct)}</td>
+          </tr>
+          <tr>
+            <td>60/25/15 Equity/Bond/Alts (typical model)</td>
+            <td class="num">15%</td>
+            <td class="num neutral">${fmtPct(conv6015alts25bonds)}</td>
+            <td class="num ${conv6015alts25bonds > portfolioReturnPct ? 'negative' : 'positive'}">${fmtPct(conv6015alts25bonds - portfolioReturnPct)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:8.5pt; color:#555; margin-top:6px; margin-bottom:0; font-style:italic;">
+        These are illustrative blended return estimates using actual ITD figures (SPY ${fmtPct(spyItd)}, AGG ${fmtPct(aggItd)}, alts ${fmtPct(totalReturnPct)}).
+        The alternatives book needed to return <strong>${fmtPct(requiredAltsForParity)}</strong> ITD just to match a simple 70/30 portfolio — it delivered ${fmtPct(totalReturnPct)}.
+        This is the cost of the bond-substitution architecture in a prolonged equity bull market.
+      </p>
     </div>
   </div>
 
-  <!-- ── Section 6: Key Questions for Advisor Meeting ─────────────────── -->
+  <!-- ── Section 7: Key Questions for Advisor Meeting ─────────────────── -->
   <div class="section">
-    <div class="section-header tinted">6 — Key Questions for Advisor Meeting</div>
+    <div class="section-header tinted">7 — Key Questions for Advisor Meeting</div>
 
-    <p style="font-size:10pt; color:#555; margin-bottom: 14px;">
-      These are the five questions that cannot be answered with generalities.
-      Each has a specific number behind it. Bring this exhibit to the meeting.
+    <p style="font-size:9pt; color:#555; margin-bottom:10px;">
+      Five questions with specific numbers. Each requires a direct answer — not a category overview or a fund narrative.
     </p>
 
     <ol class="questions-list">
       <li>
-        Is the 55% alternatives allocation (${fmt$(totalValue)} of ${fmt$(portfolioTotal)}) Patrick's deliberate model allocation,
-        or is it a structural outcome of capital locked into illiquid vintage commitments that cannot be redeployed?
+        Was the decision to hold ${fmtPctAbs(portfolioPct)} in alternatives an explicit, documented architectural choice
+        to substitute traditional fixed income — or is it a structural outcome of capital committed to illiquid vehicles
+        that cannot currently be redeployed?
         <div class="q-detail">
-          A 55% alts allocation is approximately 2–3× the typical model for a growth-oriented household portfolio.
-          If it's intentional, what is the target allocation and when does it normalize?
-          If it's structural lock-up, what is the expected roll-off timeline?
+          If intentional: what is the written IPS target for alternatives, and what is the rebalancing mechanism if equities
+          outperform for another two years? If structural lock-up: what is the weighted roll-off timeline across the seven funds?
+          The answer determines whether the allocation will self-correct or requires active management.
         </div>
       </li>
       <li>
-        VistaOne is the single largest PE holding at ${fmt$(peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.value ?? 0)} —
-        yet its ITD return of ${fmtPct(peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.return_pct)} is the weakest
-        in the PE category (average: ${fmtPct(peAvgReturn)}). What is the expected return trajectory and harvest timeline?
+        During the April 2025 equity drawdown (S&amp;P approximately −18%), what was the actual quarterly NAV change
+        across the private equity, private credit, and hedge fund positions?
         <div class="q-detail">
-          At PE category average, VistaOne would be worth ~${fmt$((peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.value ?? 0) * 1.20)} today.
-          The relative underperformance represents a ~${fmt$(((peItem?.return_pct ?? 0) / 100 - (peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.return_pct ?? 0) / 100) * (peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.value ?? 0))} drag
-          vs. category average. What's the GP's fund thesis and current portfolio company status?
+          If quarterly marks had not yet come back at the time of the drawdown, the portfolio's reported low volatility
+          is a measurement artifact — not genuine protection. The advisor should be able to show Q1 or Q2 2025 NAV
+          changes by fund. If private assets did not mark down materially while public equities fell 18%, the follow-up
+          question is: what are the unrealized losses sitting in the quarterly lag?
         </div>
       </li>
       <li>
-        The commodity bucket (Statar + GLD ETF, ${fmt$(commodityValue)}) accounts for a disproportionate share of the alternatives
-        headline return at ${fmtPct(commodityItem?.return_pct)} ITD. Should it be classified and benchmarked separately from
-        illiquid alternatives?
+        VistaOne is the single largest PE holding at ${fmt$(peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.value ?? 0)}
+        with an ITD return of ${fmtPct(peHoldings.find(h => h.name?.toLowerCase().includes('vista'))?.return_pct)} vs. the PE
+        category average of ${fmtPct(peAvgReturn)}. What is the GP's harvest timeline, current distribution pace, and
+        the specific path to closing the performance gap?
         <div class="q-detail">
-          Neither position carries illiquidity, lock-up, or complexity premium — the defining characteristics of
-          alternatives. Reporting them in the same sleeve as PE and private credit inflates the alternatives ITD return
-          by approximately ${((totalReturnPct - exCommodityReturn)).toFixed(1)} percentage points.
-          Gold's exceptional recent run (+${(commodityItem?.return_pct ?? 0).toFixed(0)}%) will not persist indefinitely.
+          Unlike the other J-curve funds, VistaOne has been held long enough that early-NAV-suppression is no longer
+          the explanation. The relative underperformance represents real tracking error vs. what the capital could have
+          earned in a median PE vehicle. The advisor needs fund-level thesis and portfolio company status, not macro narrative.
         </div>
       </li>
       <li>
-        The core alternatives book (ex-commodity) returned ${fmtPct(exCommodityReturn)} ITD vs. the S&amp;P 500 at +${spyItd.toFixed(2)}%.
-        What is the specific investment case for maintaining ${fmtPctAbs(portfolioPct)} in alternatives
-        vs. a structure like 40% equity + 15% alternatives?
+        The alternatives book needed to return approximately <strong>${fmtPct(requiredAltsForParity)}</strong> ITD to match
+        a conventional 70/30 portfolio — it returned ${fmtPct(totalReturnPct)}, missing by ${fmtPct(altsUnderdelivery)}.
+        What is the forward return expectation for each strategy over the next five years that justifies maintaining
+        ${fmtPctAbs(portfolioPct)} in illiquid alternatives?
         <div class="q-detail">
-          A 40/15 split would have placed ~${fmt$(portfolioTotal * 0.40)} in public equity and ${fmt$(portfolioTotal * 0.15)} in alternatives —
-          the equity portion alone at S&amp;P pace would have generated ${fmt$(portfolioTotal * 0.40 * spyItd / 100)} vs.
-          the actual alternatives gain of ${fmt$(totalGain)}.
-          The diversification benefit needs to be quantified in terms of drawdown protection, not just nominal return.
+          Median PE and VC funds track or slightly lag public equity after fees and J-curve. Top-quartile outperforms —
+          but that is the bar 52% of this portfolio must clear. The advisor should provide vintage-year PME expectations
+          by fund, not blended category figures. The case for this architecture must be made in forward returns,
+          not the past performance of a commodity-boosted headline number.
         </div>
       </li>
       <li>
-        What is the proper performance benchmark for each alternatives category? The current blended benchmark
-        uses AGG (Bloomberg U.S. Aggregate Bond Index, +${aggItd.toFixed(2)}% ITD) as the alternatives comparator — structurally wrong.
+        The commodity sleeve (${fmt$(commodityValue)}, ${fmtPct(commodityItem?.return_pct)} ITD) inflates the alternatives
+        headline return by ~${((totalReturnPct - exCommodityReturn)).toFixed(1)} percentage points. The blended benchmark uses
+        AGG (+${aggItd.toFixed(2)}% ITD) as the alternatives comparator. Should both be corrected before the next performance review?
         <div class="q-detail">
-          Correct benchmarks: PE → PME vs. S&amp;P 500. Private Credit → Cliffwater DLI.
-          Hedge Funds → HFRI Equity Hedge Index. Managed Futures → SG CTA Index.
-          Commodity → Bloomberg Commodity Total Return or GLD. Using AGG as the alternatives benchmark
-          makes every alternatives position look like an outperformer — it sets an inappropriately low bar.
+          GLD ETF and Statar Capital are liquid public strategies — they carry no illiquidity, lock-up, or complexity premium.
+          Benchmarking PE against AGG makes the alternatives book appear to outperform by design.
+          Corrected benchmarks: PE → PME vs. S&amp;P 500. Credit → Cliffwater DLI. Hedge Funds → HFRI Equity Hedge. Futures → SG CTA.
+          Request that the advisor report the ex-commodity book separately from the next review cycle onward.
         </div>
       </li>
     </ol>
@@ -939,13 +1084,10 @@ export function exportAlternativesPDF({ alts, summary, insights, official }) {
   <div class="disclaimer">
     <strong>Important Disclosure:</strong> This exhibit is prepared solely for informational and planning purposes by the portfolio holder.
     It does not constitute investment advice, a guarantee of future performance, or a solicitation to buy or sell any security.
-    All returns are inception-to-date (ITD) as reported by AllSource Advisory / Tamarac.
-    Private equity, private credit, and hedge fund NAVs are reported quarterly and may not reflect current economic value.
-    Ex-commodity figures are computed from category-level data; minor rounding differences may exist.
-    Opportunity cost calculations are illustrative compounding models — actual results differ due to timing,
-    fees, and sequence of returns.
-    Past performance does not guarantee future results.
-    Prepared from independently reconciled AllSource custodian data as of the date shown above.
+    All returns are ITD as reported by AllSource Advisory / Tamarac. Private equity, private credit, and hedge fund NAVs are
+    reported quarterly and may not reflect current economic value. Structural comparison returns (70/30, 60/25/15) are illustrative
+    estimates using actual ITD benchmarks — they do not account for timing, rebalancing, or transaction costs.
+    Opportunity cost calculations are models; actual results differ. Past performance does not guarantee future results.
   </div>
 
 </div>
