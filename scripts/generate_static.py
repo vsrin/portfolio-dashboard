@@ -217,6 +217,32 @@ ctx = {
 }
 write('system_context', ctx)
 
+# ── Embed portfolio context directly into functions/api/chat.js ────────────────
+# The Cloudflare Pages Function can't reliably self-fetch static assets at runtime,
+# so we bake the context directly into the function file as PORTFOLIO_CTX.
+import re as _re
+chat_fn = os.path.join(ROOT, 'functions', 'api', 'chat.js')
+if os.path.exists(chat_fn):
+    with open(chat_fn, 'r') as f:
+        chat_src = f.read()
+    new_block = (
+        '// === PORTFOLIO_CTX_START (auto-updated by generate_static.py — do not edit manually) ===\n'
+        f'const PORTFOLIO_CTX = {json.dumps(ctx, separators=(",", ":"))}\n'
+        '// === PORTFOLIO_CTX_END ==='
+    )
+    updated = _re.sub(
+        r'// === PORTFOLIO_CTX_START.*?// === PORTFOLIO_CTX_END ===',
+        lambda _: new_block,
+        chat_src,
+        flags=_re.DOTALL,
+    )
+    if updated != chat_src:
+        with open(chat_fn, 'w') as f:
+            f.write(updated)
+        print(f'  ✓  functions/api/chat.js PORTFOLIO_CTX updated')
+    else:
+        print(f'  ⚠  functions/api/chat.js — PORTFOLIO_CTX marker not found, skipping embed')
+
 # Copy reconciliation.json from data/ if it exists
 import shutil
 recon_src = os.path.join(ROOT, 'data', 'reconciliation.json')
