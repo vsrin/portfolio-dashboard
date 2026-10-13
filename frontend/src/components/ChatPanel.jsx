@@ -371,7 +371,7 @@ export default function ChatPanel() {
                   PORTFOLIO AI
                 </div>
                 <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.06em', marginTop: 1 }}>
-                  GROQ · GPT-OSS 120B · INDEPENDENT ANALYST
+                  GROQ · LLAMA 3.3 70B · INDEPENDENT ANALYST
                 </div>
               </div>
             </div>
