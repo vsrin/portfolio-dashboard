@@ -6,7 +6,6 @@ import { useApi } from '../hooks/useApi'
 import { fmt$, fmtShortDate } from '../utils/formatters'
 import InfoButton from './InfoButton'
 import NarrativeBlur from './NarrativeBlur'
-import { exportRetirementPDF } from '../utils/exportRetirementPDF'
 
 // ── Educational content for the info drawer ───────────────────────────────────
 const SHARPE_EDU = `**What Is the Sharpe Ratio?**
@@ -526,50 +525,19 @@ function LiquidityProfile({ liq }) {
 function RetirementProjection({ ret, rm, official, asOf, inception, summary }) {
   const COLORS = { conservative: 'var(--amber)', moderate: 'var(--cyan)', current: 'var(--green)' }
 
-  const handleExport = () => {
-    exportRetirementPDF({ ret, rm, official, asOf, inception, summary })
-  }
-
   return (
     <Section
       title="Gap 4 — Retirement Projection"
       subtitle={`Age ${ret.current_age} today · retiring at ${ret.retirement_age} · ${ret.years_to_retirement} years to go · $5M target (4% rule → ~$200K/yr)`}
       action={
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button
-            onClick={handleExport}
-            style={{
-              padding: '5px 14px',
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.07em',
-              textTransform: 'uppercase',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 4,
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-mono)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              transition: 'border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--cyan)'; e.currentTarget.style.color = 'var(--cyan)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
-            title="Export a PDF exhibit showing all calculations and projections"
-          >
-            ↓ Export PDF
-          </button>
-          <div style={{
-            padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)',
-            background: ret.on_track ? 'rgba(0,230,118,0.12)' : 'rgba(255,82,82,0.12)',
-            color: ret.on_track ? 'var(--green)' : 'var(--red)',
-            border: `1px solid ${ret.on_track ? 'rgba(0,230,118,0.3)' : 'rgba(255,82,82,0.3)'}`,
-            whiteSpace: 'nowrap',
-          }}>
-            {ret.on_track ? '✓ ON TRACK' : '✗ BELOW TARGET'}
-          </div>
+        <div style={{
+          padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)',
+          background: ret.on_track ? 'rgba(0,230,118,0.12)' : 'rgba(255,82,82,0.12)',
+          color: ret.on_track ? 'var(--green)' : 'var(--red)',
+          border: `1px solid ${ret.on_track ? 'rgba(0,230,118,0.3)' : 'rgba(255,82,82,0.3)'}`,
+          whiteSpace: 'nowrap',
+        }}>
+          {ret.on_track ? '✓ ON TRACK' : '✗ BELOW TARGET'}
         </div>
       }
     >

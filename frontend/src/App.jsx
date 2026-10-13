@@ -17,6 +17,7 @@ import ManagerScorecard from './components/ManagerScorecard'
 import TargetDatePanel from './components/TargetDatePanel'
 import ReconciliationPanel from './components/ReconciliationPanel'
 import RiskPanel from './components/RiskPanel'
+import ReportsPanel from './components/ReportsPanel'
 import LoginScreen from './components/LoginScreen'
 import AccessDenied from './components/AccessDenied'
 import { InfoProvider } from './context/InfoContext'
@@ -30,6 +31,7 @@ const TABS = [
   { id: 'accounts',      label: 'Accounts' },
   { id: 'fees',          label: 'Fees & Costs' },
   { id: 'transactions',  label: 'Transactions' },
+  { id: 'reports',       label: 'Reports' },
 ]
 
 const PERF_SUBTABS = [
@@ -221,6 +223,7 @@ function AppShell() {
         {activeTab === 'accounts'      && <AccountsTable selectedAssetClass={selectedAssetClass} onClearSelection={() => setSelectedAssetClass(null)} period={activePeriod} onPeriodChange={setActivePeriod} />}
         {activeTab === 'fees'          && <FeePanel />}
         {activeTab === 'transactions'  && <TransactionTable />}
+        {activeTab === 'reports'       && <ReportsPanel />}
       </div>
     </div>
     <InfoDrawer />
