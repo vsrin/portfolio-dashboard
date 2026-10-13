@@ -223,7 +223,12 @@ export default function ChatPanel() {
         body: JSON.stringify({ message: '__PRELOAD__', history: [] }),
       }),
       (accumulated) => setMessages([{ role: 'assistant', content: accumulated }]),
-      () => setPreloading(false),
+      (accumulated) => {
+        setPreloading(false)
+        if (!accumulated || accumulated.trim().length < 20) {
+          setMessages([{ role: 'assistant', content: '## Ready\nPortfolio data loaded. Ask me about performance, fees, alternatives, risk, or specific holdings.' }])
+        }
+      },
       (errMsg) => { setMessages([{ role: 'assistant', content: errMsg }]); setPreloading(false) }
     )
   }, [open, streamResponse])
@@ -278,7 +283,12 @@ export default function ChatPanel() {
         body: JSON.stringify({ message: '__PRELOAD__', history: [] }),
       }),
       (accumulated) => setMessages([{ role: 'assistant', content: accumulated }]),
-      () => setPreloading(false),
+      (accumulated) => {
+        setPreloading(false)
+        if (!accumulated || accumulated.trim().length < 20) {
+          setMessages([{ role: 'assistant', content: '## Ready\nPortfolio data loaded. Ask me about performance, fees, alternatives, risk, or specific holdings.' }])
+        }
+      },
       (errMsg) => { setMessages([{ role: 'assistant', content: errMsg }]); setPreloading(false) }
     )
   }

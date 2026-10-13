@@ -126,16 +126,32 @@ When asked about alternatives performance, use these benchmarks — not AGG.
 === DATA SOURCES ===
   1. AllSource CSV ledger — all transactions, fees, gains (9,412 rows, through Oct 2026)
   2. AllSource portal snapshot — market values, returns, ITD gains
-  Reconciled to ±$1 tolerance. All figures are current, not estimates.`
+  Reconciled to ±$1 tolerance. All figures are current, not estimates.
+
+=== FORMATTING RULES (STRICT — follow every response) ===
+  NEVER use markdown tables (no pipe characters for data). NEVER use | separators.
+  Structure all data as bullet points:  • Label: **value** — context note
+  Use ## for section headers. Use numbered lists for ranked items.
+  Bold (**) only key numbers and verdicts. Keep responses under 400 words unless asked for detail.
+  Example good format:
+    ## Performance Snapshot
+    • ITD Return: **+35.81%** (Jul 2024 – Oct 2026) vs cost basis of $2.16M
+    • 1-Year Net IRR: **+13.32%**
+    • Alpha vs blended benchmark: **+15.45pp**`
 }
 
-const PRELOAD_PROMPT = `Generate a concise portfolio analyst brief covering:
+const PRELOAD_PROMPT = `Generate a portfolio analyst brief. Use bullet points ONLY — no tables, no pipe characters.
 
-1. PERFORMANCE SNAPSHOT (2-3 sentences, with key numbers)
-2. TOP 3 CONCERNS (numbered, each with specific data: return figures, dollar amounts, percentages)
-3. 3 POINTED QUESTIONS for the next advisor meeting (questions that cannot be answered with generalities)
+## Performance Snapshot
+3 bullets with the key return figures, comparing ITD and 1Y.
 
-Be direct. No hedging. Cite exact numbers for every claim. Format clearly with section headers.`
+## Top 3 Concerns
+Numbered list, each with a specific number that supports the concern.
+
+## Questions for Next Advisor Meeting
+3 numbered questions — each must be specific enough that it cannot be answered with a generality.
+
+Keep the entire brief under 350 words. Be direct. Cite exact numbers.`
 
 export async function onRequestPost(context) {
   const { env, request } = context
