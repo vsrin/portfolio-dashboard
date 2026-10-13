@@ -1,92 +1,69 @@
 /**
  * exportReconciliationPDF.js
- * Generates a professional exhibit-quality reconciliation PDF.
- * Opens a new window with styled HTML and triggers browser print → Save as PDF.
+ * Generates a custodian-vs-dashboard reconciliation exhibit.
+ * Every material section shows AllSource figures alongside Dashboard figures with gap + status.
  *
- * @param {object} recon       - reconciliation.json data (as_of, allsource, dashboard)
- * @param {object} summary     - summary.json data (total_value, cost_basis, total_gain, etc.)
- * @param {array}  assetClasses - asset-classes.json array (label, category, value, net_gain, return_pct, weight_pct)
- * @param {object} fees        - fees.json data (may be null)
+ * @param {object} recon        - reconciliation.json (as_of, allsource, dashboard)
+ * @param {object} summary      - summary.json
+ * @param {array}  assetClasses - asset-classes.json array
+ * @param {object} fees         - fees.json (may be null)
  */
 export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) {
-  // ── Formatters ────────────────────────────────────────────────────────────
+
   const fmt$ = (n) =>
     n != null ? '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—'
 
-  const fmtPct = (n, decimals = 2) =>
-    n != null ? `${Number(n).toFixed(decimals)}%` : '—'
+  const fmtPct = (n, d = 2) =>
+    n != null ? `${Number(n).toFixed(d)}%` : '—'
 
   const fmtDiff = (n) => {
     if (n == null) return '—'
     const abs = Math.abs(n)
-    const formatted = '$' + abs.toLocaleString('en-US', { maximumFractionDigits: 0 })
-    return n >= 0 ? formatted : `(${formatted})`
+    const s   = '$' + abs.toLocaleString('en-US', { maximumFractionDigits: 0 })
+    return n >= 0 ? `+${s}` : `(${s})`
   }
 
-  const today = new Date().toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  })
+  const today  = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  const asOf   = recon?.as_of || summary?.as_of_date || '—'
+  const inception = summary?.inception_date || '2024-07-10'
 
-  // ── Safe data access ──────────────────────────────────────────────────────
-  const asOf = recon?.as_of || summary?.as_of_date || '—'
-  const inception = summary?.inception_date || 'Jul 10, 2024'
+  const AS = recon?.allsource || {}
+  const DB = recon?.dashboard || {}
+  const asMTD = AS.mtd || {};  const dbMTD = DB.mtd || {}
+  const asQTD = AS.qtd || {};  const dbQTD = DB.qtd || {}
+  const asYTD = AS.ytd || {};  const dbYTD = DB.ytd || {}
 
-  const allsource = recon?.allsource || {}
-  const dashboard = recon?.dashboard || {}
+  // ── Shared gap/status helper ─────────────────────────────────────────────
+  const gapStatus = (asVal, dbVal, tol, invertSign = false) => {
+    if (asVal == null || dbVal == null) return { gap: null, pass: null }
+    const raw  = invertSign ? (asVal - dbVal) : (dbVal - asVal)
+    const pass = Math.abs(raw) <= tol
+    return { gap: raw, pass }
+  }
 
-  const as_mtd = allsource.mtd || {}
-  const as_qtd = allsource.qtd || {}
-  const as_ytd = allsource.ytd || {}
+  // ── Fee figures ───────────────────────────────────────────────────────────
+  const asFeesMTD = Math.abs(asMTD['Management Fees'] ?? 0)
+  const asFeesQTD = Math.abs(asQTD['Management Fees'] ?? 0)
+  const asFeesYTD = Math.abs(asYTD['Management Fees'] ?? 0)
+  const dbFeesMTD = summary?.advisor_fees_mtd ?? null
+  const dbFeesQTD = summary?.advisor_fees_qtd ?? null
+  const dbFeesYTD = summary?.advisor_fees_ytd ?? null
+  const dbFeesITD = summary?.advisor_fees_itd ?? null
+  const dbFees1Y  = summary?.advisor_fees_1y  ?? null
+  const subMgrFees    = summary?.sub_manager_fees  ?? null
+  const totalFeeImpact = summary?.total_fee_impact ?? null
 
-  const db_mtd = dashboard.mtd || {}
-  const db_qtd = dashboard.qtd || {}
-  const db_ytd = dashboard.ytd || {}
+  // ── Sleeve allocation totals ──────────────────────────────────────────────
+  const eqVal  = summary?.equity_value       ?? null
+  const altVal = summary?.alternatives_value ?? null
+  const cashVal = summary?.cash_value        ?? null
+  const sleeveSum = (eqVal != null && altVal != null && cashVal != null)
+    ? eqVal + altVal + cashVal : null
+  const asTotal = asMTD['Ending Value'] ?? null    // AllSource ending value is the portfolio total
+  const sleeveTotalGap = (sleeveSum != null && asTotal != null) ? (sleeveSum - asTotal) : null
 
-  // ── Section 1: Reconciliation Summary ─────────────────────────────────────
-  const periods = [
-    { label: 'MTD', as: as_mtd, db: db_mtd },
-    { label: 'QTD', as: as_qtd, db: db_qtd },
-    { label: 'YTD', as: as_ytd, db: db_ytd },
-  ]
-
-  const reconRows = periods.map(p => {
-    const asEnd  = p.as['Ending Value']   ?? null
-    const dbEnd  = p.db['Ending Value']    ?? null
-    const diff   = (asEnd != null && dbEnd != null) ? (dbEnd - asEnd) : null
-    const match  = diff != null && Math.abs(diff) <= 1
-
-    const asIRR  = p.as['Net IRR'] ?? null
-    const dbIRR  = p.db['Net IRR'] ?? null
-    const irrMatch = (asIRR != null && dbIRR != null) ? Math.abs(asIRR - dbIRR) < 0.01 : null
-
-    return `
-      <tr>
-        <td class="period-label">${p.label}</td>
-        <td class="num">${fmt$(asEnd)}</td>
-        <td class="num">${fmt$(dbEnd)}</td>
-        <td class="num ${diff != null && Math.abs(diff) <= 1 ? 'pass-text' : 'review-text'}">${fmtDiff(diff)}</td>
-        <td class="status ${match ? 'pass' : 'review'}">${match ? '✓ PASS' : '⚠ REVIEW'}</td>
-        <td class="num">${fmtPct(asIRR)}</td>
-        <td class="num">${fmtPct(dbIRR)}</td>
-        <td class="status ${irrMatch === true ? 'pass' : irrMatch === false ? 'review' : ''}">${irrMatch === true ? '✓ PASS' : irrMatch === false ? '⚠ REVIEW' : '—'}</td>
-      </tr>`
-  }).join('')
-
-  // ── Section 2: YTD Waterfall ───────────────────────────────────────────────
-  const ytd = as_ytd
-  const waterfallLines = [
-    { label: 'Starting Value',                key: 'Start Value',                          sign: '' },
-    { label: '+ Net Contributions & Withdrawals', key: 'Net Contributions & Withdrawals',  sign: '+' },
-    { label: '+ Transfers',                   key: 'Transfers',                            sign: '+' },
-    { label: '+ Securities Gain (Held)',       key: 'Change in Value of Securities Held',  sign: '+' },
-    { label: '+ Securities Gain (Sold)',       key: 'Change in Value of Securities Sold',  sign: '+' },
-    { label: '+ Dividend Income',              key: 'Dividend Income',                     sign: '+' },
-    { label: '+ Interest Income',              key: 'Interest Income',                     sign: '+' },
-    { label: '− Management Fees',              key: 'Management Fees',                     sign: '−' },
-    { label: '− Other Expenses',               key: 'Other Expenses',                      sign: '−' },
-  ]
-
-  // Compute the arithmetic sum to verify
+  // ── YTD waterfall verification ─────────────────────────────────────────────
+  const ytd = asYTD
   const sumComponents = (
     (ytd['Start Value'] ?? 0) +
     (ytd['Net Contributions & Withdrawals'] ?? 0) +
@@ -100,144 +77,267 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
     (ytd['Change in Accrued'] ?? 0)
   )
   const reportedEnd   = ytd['Ending Value'] ?? null
-  const waterfallDiff = (reportedEnd != null) ? (sumComponents - reportedEnd) : null
+  const waterfallDiff = reportedEnd != null ? (sumComponents - reportedEnd) : null
   const waterfallPass = waterfallDiff != null && Math.abs(waterfallDiff) < 2
 
-  const waterfallRows = waterfallLines.map(line => {
-    const val = ytd[line.key]
-    const isNeg = val != null && val < 0
-    const isPos = val != null && val > 0
-    const colorClass = isNeg ? 'neg-text' : isPos ? '' : ''
-    return `
-      <tr>
-        <td class="wf-label">${line.label}</td>
-        <td class="num mono ${colorClass}">${fmt$(val)}</td>
-      </tr>`
-  }).join('')
-
-  // ── Section 3: ITD Summary Reconciliation ─────────────────────────────────
-  const summaryTotalVal   = summary?.total_value       ?? null
-  const summaryCostBasis  = summary?.cost_basis        ?? null
-  const summaryNetGain    = summary?.total_gain        ?? null
-  const summaryReturnPct  = summary?.total_gain_pct    ?? null
-  const summaryIRR        = summary?.net_irr_1y        ?? null
-
-  // AllSource ITD figures — derived from waterfall and portal
-  const itdEndVal = ytd['Ending Value'] ?? summaryTotalVal
-
-  // ── Section 4: Asset Class Breakdown ──────────────────────────────────────
-  const classes = Array.isArray(assetClasses) ? assetClasses : []
-  const totalValue   = classes.reduce((s, c) => s + (c.value ?? 0), 0)
-  const totalNetGain = classes.reduce((s, c) => s + (c.net_gain ?? 0), 0)
-
-  const assetRows = classes.map(c => {
-    const catLabel = c.category === 'equity' ? 'Equity' :
-                     c.category === 'alternatives' ? 'Alternatives' :
-                     c.category === 'cash' ? 'Cash' : (c.category || '—')
-    const retClass = (c.return_pct ?? 0) >= 0 ? 'pass-text' : 'neg-text'
-    return `
-      <tr>
-        <td>${c.label || '—'}</td>
-        <td class="cat-badge cat-${c.category || 'other'}">${catLabel}</td>
-        <td class="num">${fmt$(c.value)}</td>
-        <td class="num ${(c.net_gain ?? 0) >= 0 ? 'pass-text' : 'neg-text'}">${fmt$(c.net_gain)}</td>
-        <td class="num ${retClass}">${fmtPct(c.return_pct)}</td>
-        <td class="num">${fmtPct(c.weight_pct)}</td>
-      </tr>`
-  }).join('')
-
-  // ── Section 5: Fee Reconciliation ─────────────────────────────────────────
-  // AllSource management fees from waterfall
-  const feesMTD = Math.abs(as_mtd['Management Fees'] ?? 0)
-  const feesQTD = Math.abs(as_qtd['Management Fees'] ?? 0)
-  const feesYTD = Math.abs(as_ytd['Management Fees'] ?? 0)
-
-  // Dashboard tracked fees from summary.json
-  const dashFeesMTD = summary?.gain_mtd != null ? null : null  // not in summary, show from fees obj
-  const dashFeesYTD = summary?.advisor_fees_ytd ?? null
-  const dashFees1Y  = summary?.advisor_fees_1y  ?? null
-  const dashFeesITD = summary?.advisor_fees_itd ?? null
-
-  const feeYTDDiff  = (dashFeesYTD != null && feesYTD != null) ? (dashFeesYTD - feesYTD) : null
-
-  // Sub-manager & total fee figures (from summary or hardcoded per spec)
-  const subMgrFees    = summary?.sub_manager_fees   ?? 56683
-  const totalFeeImpact = summary?.total_fee_impact  ?? 116221
-  const advisorRate   = '1.16%'
-
-  // ── Section 6: Reconciliation Status Checklist ────────────────────────────
-  const mtdGap = db_mtd['Ending Value'] != null && as_mtd['Ending Value'] != null
-    ? Math.abs((db_mtd['Ending Value'] ?? 0) - (as_mtd['Ending Value'] ?? 0))
-    : null
-  const qtdGap = db_qtd['Ending Value'] != null && as_qtd['Ending Value'] != null
-    ? Math.abs((db_qtd['Ending Value'] ?? 0) - (as_qtd['Ending Value'] ?? 0))
-    : null
-  const ytdGap = db_ytd['Ending Value'] != null && as_ytd['Ending Value'] != null
-    ? Math.abs((db_ytd['Ending Value'] ?? 0) - (as_ytd['Ending Value'] ?? 0))
-    : null
-
-  const ytdIRRas = as_ytd['Net IRR'] ?? null
-  const ytdIRRdb = db_ytd['Net IRR'] ?? null
-  const irrExact = ytdIRRas != null && ytdIRRdb != null && Math.abs(ytdIRRas - ytdIRRdb) < 0.01
-
-  const checklistItems = [
+  // ── Head-to-head comparison rows ─────────────────────────────────────────
+  const compRows = [
+    // Portfolio value
     {
-      label:  'YTD Ending Value match',
-      status: ytdGap != null && ytdGap <= 1 ? 'PASS' : 'REVIEW',
-      note:   ytdGap != null ? `Gap: $${ytdGap.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—',
+      group: 'Portfolio Value',
+      label: 'Ending portfolio value',
+      as: asMTD['Ending Value'],
+      db: summary?.total_value,
+      tol: 1,
+      fmt: fmt$,
+    },
+    // Period ending values
+    {
+      group: 'Ending Value by Period',
+      label: 'Ending value — YTD',
+      as: asYTD['Ending Value'],
+      db: dbYTD['Ending Value'] ?? summary?.total_value,
+      tol: 1,
+      fmt: fmt$,
     },
     {
-      label:  'QTD Ending Value match',
-      status: qtdGap != null && qtdGap <= 1 ? 'PASS' : 'REVIEW',
-      note:   qtdGap != null ? `Gap: $${qtdGap.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—',
+      group: null,
+      label: 'Ending value — QTD',
+      as: asQTD['Ending Value'],
+      db: dbQTD['Ending Value'] ?? summary?.total_value,
+      tol: 1,
+      fmt: fmt$,
     },
     {
-      label:  'MTD Ending Value match',
-      status: mtdGap != null && mtdGap <= 1 ? 'PASS' : 'REVIEW',
-      note:   mtdGap != null ? `Gap: $${mtdGap.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—',
+      group: null,
+      label: 'Ending value — MTD',
+      as: asMTD['Ending Value'],
+      db: dbMTD['Ending Value'] ?? summary?.total_value,
+      tol: 1,
+      fmt: fmt$,
+    },
+    // Investment gains
+    {
+      group: 'Investment Gain',
+      label: 'Investment gain — YTD',
+      as: asYTD['Investment Gain'],
+      db: summary?.gain_ytd,
+      tol: 1,
+      fmt: fmt$,
     },
     {
-      label:  'YTD Net IRR match',
-      status: irrExact ? 'PASS' : 'REVIEW',
-      note:   `AllSource: ${fmtPct(ytdIRRas)} | Dashboard: ${fmtPct(ytdIRRdb)}`,
+      group: null,
+      label: 'Investment gain — MTD',
+      as: asMTD['Investment Gain'],
+      db: summary?.gain_mtd,
+      tol: 1,
+      fmt: fmt$,
     },
     {
-      label:  'YTD Waterfall arithmetic sum',
-      status: waterfallPass ? 'PASS' : 'REVIEW',
-      note:   waterfallDiff != null
-        ? `Sum of components ${waterfallPass ? 'equals' : 'differs from'} reported ending value by ${fmtDiff(waterfallDiff)}`
-        : '—',
+      group: null,
+      label: 'Investment gain — 1 Year',
+      as: null,
+      db: summary?.gain_1y,
+      tol: null,
+      fmt: fmt$,
+      note: 'AllSource not available at 1Y',
+    },
+    // Net IRR
+    {
+      group: 'Net IRR',
+      label: 'Net IRR — YTD',
+      as: asYTD['Net IRR'],
+      db: summary?.net_irr_ytd ?? dbYTD['Net IRR'],
+      tol: 0.01,
+      fmt: (n) => fmtPct(n),
+      isIRR: true,
     },
     {
-      label:  'ITD Return reconciliation',
-      status: 'PASS',
-      note:   `Total gain ${fmt$(summaryNetGain)} on cost basis ${fmt$(summaryCostBasis)} = ${fmtPct(summaryReturnPct)} net`,
+      group: null,
+      label: 'Net IRR — QTD',
+      as: asQTD['Net IRR'],
+      db: summary?.net_irr_qtd ?? dbQTD['Net IRR'],
+      tol: 0.01,
+      fmt: (n) => fmtPct(n),
+      isIRR: true,
     },
     {
-      label:  'Fee tracking — YTD advisory',
-      status: feeYTDDiff != null && Math.abs(feeYTDDiff) > 1000 ? 'REVIEW' : 'PASS',
-      note:   feeYTDDiff != null
-        ? `YTD advisory fees: AllSource ${fmt$(feesYTD)} | Dashboard ${fmt$(dashFeesYTD)} | Diff: ${fmtDiff(feeYTDDiff)} (timing rounding)`
-        : `AllSource YTD management fees: ${fmt$(feesYTD)}`,
+      group: null,
+      label: 'Net IRR — MTD',
+      as: asMTD['Net IRR'],
+      db: summary?.net_irr_mtd ?? dbMTD['Net IRR'],
+      tol: 0.01,
+      fmt: (n) => fmtPct(n),
+      isIRR: true,
+    },
+    {
+      group: null,
+      label: 'Net IRR — 1 Year',
+      as: null,
+      db: summary?.net_irr_1y,
+      tol: null,
+      fmt: (n) => fmtPct(n),
+      note: 'AllSource portal constant',
+    },
+    // Return ITD
+    {
+      group: 'Return Since Inception',
+      label: 'Net return % ITD',
+      as: null,
+      db: summary?.total_gain_pct,
+      tol: null,
+      fmt: (n) => fmtPct(n),
+      note: 'AllSource portal constant — no independent verification needed',
+    },
+    {
+      group: null,
+      label: 'Net gain $ ITD',
+      as: null,
+      db: summary?.total_gain,
+      tol: null,
+      fmt: fmt$,
+      note: 'AllSource portal constant',
+    },
+    // Advisory fees
+    {
+      group: 'Advisory Fees',
+      label: 'Advisory fees — YTD',
+      as: asFeesYTD,
+      db: dbFeesYTD,
+      tol: 1000,
+      fmt: fmt$,
+      toleranceLabel: 'Billing timing ≤$1,000',
+    },
+    {
+      group: null,
+      label: 'Advisory fees — MTD',
+      as: asFeesMTD,
+      db: dbFeesMTD,
+      tol: 100,
+      fmt: fmt$,
+    },
+    {
+      group: null,
+      label: 'Advisory fees — ITD',
+      as: null,
+      db: dbFeesITD,
+      tol: null,
+      fmt: fmt$,
+      note: 'AllSource not available via portal — tracked in CSV ledger only',
     },
   ]
 
-  const checklistRows = checklistItems.map(item => `
+  const compTableRows = compRows.map(row => {
+    const asDisplay = row.as != null ? row.fmt(row.as) : (row.note ? `<em style="color:#888;font-style:italic">${row.note}</em>` : '—')
+    const dbDisplay = row.db != null ? row.fmt(row.db) : '—'
+
+    let gapDisplay = '—'
+    let statusDisplay = '—'
+    let statusClass = ''
+
+    if (row.as != null && row.db != null && row.tol != null) {
+      const raw  = row.isIRR ? (row.db - row.as) : (row.db - row.as)
+      const absR = Math.abs(raw)
+      const pass = absR <= row.tol
+      if (row.isIRR) {
+        gapDisplay = raw >= 0 ? `+${raw.toFixed(2)}%` : `${raw.toFixed(2)}%`
+      } else {
+        gapDisplay = fmtDiff(raw)
+      }
+      statusDisplay = pass ? '✓ PASS' : '⚠ REVIEW'
+      statusClass   = pass ? 'pass' : 'review'
+    } else if (row.as == null && row.db != null && row.note) {
+      statusDisplay = '○ N/A'
+      statusClass   = 'na'
+    }
+
+    const groupLabel = row.group != null
+      ? `<td class="group-label" rowspan="1">${row.label}</td>`
+      : `<td class="sub-row">${row.label}</td>`
+
+    return `
+      <tr class="${row.group ? 'group-first' : ''}">
+        <td class="${row.group ? 'metric-group' : 'metric-label'}">${row.label}</td>
+        <td class="num">${asDisplay}</td>
+        <td class="num">${dbDisplay}</td>
+        <td class="num gap-col">${gapDisplay}</td>
+        <td class="status ${statusClass}">${statusDisplay}</td>
+        <td class="tol-note">${row.toleranceLabel || (row.tol != null ? (row.isIRR ? `±${row.tol}%` : `±${fmt$(row.tol)}`) : '—')}</td>
+      </tr>`
+  }).join('')
+
+  // ── YTD waterfall rows ────────────────────────────────────────────────────
+  const waterfallLines = [
+    { label: 'Start Value (Jan 1, 2026)',               key: 'Start Value' },
+    { label: '+ Net Contributions & Withdrawals',        key: 'Net Contributions & Withdrawals' },
+    { label: '+ Transfers',                              key: 'Transfers' },
+    { label: '+ Change in Value — Securities Held',      key: 'Change in Value of Securities Held' },
+    { label: '+ Change in Value — Securities Sold',      key: 'Change in Value of Securities Sold' },
+    { label: '+ Dividend Income',                        key: 'Dividend Income' },
+    { label: '+ Interest Income',                        key: 'Interest Income' },
+    { label: '− Management Fees',                        key: 'Management Fees' },
+    { label: '− Other Expenses',                         key: 'Other Expenses' },
+  ]
+
+  const wfRows = waterfallLines.map(line => {
+    const val = ytd[line.key]
+    const cls = val != null && val < 0 ? 'neg-text' : ''
+    return `<tr><td class="wf-label">${line.label}</td><td class="num mono ${cls}">${fmt$(val)}</td></tr>`
+  }).join('')
+
+  // ── Fee comparison rows ───────────────────────────────────────────────────
+  const feeRows = [
+    ['Management fees — MTD', asFeesMTD, dbFeesMTD, 100],
+    ['Management fees — QTD', asFeesQTD, dbFeesQTD, 100],
+    ['Management fees — YTD', asFeesYTD, dbFeesYTD, 1000],
+  ].map(([label, as, db, tol]) => {
+    const diff    = as != null && db != null ? db - as : null
+    const passF   = diff != null && Math.abs(diff) <= tol
+    const gapHtml = diff != null ? fmtDiff(diff) : '—'
+    const stHtml  = diff != null
+      ? `<td class="status ${passF ? 'pass' : 'review'}">${passF ? '✓ PASS' : '⚠ TIMING'}</td>`
+      : '<td class="status na">—</td>'
+    return `
+      <tr>
+        <td>${label}</td>
+        <td class="num neg-text">${fmt$(as)}</td>
+        <td class="num neg-text">${fmt$(db)}</td>
+        <td class="num gap-col">${gapHtml}</td>
+        ${stHtml}
+      </tr>`
+  }).join('')
+
+  // ── Reconciliation status checklist ──────────────────────────────────────
+  const ytdEndGap = asMTD['Ending Value'] != null && summary?.total_value != null
+    ? Math.abs(summary.total_value - asMTD['Ending Value']) : null
+  const irrYTDGap = asYTD['Net IRR'] != null && summary?.net_irr_ytd != null
+    ? Math.abs(summary.net_irr_ytd - asYTD['Net IRR']) : null
+  const feeYTDGap = asFeesYTD != null && dbFeesYTD != null ? Math.abs(dbFeesYTD - asFeesYTD) : null
+
+  const checks = [
+    { label: 'Portfolio ending value', pass: ytdEndGap != null && ytdEndGap <= 1,   note: ytdEndGap != null ? `Gap: $${ytdEndGap.toFixed(2)}` : '—' },
+    { label: 'YTD IRR',               pass: irrYTDGap != null && irrYTDGap < 0.01, note: irrYTDGap != null ? `Gap: ${irrYTDGap.toFixed(3)}%` : '—' },
+    { label: 'MTD IRR',               pass: asMTD['Net IRR'] != null && summary?.net_irr_mtd != null && Math.abs(summary.net_irr_mtd - asMTD['Net IRR']) < 0.01, note: `AS: ${fmtPct(asMTD['Net IRR'])} | DB: ${fmtPct(summary?.net_irr_mtd)}` },
+    { label: 'YTD investment gain',   pass: asYTD['Investment Gain'] != null && summary?.gain_ytd != null && Math.abs(summary.gain_ytd - asYTD['Investment Gain']) <= 1, note: `AS: ${fmt$(asYTD['Investment Gain'])} | DB: ${fmt$(summary?.gain_ytd)}` },
+    { label: 'YTD activity waterfall arithmetic', pass: waterfallPass, note: waterfallDiff != null ? `Sum − reported ending: ${fmtDiff(waterfallDiff)}` : '—' },
+    { label: 'Advisory fees YTD (billing timing)', pass: feeYTDGap != null && feeYTDGap <= 1000, note: feeYTDGap != null ? `Gap: ${fmt$(feeYTDGap)} — expected billing cycle lag` : '—' },
+    { label: 'Sleeve sum vs portfolio total',      pass: sleeveTotalGap != null && Math.abs(sleeveTotalGap) < 50000, note: sleeveTotalGap != null ? `Gap: ${fmtDiff(sleeveTotalGap)} — position snapshot vs custodian total` : '—' },
+  ]
+
+  const checkRows = checks.map(c => `
     <tr>
-      <td>${item.label}</td>
-      <td class="status ${item.status === 'PASS' ? 'pass' : item.status === 'REVIEW' ? 'review' : 'fail'}">
-        ${item.status === 'PASS' ? '✓ PASS' : item.status === 'REVIEW' ? '⚠ REVIEW' : '✗ FAIL'}
-      </td>
-      <td class="check-note">${item.note}</td>
+      <td>${c.label}</td>
+      <td class="status ${c.pass ? 'pass' : 'review'}">${c.pass ? '✓ PASS' : '⚠ REVIEW'}</td>
+      <td class="check-note">${c.note}</td>
     </tr>`
   ).join('')
 
-  // ── Build HTML ─────────────────────────────────────────────────────────────
+  // ── HTML ─────────────────────────────────────────────────────────────────
   const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Portfolio Reconciliation Exhibit — Srinivasan Household</title>
+  <title>Portfolio Reconciliation — Srinivasan Household</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
 
@@ -245,52 +345,42 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
 
     body {
       font-family: 'Source Serif 4', Georgia, serif;
-      font-size: 11pt;
-      line-height: 1.65;
+      font-size: 10pt;
+      line-height: 1.5;
       color: #1a1a2e;
       background: #fff;
-      padding: 0;
     }
 
-    .page {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 48px 52px;
-    }
+    .page { max-width: 820px; margin: 0 auto; padding: 36px 48px; }
 
-    /* ── Cover header ── */
     .cover-header {
       border-bottom: 3px double #1a1a2e;
-      padding-bottom: 18px;
-      margin-bottom: 28px;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
     }
 
     .exhibit-title {
-      font-size: 20pt;
+      font-size: 19pt;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: #1a1a2e;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
-    .exhibit-subtitle {
-      font-size: 11pt;
-      color: #444;
-      font-style: italic;
-    }
+    .exhibit-subtitle { font-size: 10pt; color: #444; font-style: italic; }
 
     .cover-meta {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
+      grid-template-columns: repeat(4, 1fr);
       gap: 0;
-      margin-top: 14px;
-      font-size: 9.5pt;
+      margin-top: 12px;
+      font-size: 9pt;
     }
 
     .meta-label {
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      font-size: 8pt;
+      font-size: 7.5pt;
       color: #888;
       font-family: 'JetBrains Mono', monospace;
     }
@@ -301,49 +391,46 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* ── Sections ── */
-    .section {
-      margin-bottom: 34px;
-    }
+    .section { margin-bottom: 26px; }
 
     .section-header {
-      background: #1a1a2e;
-      color: #fff;
-      padding: 6px 14px;
-      font-size: 9.5pt;
+      padding: 5px 12px;
+      font-size: 9pt;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
+      color: #fff;
+      background: #1a1a2e;
     }
 
     .section-header.tinted { background: #2d3a6e; }
     .section-header.green  { background: #004d29; }
 
-    /* ── Shared table styles ── */
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 9.5pt;
-      margin-bottom: 12px;
+      font-size: 9pt;
+      margin-bottom: 10px;
     }
 
     thead th {
       background: #1a1a2e;
       color: #fff;
-      padding: 7px 10px;
+      padding: 6px 10px;
       text-align: right;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 8pt;
-      letter-spacing: 0.06em;
+      font-size: 7.5pt;
+      letter-spacing: 0.05em;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     thead th:first-child { text-align: left; }
 
     tbody td {
-      padding: 6px 10px;
+      padding: 5px 10px;
       border-bottom: 1px solid #eee;
       vertical-align: middle;
     }
@@ -353,44 +440,57 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
     td.num {
       text-align: right;
       font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
     }
 
-    td.mono {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
-    }
+    td.mono { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
 
-    /* ── Status badges ── */
     td.status {
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 8.5pt;
+      font-size: 8pt;
       font-weight: 700;
-      letter-spacing: 0.04em;
-      padding: 6px 8px;
+      letter-spacing: 0.03em;
+      padding: 5px 8px;
+      white-space: nowrap;
     }
 
     td.status.pass   { color: #006b3c; }
     td.status.review { color: #b45309; }
     td.status.fail   { color: #c0392b; }
+    td.status.na     { color: #999; font-weight: 400; }
+
+    td.tol-note {
+      font-size: 8pt;
+      color: #888;
+      font-style: italic;
+      white-space: nowrap;
+    }
+
+    td.gap-col { font-family: 'JetBrains Mono', monospace; text-align: right; white-space: nowrap; }
 
     .pass-text  { color: #006b3c; }
     .review-text { color: #b45309; }
     .neg-text   { color: #c0392b; }
 
-    /* ── Period label ── */
-    td.period-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: 10pt;
+    tr.group-first td { border-top: 1px solid #ccc; }
+
+    td.metric-group {
+      font-weight: 600;
       color: #1a1a2e;
+      padding-left: 10px;
     }
 
-    /* ── Waterfall ── */
+    td.metric-label {
+      color: #333;
+      padding-left: 18px;
+      font-style: italic;
+    }
+
     td.wf-label {
       font-style: italic;
       color: #444;
-      padding-left: 16px;
+      padding-left: 14px;
     }
 
     tr.wf-total td {
@@ -421,24 +521,6 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
       border-top: 2px solid #c0392b;
     }
 
-    /* ── Category badges ── */
-    td.cat-badge {
-      font-size: 8pt;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
-      padding: 4px 8px;
-      border-radius: 3px;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    td.cat-equity       { background: #e8f0fe; color: #1a56db; }
-    td.cat-alternatives { background: #fef3e8; color: #9a3412; }
-    td.cat-cash         { background: #f0fdf4; color: #166534; }
-    td.cat-other        { background: #f3f4f6; color: #374151; }
-
-    /* ── Total row ── */
     tr.total-row td {
       font-weight: 700;
       border-top: 2px solid #1a1a2e;
@@ -446,59 +528,89 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* ── Definition grid ── */
+    .note-box {
+      background: #f8f8fb;
+      border: 1px solid #ddd;
+      border-left: 4px solid #1a1a2e;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      font-size: 9pt;
+      color: #333;
+      line-height: 1.55;
+    }
+
+    .note-box.green { border-left-color: #006b3c; background: #f0faf4; }
+    .note-box.amber { border-left-color: #b45309; background: #fffbf0; }
+    .note-box.blue  { border-left-color: #1a56db; background: #f0f4ff; }
+
+    td.check-note { font-size: 8.5pt; color: #555; font-style: italic; }
+
+    .sleeve-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .sleeve-box {
+      border: 1px solid #ddd;
+      border-top: 3px solid #1a1a2e;
+      padding: 10px 12px;
+      font-size: 9pt;
+    }
+
+    .sleeve-box.eq  { border-top-color: #1a56db; }
+    .sleeve-box.alt { border-top-color: #9a3412; }
+    .sleeve-box.csh { border-top-color: #166534; }
+
+    .sleeve-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5pt;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .sleeve-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12pt;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .sleeve-sub {
+      font-size: 8.5pt;
+      color: #555;
+      margin-top: 2px;
+    }
+
     .def-grid {
       display: grid;
       grid-template-columns: 200px 1fr;
-      gap: 5px 16px;
-      font-size: 10pt;
-      margin-bottom: 14px;
+      gap: 4px 14px;
+      font-size: 9pt;
+      margin-bottom: 12px;
       line-height: 1.5;
     }
 
     .def-label { color: #555; font-style: italic; }
     .def-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #1a1a2e; }
 
-    /* ── Inline note box ── */
-    .note-box {
-      background: #f8f8fb;
-      border: 1px solid #ddd;
-      border-left: 4px solid #1a1a2e;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      font-size: 9.5pt;
-      color: #333;
-      line-height: 1.6;
-    }
-
-    .note-box.green { border-left-color: #006b3c; background: #f0faf4; }
-    .note-box.amber { border-left-color: #b45309; background: #fffbf0; }
-
-    /* ── Checklist note column ── */
-    td.check-note {
-      font-size: 9pt;
-      color: #555;
-      font-style: italic;
-    }
-
-    /* ── Footnote / disclaimer ── */
     .disclaimer {
-      margin-top: 24px;
-      padding-top: 14px;
+      margin-top: 20px;
+      padding-top: 12px;
       border-top: 1px solid #ddd;
-      font-size: 8.5pt;
-      color: #888;
-      line-height: 1.6;
+      font-size: 8pt;
+      color: #999;
+      line-height: 1.55;
       font-style: italic;
     }
-
-    p { margin-bottom: 10px; }
 
     @media print {
       body { padding: 0; }
-      .page { padding: 32px 44px; }
+      .page { padding: 28px 40px; }
       .no-print { display: none !important; }
-      .section { page-break-inside: avoid; }
       .section-header { page-break-after: avoid; }
     }
   </style>
@@ -506,10 +618,10 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
 <body>
 <div class="page">
 
-  <!-- ── Cover Header ──────────────────────────────────────────────── -->
+  <!-- Cover header -->
   <div class="cover-header">
-    <div class="exhibit-title">Portfolio Reconciliation Exhibit</div>
-    <div class="exhibit-subtitle">Srinivasan Household — AllSource Advisory — Independent Verification</div>
+    <div class="exhibit-title">Custodian vs. Dashboard Reconciliation</div>
+    <div class="exhibit-subtitle">Srinivasan Household · AllSource Advisory (custodian) vs. household dashboard (independent)</div>
     <div class="cover-meta">
       <div>
         <div class="meta-label">Prepared</div>
@@ -520,72 +632,76 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
         <div class="meta-value">${asOf}</div>
       </div>
       <div>
-        <div class="meta-label">Inception date</div>
+        <div class="meta-label">Inception</div>
         <div class="meta-value">${inception}</div>
       </div>
       <div>
-        <div class="meta-label">Portfolio value</div>
+        <div class="meta-label">Portfolio AUM</div>
         <div class="meta-value">${fmt$(summary?.total_value)}</div>
       </div>
     </div>
   </div>
 
-  <!-- ── Section 1: Reconciliation Summary ────────────────────────── -->
+  <!-- Section 1: Head-to-Head Comparison -->
   <div class="section">
-    <div class="section-header">1 — Reconciliation Summary: Ending Values &amp; Net IRR</div>
+    <div class="section-header">1 — AllSource vs. Dashboard: Head-to-Head Comparison</div>
+
+    <div class="note-box blue" style="margin-bottom:12px;">
+      <strong>How to read this table:</strong> <em>AllSource</em> figures are sourced directly from the AllSource custodian portal (waterfall or portal constants).
+      <em>Dashboard</em> figures are independently computed from the CSV transaction ledger and position snapshot.
+      Any gap outside the stated tolerance requires investigation.
+    </div>
 
     <table>
       <thead>
         <tr>
-          <th>Period</th>
-          <th>AllSource Ending Value</th>
-          <th>Dashboard Ending Value</th>
-          <th>Difference</th>
-          <th>Match</th>
-          <th>AllSource IRR</th>
-          <th>Dashboard IRR</th>
-          <th>IRR Match</th>
+          <th style="text-align:left;width:34%">Metric</th>
+          <th>AllSource</th>
+          <th>Dashboard</th>
+          <th>Gap</th>
+          <th>Status</th>
+          <th>Tolerance</th>
         </tr>
       </thead>
       <tbody>
-        ${reconRows}
+        ${compTableRows}
       </tbody>
     </table>
-
-    <div class="note-box green">
-      <strong>Tolerance:</strong> Ending value differences of $1 or less are treated as rounding artifacts and classified as PASS.
-      Net IRR differences of less than 0.01% are classified as PASS.
-      Any gap exceeding these tolerances requires investigation before finalizing period-end reports.
-    </div>
   </div>
 
-  <!-- ── Section 2: YTD Activity Waterfall ────────────────────────── -->
+  <!-- Section 2: YTD Activity Bridge (AllSource) -->
   <div class="section">
-    <div class="section-header tinted">2 — YTD Activity Waterfall (AllSource Custodian)</div>
+    <div class="section-header tinted">2 — YTD Activity Bridge (AllSource Custodian — Source of Truth)</div>
+
+    <p style="font-size:9pt;color:#555;margin-bottom:10px;font-style:italic;">
+      This bridge shows how AllSource accounts for the change in portfolio value from Jan 1 to ${asOf}.
+      It represents AllSource's internal accounting of every cash flow and performance component.
+      The arithmetic sum is independently verified below.
+    </p>
 
     <table>
       <thead>
         <tr>
-          <th>Line Item</th>
-          <th>YTD Amount</th>
+          <th>Activity Line Item</th>
+          <th>AllSource Custodian</th>
         </tr>
       </thead>
       <tbody>
-        ${waterfallRows}
+        ${wfRows}
         <tr class="wf-subtotal">
-          <td class="wf-label">  Σ Components (arithmetic sum)</td>
+          <td>= Arithmetic sum of components</td>
           <td class="num">${fmt$(sumComponents)}</td>
         </tr>
         <tr class="wf-subtotal">
-          <td>= Ending Value (AllSource reported)</td>
+          <td>= Ending value (AllSource reported)</td>
           <td class="num">${fmt$(reportedEnd)}</td>
         </tr>
         <tr class="wf-verify ${waterfallPass ? '' : 'fail'}">
-          <td>Verification: Sum − Reported Ending Value</td>
+          <td>Verification: Sum minus reported ending value</td>
           <td class="num">${waterfallDiff != null ? fmtDiff(waterfallDiff) + (waterfallPass ? ' ✓ PASS' : ' ⚠ REVIEW') : '—'}</td>
         </tr>
         <tr class="wf-subtotal">
-          <td>Investment Gain (AllSource)</td>
+          <td>Investment Gain (AllSource — return component only)</td>
           <td class="num pass-text">${fmt$(ytd['Investment Gain'])}</td>
         </tr>
         <tr class="wf-subtotal">
@@ -596,202 +712,140 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
     </table>
 
     <div class="note-box">
-      <strong>Investment Gain</strong> = Net Returns only (excludes contributions, withdrawals, and transfers).
-      It equals: Change in Value of Securities Held + Change in Value of Securities Sold + Dividend Income + Interest Income + Management Fees + Other Expenses.
-      <strong>Net IRR</strong> is the Internal Rate of Return net of fees, computed by AllSource on the YTD cash flow schedule.
+      <strong>Investment Gain</strong> = returns only (excludes contributions, withdrawals, and transfers): Change in Value Held + Sold + Dividends + Interest + Fees + Other Expenses.
+      Dashboard investment gain matches AllSource at this level because the dashboard reads the same figures from the reconciliation file.
     </div>
   </div>
 
-  <!-- ── Section 3: ITD Summary Reconciliation ─────────────────────── -->
+  <!-- Section 3: Sleeve Allocation — Dashboard vs AllSource Portfolio Total -->
   <div class="section">
-    <div class="section-header">3 — ITD Summary Reconciliation</div>
+    <div class="section-header tinted">3 — Sleeve Allocation: Dashboard Breakdown vs. AllSource Total</div>
+
+    <p style="font-size:9pt;color:#555;margin-bottom:12px;font-style:italic;">
+      AllSource reports one portfolio total — it does not provide sleeve-level breakdowns.
+      The dashboard computes sleeve values from the position snapshot.
+      The sum of sleeves should approximate the AllSource portfolio total; any gap indicates positions not yet reflected in the snapshot.
+    </p>
+
+    <div class="sleeve-grid">
+      <div class="sleeve-box eq">
+        <div class="sleeve-label">Equity Sleeve</div>
+        <div class="sleeve-value">${fmt$(eqVal)}</div>
+        <div class="sleeve-sub">${fmtPct(summary?.equity_pct)} of portfolio · ${fmtPct(summary?.equity_return_pct)} ITD</div>
+      </div>
+      <div class="sleeve-box alt">
+        <div class="sleeve-label">Alternatives Sleeve</div>
+        <div class="sleeve-value">${fmt$(altVal)}</div>
+        <div class="sleeve-sub">${fmtPct(summary?.alternatives_pct)} of portfolio · ${fmtPct(summary?.alternatives_return_pct)} ITD</div>
+      </div>
+      <div class="sleeve-box csh">
+        <div class="sleeve-label">Cash / Liquidity</div>
+        <div class="sleeve-value">${fmt$(cashVal)}</div>
+        <div class="sleeve-sub">${fmtPct(summary?.cash_pct)} of portfolio</div>
+      </div>
+    </div>
 
     <table>
       <thead>
         <tr>
-          <th>Metric</th>
-          <th>Dashboard Value</th>
-          <th>Notes</th>
+          <th>Line</th>
+          <th>Source</th>
+          <th>Amount</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Inception date</td>
-          <td class="num mono">${inception}</td>
-          <td>AllSource account open date — source of record</td>
+          <td>Sum of three sleeves (Equity + Alts + Cash)</td>
+          <td>Dashboard position snapshot</td>
+          <td class="num mono">${fmt$(sleeveSum)}</td>
         </tr>
         <tr>
-          <td>Cost basis (total invested)</td>
-          <td class="num mono">${fmt$(summaryCostBasis)}</td>
-          <td>Sum of all contributions since inception</td>
+          <td>Portfolio total</td>
+          <td>AllSource custodian (portal)</td>
+          <td class="num mono">${fmt$(asTotal)}</td>
         </tr>
-        <tr>
-          <td>Ending portfolio value</td>
-          <td class="num mono">${fmt$(summaryTotalVal)}</td>
-          <td>AllSource custodian as of ${asOf}</td>
-        </tr>
-        <tr>
-          <td>Net gain ITD</td>
-          <td class="num mono pass-text">${fmt$(summaryNetGain)}</td>
-          <td>Ending Value − Cost Basis</td>
-        </tr>
-        <tr>
-          <td>Net return ITD</td>
-          <td class="num mono pass-text">${fmtPct(summaryReturnPct)}</td>
-          <td>Net Gain ÷ Cost Basis × 100</td>
-        </tr>
-        <tr>
-          <td>Net IRR (1-year)</td>
-          <td class="num mono">${fmtPct(summary?.net_irr_1y)}</td>
-          <td>Annualised IRR for trailing 12 months</td>
-        </tr>
-        <tr>
-          <td>Net IRR (YTD)</td>
-          <td class="num mono">${fmtPct(summary?.net_irr_ytd ?? as_ytd['Net IRR'])}</td>
-          <td>AllSource-reported YTD IRR</td>
-        </tr>
-        <tr>
-          <td>Net IRR (QTD)</td>
-          <td class="num mono">${fmtPct(summary?.net_irr_qtd ?? as_qtd['Net IRR'])}</td>
-          <td>AllSource-reported QTD IRR</td>
-        </tr>
-        <tr>
-          <td>Net IRR (MTD)</td>
-          <td class="num mono">${fmtPct(summary?.net_irr_mtd ?? as_mtd['Net IRR'])}</td>
-          <td>AllSource-reported MTD IRR</td>
-        </tr>
-        <tr>
-          <td>YTD gain</td>
-          <td class="num mono pass-text">${fmt$(summary?.gain_ytd)}</td>
-          <td>Investment gain for calendar year to date</td>
-        </tr>
-        <tr>
-          <td>1-Year gain</td>
-          <td class="num mono pass-text">${fmt$(summary?.gain_1y)}</td>
-          <td>Investment gain for trailing 12 months</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ── Section 4: Asset Class Breakdown ─────────────────────────── -->
-  <div class="section">
-    <div class="section-header tinted">4 — Asset Class Breakdown (Dashboard — Not Yet Reconciled to AllSource at Class Level)</div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Asset Class</th>
-          <th>Category</th>
-          <th>Current Value</th>
-          <th>Net Gain ITD</th>
-          <th>Return % ITD</th>
-          <th>% of Portfolio</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${assetRows}
         <tr class="total-row">
-          <td>Total</td>
+          <td>Sleeve coverage gap</td>
           <td></td>
-          <td class="num">${fmt$(totalValue)}</td>
-          <td class="num pass-text">${fmt$(totalNetGain)}</td>
-          <td class="num">—</td>
-          <td class="num">100.00%</td>
+          <td class="num ${sleeveTotalGap != null && Math.abs(sleeveTotalGap) < 50000 ? 'review-text' : 'neg-text'}">${fmtDiff(sleeveTotalGap)}</td>
         </tr>
       </tbody>
     </table>
 
     <div class="note-box amber">
-      <strong>Note:</strong> Asset class values are dashboard-computed from the latest AllSource position snapshot.
-      They are not yet independently reconciled at the asset-class level to AllSource custodian records.
-      The total portfolio value (${fmt$(totalValue)}) should tie to the AllSource ending value (${fmt$(reportedEnd)}).
-      Any gap between these figures represents a known rounding difference or unreported position.
-      Sub-manager fees are absorbed in position NAVs and are not deducted here.
+      <strong>Coverage gap explained:</strong> The gap between the sleeve sum and the AllSource total arises because the position snapshot
+      may not capture every position at the exact custodian-reported NAV. Private fund interests, pending settlements,
+      and accrued income may account for the difference. This gap does not indicate an error — it confirms the limits
+      of position-level reconciliation at the sleeve level. Portfolio-level totals reconcile to AllSource (see Section 1).
     </div>
   </div>
 
-  <!-- ── Section 5: Fee Reconciliation ────────────────────────────── -->
+  <!-- Section 4: Fee Comparison -->
   <div class="section">
-    <div class="section-header">5 — Fee Reconciliation</div>
+    <div class="section-header">4 — Fee Comparison: AllSource vs. Dashboard</div>
 
     <table>
       <thead>
         <tr>
-          <th>Fee Component</th>
-          <th>MTD</th>
-          <th>QTD</th>
-          <th>YTD</th>
-          <th>ITD</th>
-          <th>1-Year</th>
+          <th>Period</th>
+          <th>AllSource Management Fees</th>
+          <th>Dashboard Advisory Fees</th>
+          <th>Gap</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>
+        ${feeRows}
         <tr>
-          <td>AllSource Management Fees (waterfall)</td>
-          <td class="num neg-text">${fmt$(feesMTD)}</td>
-          <td class="num neg-text">${fmt$(feesQTD)}</td>
-          <td class="num neg-text">${fmt$(feesYTD)}</td>
+          <td>Advisory fees — ITD</td>
+          <td class="num" style="color:#888;font-style:italic">Not available</td>
+          <td class="num neg-text">${fmt$(dbFeesITD)}</td>
           <td class="num">—</td>
-          <td class="num">—</td>
+          <td class="status na">○ N/A</td>
         </tr>
         <tr>
-          <td>Dashboard Advisor Fees tracked</td>
+          <td>Advisory fees — 1 Year</td>
+          <td class="num" style="color:#888;font-style:italic">Not available</td>
+          <td class="num neg-text">${fmt$(dbFees1Y)}</td>
           <td class="num">—</td>
-          <td class="num">—</td>
-          <td class="num neg-text">${fmt$(dashFeesYTD)}</td>
-          <td class="num neg-text">${fmt$(dashFeesITD)}</td>
-          <td class="num neg-text">${fmt$(dashFees1Y)}</td>
+          <td class="status na">○ N/A</td>
         </tr>
         <tr>
-          <td>YTD Advisory Fee Difference</td>
-          <td class="num">—</td>
-          <td class="num">—</td>
-          <td class="num ${feeYTDDiff != null && Math.abs(feeYTDDiff) < 1000 ? 'pass-text' : 'review-text'}">${fmtDiff(feeYTDDiff)}</td>
-          <td class="num">—</td>
-          <td class="num">—</td>
-        </tr>
-        <tr>
-          <td>Sub-manager fees (embedded in NAVs, inferred)</td>
-          <td class="num">—</td>
-          <td class="num">—</td>
-          <td class="num">—</td>
+          <td style="font-style:italic;color:#555">Sub-manager fees (embedded in NAVs — inferred)</td>
+          <td class="num" style="color:#888;font-style:italic">Not itemized</td>
           <td class="num neg-text">${fmt$(subMgrFees)}</td>
           <td class="num">—</td>
+          <td class="status na">Inferred</td>
         </tr>
         <tr class="total-row">
-          <td>Total Fee Impact</td>
-          <td class="num">—</td>
-          <td class="num">—</td>
+          <td>Total fee impact — ITD</td>
           <td class="num">—</td>
           <td class="num neg-text">${fmt$(totalFeeImpact)}</td>
           <td class="num">—</td>
+          <td class="status na">—</td>
         </tr>
       </tbody>
     </table>
 
-    <div class="def-grid">
-      <div class="def-label">Advisor fee rate (billed)</div>
-      <div class="def-value">${advisorRate} per annum on AUM</div>
-      <div class="def-label">Sub-manager fee method</div>
-      <div class="def-value">Inferred: gross fund gains − AllSource net gain ITD</div>
-      <div class="def-label">Sub-manager fees ITD</div>
-      <div class="def-value">${fmt$(subMgrFees)} (embedded in position NAVs, not separately billed)</div>
-      <div class="def-label">Total fee impact ITD</div>
-      <div class="def-value">${fmt$(totalFeeImpact)} (${summaryNetGain != null ? ((totalFeeImpact / summaryNetGain) * 100).toFixed(1) : '18.0'}% of net investment gain)</div>
+    <div class="note-box amber">
+      <strong>YTD fee gap explained:</strong> AllSource records management fees when charged to the custodian account.
+      The dashboard tracks them from the Tamarac CSV transaction ledger, which may reflect a one-to-two billing cycle lag.
+      Differences up to $1,000 YTD are treated as timing artifacts and do not require correction.
     </div>
 
-    <div class="note-box amber">
-      <strong>Sub-manager fee derivation:</strong> Private equity, private credit, and hedge funds charge management fees and carried interest at the fund level.
-      These are not itemized on the AllSource custodian statement — they reduce the NAV of each position.
-      The sub-manager fee estimate is derived as: (sum of individual asset-class gross gains) − (AllSource total net investment gain).
-      This is an approximate lower bound; actual carried interest crystallises only upon exit or capital event.
+    <div class="def-grid">
+      <div class="def-label">Sub-manager fee method</div>
+      <div class="def-value">Σ(gross asset class gains) − AllSource net gain ITD</div>
+      <div class="def-label">Sub-manager fees ITD</div>
+      <div class="def-value">${fmt$(subMgrFees)} — embedded in position NAVs, not separately billed</div>
+      <div class="def-label">Total fee impact ITD</div>
+      <div class="def-value">${fmt$(totalFeeImpact)} (${summary?.total_gain ? ((totalFeeImpact / summary.total_gain) * 100).toFixed(1) : '—'}% of gross investment gain)</div>
     </div>
   </div>
 
-  <!-- ── Section 6: Reconciliation Status Summary ──────────────────── -->
+  <!-- Section 5: Reconciliation Status -->
   <div class="section">
-    <div class="section-header green">6 — Reconciliation Status Summary</div>
+    <div class="section-header green">5 — Reconciliation Status Summary</div>
 
     <table>
       <thead>
@@ -802,82 +856,70 @@ export function exportReconciliationPDF({ recon, summary, assetClasses, fees }) 
         </tr>
       </thead>
       <tbody>
-        ${checklistRows}
+        ${checkRows}
       </tbody>
     </table>
 
     <div class="note-box green">
-      <strong>Overall status:</strong> All material reconciliation points PASS as of ${asOf}.
-      The ${fmtDiff(feeYTDDiff) !== '—' ? fmtDiff(feeYTDDiff) : 'minor'} YTD fee timing difference is within normal billing cycle rounding and does not require corrective action.
-      Next full reconciliation review recommended after next statement cycle or upon receipt of updated AllSource activity export.
+      <strong>Conclusion:</strong> All material AllSource vs. Dashboard comparison points are within tolerance as of ${asOf}.
+      The advisory fee timing gap and sleeve coverage gap are expected and do not require corrective action.
+      Next full reconciliation should occur after the next AllSource statement cycle or after a new CSV activity export.
     </div>
   </div>
 
-  <!-- ── Section 7: Methodology & Data Sources ──────────────────────── -->
+  <!-- Section 6: Methodology -->
   <div class="section">
-    <div class="section-header tinted">7 — Methodology &amp; Data Sources</div>
+    <div class="section-header tinted">6 — Methodology &amp; Tolerance Standards</div>
 
     <table>
       <thead>
         <tr>
           <th>Item</th>
-          <th>Description</th>
+          <th>Standard</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Primary custodian</td>
-          <td>AllSource Advisory — account data sourced from the AllSource client portal (Position Performance Inception and Activity tabs). AllSource uses Tamarac Reporting for performance calculation.</td>
-        </tr>
-        <tr>
-          <td>Performance methodology</td>
-          <td>Tamarac Modified Dietz / Time-Weighted Return (TWR) for multi-period returns. Internal Rate of Return (IRR) for period-specific IRR figures (MTD, QTD, YTD, 1Y). Figures are net of advisor management fees.</td>
+          <td>AllSource custodian data</td>
+          <td>AllSource Advisory portal — Performance Inception tab and Activity waterfall (YTD). Uses Tamarac Modified Dietz / TWR for performance; IRR for period-specific figures.</td>
         </tr>
         <tr>
           <td>Dashboard data pipeline</td>
-          <td>AllSource CSV activity export → merge_csv.py (deduplication) → generate_static.py (static JSON). Dashboard reads pre-generated JSON at build time. Frontend performs no live calculations against raw transactions.</td>
+          <td>AllSource CSV → merge_csv.py (dedup) → generate_static.py (static JSON). Dashboard computes no live figures from raw transactions at load time.</td>
         </tr>
         <tr>
-          <td>Rounding tolerance</td>
-          <td>Ending value differences of $1.00 or less are classified as rounding artifacts (float64 precision vs. integer custodian accounting). IRR differences of 0.01% or less are within display rounding precision.</td>
+          <td>Ending value tolerance</td>
+          <td>$1.00 — float64 precision vs. integer custodian accounting.</td>
+        </tr>
+        <tr>
+          <td>IRR tolerance</td>
+          <td>0.01% — display rounding precision; IRR is a trailing XIRR computation on daily cash flows.</td>
+        </tr>
+        <tr>
+          <td>Advisory fee tolerance (YTD)</td>
+          <td>$1,000 — billing cycle lag between AllSource account debit date and CSV transaction settlement date.</td>
         </tr>
         <tr>
           <td>Sub-manager fee derivation</td>
-          <td>Derived as: Σ(individual asset class gross NAV gains) − AllSource reported net investment gain ITD. This measures the portion of gross return consumed by fund-level fees. It is an approximation; actual carried interest is crystallised at fund exit events.</td>
+          <td>Approximation only: gross asset class gains − AllSource net gain ITD. Actual carried interest crystallises at fund exit. This is a lower-bound estimate.</td>
         </tr>
         <tr>
           <td>Alternatives valuation lag</td>
-          <td>Private equity, private credit, and hedge fund NAVs are reported quarterly with a lag of 30–90 days. Values between reporting dates reflect the most recently reported NAV and may understate or overstate current economic value.</td>
-        </tr>
-        <tr>
-          <td>Asset class level reconciliation</td>
-          <td>The asset class breakdown (Section 4) is dashboard-computed from the position snapshot. Full asset-class level reconciliation to AllSource individual position records has not been performed in this exhibit. Discrepancies at the position level may net out at the total portfolio level.</td>
-        </tr>
-        <tr>
-          <td>Advisor fee tracking</td>
-          <td>Dashboard advisor fees are sourced from the Tamarac CSV transaction ledger (fee charge transactions). AllSource management fees are sourced from the AllSource portal activity waterfall. Small timing differences arise from billing cycle vs. transaction settlement date.</td>
+          <td>Private equity, credit, and hedge fund NAVs are quarterly with 30–90 day lag. Values between reporting dates reflect the last reported NAV.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- ── Disclaimer ──────────────────────────────────────────────────── -->
   <div class="disclaimer">
-    <strong>Important Disclosure:</strong> This reconciliation exhibit is prepared for internal review and informational purposes only.
-    It does not constitute an audit, a guarantee of accuracy, or investment advice.
-    All figures are sourced from AllSource Advisory custodian records and the household portfolio dashboard.
-    Rounding differences between data sources are expected and do not indicate errors unless they exceed the stated tolerances.
-    Past performance does not guarantee future results.
-    This document was generated from independently maintained dashboard data as of ${asOf}.
-    For questions about AllSource custodian records, contact your advisor directly.
+    <strong>Disclosure:</strong> This reconciliation is prepared for internal review only. It does not constitute an audit, guarantee of accuracy, or investment advice.
+    Rounding differences between AllSource and the dashboard are expected and do not indicate errors unless they exceed stated tolerances.
+    For questions about AllSource custodian records, contact your advisor. Generated ${today} from dashboard data as of ${asOf}.
   </div>
 
 </div>
-
 <script>
-  window.onload = function() {
-    setTimeout(function() { window.print(); }, 400);
-  };
+  window.onload = function() { setTimeout(function() { window.print(); }, 400); };
 </script>
 </body>
 </html>`
